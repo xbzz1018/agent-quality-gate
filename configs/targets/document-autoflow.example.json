@@ -1,0 +1,14 @@
+{
+  "template_only": true,
+  "name": "Document Autoflow",
+  "target_kind": "agent",
+  "protocol": "http",
+  "endpoint": "${DOCUMENT_AUTOFLOW_AGENT_ENDPOINT}",
+  "auth_ref": "DOCUMENT_AUTOFLOW_AGENT_HEADERS",
+  "timeout_seconds": 120,
+  "capabilities": {
+    "source_project": "project-two",
+    "repository_access": "read-only",
+    "contract_status": "pending-live-verification"
+  }
+}

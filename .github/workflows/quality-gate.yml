@@ -1,0 +1,49 @@
+name: quality-gate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: agent_quality
+          POSTGRES_USER: agent_quality
+          POSTGRES_PASSWORD: agent_quality
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agent_quality"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      AQH_DATABASE_URL: postgresql+psycopg://agent_quality:agent_quality@localhost:5432/agent_quality
+      AQH_REDIS_URL: redis://localhost:6379/0
+      AQH_RUN_INTEGRATION: "1"
+      AQH_CODE_VERSION: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt -e .
+      - run: python -m ruff check .
+      - run: python -m alembic upgrade head
+      - run: python -m pytest
+      - run: python -m alembic check
+      - run: aqh gate --report tests/fixtures/gate-ship.json

@@ -1,0 +1,510 @@
+{
+  "name": "agent-quality-harness-demo-stability",
+  "version": "v1",
+  "split": "stability",
+  "demo_fixture": true,
+  "frozen": true,
+  "required_runs": 3,
+  "cases": [
+    {
+      "id": "stability-001",
+      "input": {
+        "prompt": "Demo Fixture stability-001: return a stable status.",
+        "fixture_case": "stability-001"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-002",
+      "input": {
+        "prompt": "Demo Fixture stability-002: return a stable status.",
+        "fixture_case": "stability-002"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-003",
+      "input": {
+        "prompt": "Demo Fixture stability-003: return a stable status.",
+        "fixture_case": "stability-003"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-004",
+      "input": {
+        "prompt": "Demo Fixture stability-004: return a stable status.",
+        "fixture_case": "stability-004"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-005",
+      "input": {
+        "prompt": "Demo Fixture stability-005: return a stable status.",
+        "fixture_case": "stability-005"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-006",
+      "input": {
+        "prompt": "Demo Fixture stability-006: return a stable status.",
+        "fixture_case": "stability-006"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-007",
+      "input": {
+        "prompt": "Demo Fixture stability-007: return a stable status.",
+        "fixture_case": "stability-007"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-008",
+      "input": {
+        "prompt": "Demo Fixture stability-008: return a stable status.",
+        "fixture_case": "stability-008"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-009",
+      "input": {
+        "prompt": "Demo Fixture stability-009: return a stable status.",
+        "fixture_case": "stability-009"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-010",
+      "input": {
+        "prompt": "Demo Fixture stability-010: return a stable status.",
+        "fixture_case": "stability-010"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-011",
+      "input": {
+        "prompt": "Demo Fixture stability-011: return a stable status.",
+        "fixture_case": "stability-011"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-012",
+      "input": {
+        "prompt": "Demo Fixture stability-012: return a stable status.",
+        "fixture_case": "stability-012"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-013",
+      "input": {
+        "prompt": "Demo Fixture stability-013: return a stable status.",
+        "fixture_case": "stability-013"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-014",
+      "input": {
+        "prompt": "Demo Fixture stability-014: return a stable status.",
+        "fixture_case": "stability-014"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-015",
+      "input": {
+        "prompt": "Demo Fixture stability-015: return a stable status.",
+        "fixture_case": "stability-015"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-016",
+      "input": {
+        "prompt": "Demo Fixture stability-016: return a stable status.",
+        "fixture_case": "stability-016"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-017",
+      "input": {
+        "prompt": "Demo Fixture stability-017: return a stable status.",
+        "fixture_case": "stability-017"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-018",
+      "input": {
+        "prompt": "Demo Fixture stability-018: return a stable status.",
+        "fixture_case": "stability-018"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-019",
+      "input": {
+        "prompt": "Demo Fixture stability-019: return a stable status.",
+        "fixture_case": "stability-019"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    },
+    {
+      "id": "stability-020",
+      "input": {
+        "prompt": "Demo Fixture stability-020: return a stable status.",
+        "fixture_case": "stability-020"
+      },
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {
+              "id": "stable.status",
+              "path": "status",
+              "operator": "equals",
+              "value": "ok"
+            }
+          ]
+        }
+      },
+      "tags": [
+        "demo-fixture",
+        "stability",
+        "run-3x"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+services:
+  api:
+    build: .
+    command: ["sh", "-c", "alembic upgrade head && uvicorn agent_quality_harness.main:app --host 0.0.0.0 --port 8000"]
+    environment: &app-environment
+      AQH_DATABASE_URL: postgresql+psycopg://agent_quality:agent_quality@postgres:5432/agent_quality
+      AQH_REDIS_URL: redis://redis:6379/0
+      AQH_OTEL_ENABLED: "true"
+      AQH_OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      AQH_JAEGER_BASE_URL: http://localhost:16686
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: ["python", "-m", "agent_quality_harness.worker"]
+    environment: *app-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: agent_quality
+      POSTGRES_USER: agent_quality
+      POSTGRES_PASSWORD: agent_quality
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_quality -d agent_quality"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.133.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./deploy/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"
+    depends_on:
+      jaeger:
+        condition: service_started
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.73.0
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+
+volumes:
+  postgres_data:

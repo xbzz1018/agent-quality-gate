@@ -1,0 +1,14 @@
+{
+  "template_only": true,
+  "name": "AgriGraph",
+  "target_kind": "agent",
+  "protocol": "http",
+  "endpoint": "${AGRIGRAPH_AGENT_ENDPOINT}",
+  "auth_ref": "AGRIGRAPH_AGENT_HEADERS",
+  "timeout_seconds": 60,
+  "capabilities": {
+    "source_project": "project-one",
+    "repository_access": "read-only",
+    "contract_status": "pending-live-verification"
+  }
+}

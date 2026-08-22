@@ -1,0 +1,12 @@
+.env
+.pip-cache/
+.tmp/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+dist/
+web/node_modules/
+web/dist/

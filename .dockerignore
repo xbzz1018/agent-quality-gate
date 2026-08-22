@@ -1,0 +1,9 @@
+.git
+.pytest_cache
+.ruff_cache
+.tmp
+.pip-cache
+__pycache__
+*.pyc
+web/node_modules
+web/dist
