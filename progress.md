@@ -63,8 +63,8 @@
 | Worker idle resilience | background Worker plus Redis retry regression | Worker remains alive after empty queue/timeout | Worker PID 45740 alive; retry test passed | PASS |
 | Live API readiness | `GET http://127.0.0.1:8010/api/v1/health/ready` | PostgreSQL and Redis ready | Both components `ok` | PASS |
 | Phase 2 Ruff | `python -m ruff check .` | No findings | All checks passed | PASS |
-| Phase 2 offline suite | `python -m pytest -m 'not integration'` | Offline suite passes | 26 passed, 1 deselected | PASS |
-| Full suite | `AQH_RUN_INTEGRATION=1 python -m pytest` | All tests pass | 27 passed | PASS |
+| Phase 2 offline suite | `python -m pytest -m 'not integration'` | Offline suite passes | 27 passed, 1 deselected | PASS |
+| Full suite | `AQH_RUN_INTEGRATION=1 python -m pytest` | All tests pass | 28 passed | PASS |
 | Enhanced E2E | `AQH_RUN_INTEGRATION=1 pytest tests/test_integration_run.py` | Score, Trace, Gate, replay, cancel | 1 passed | PASS |
 | Phase 2 migration reversibility | downgrade one revision, upgrade head, `alembic check` | Reversible and no drift | All three commands passed | PASS |
 | Compose validation | `docker compose config --quiet` | Valid configuration | Exit 0 | PASS |
@@ -93,6 +93,8 @@
 | 2026-08-22 | Planning catch-up script was first invoked from a missing `.codex` path | 1 | Located and used the installed script under `C:\Users\xzheng\.agents\skills\planning-with-files\scripts`. |
 | 2026-08-22 | Enhanced integration test could not persist `Decimal` values in PricingSnapshot JSONB | 1 | Normalize the `prices` field with Pydantic JSON mode at the API boundary while retaining exact decimal parsing in the Pricing Engine. |
 | 2026-08-22 | Built-in Image Gen tool is unavailable in this task | 1 | Stop before Vue scaffolding; the CLI fallback requires explicit user approval and an API key. |
+| 2026-08-22 | Combined background-service PowerShell command was rejected by execution policy | 1 | Start API and Worker with separate literal `Start-Process -WindowStyle Hidden` commands. |
+| 2026-08-22 | `New-Item` in this PowerShell runtime rejected `-LiteralPath` | 1 | The existing ignored `.tmp` directory was already present; use `-Path` if creation is needed later. |
 
 ## Reboot Check
 
