@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import subprocess
 from datetime import UTC, datetime
 
 from sqlalchemy import func, select
@@ -138,7 +139,7 @@ def create_eval_run(session: Session, payload: EvalRunCreate) -> EvalRun:
         "config_sha256": _sha256(config),
         "gate_policy": _policy_snapshot(gate_policy),
         "pricing_snapshot": _pricing_snapshot(pricing),
-        "code_version": os.getenv("AQH_CODE_VERSION", "uncommitted"),
+        "code_version": _code_version(),
     }
     run = EvalRun(
         dataset_id=dataset.id,
@@ -246,3 +247,20 @@ def _sha256(value: object) -> str:
         "utf-8"
     )
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _code_version() -> str:
+    configured = os.getenv("AQH_CODE_VERSION")
+    if configured:
+        return configured
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short=12", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unavailable"
+    return result.stdout.strip() or "unavailable"

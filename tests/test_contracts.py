@@ -4,6 +4,7 @@ from pydantic import ValidationError
 from agent_quality_harness.adapters.base import TokenUsage
 from agent_quality_harness.api.schemas import TargetCreate
 from agent_quality_harness.domain.enums import MeasurementStatus, TargetKind, TargetProtocol
+from agent_quality_harness.services import _code_version
 
 
 def test_unknown_usage_is_not_zero() -> None:
@@ -33,3 +34,9 @@ def test_mcp_is_valid_for_tool_target() -> None:
     )
 
     assert target.protocol is TargetProtocol.MCP
+
+
+def test_manifest_code_version_honors_ci_override(monkeypatch) -> None:
+    monkeypatch.setenv("AQH_CODE_VERSION", "ci-commit-123")
+
+    assert _code_version() == "ci-commit-123"
