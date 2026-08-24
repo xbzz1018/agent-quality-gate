@@ -97,15 +97,15 @@ Phase 4 - Protocol and safety enhancements (A2A first)
 
 ### Phase 4: Protocol and safety enhancements
 
-- [ ] Add A2A AgentTargetAdapter.
-- [ ] Add MCP ToolTargetAdapter.
-- [ ] Add DeepAgents as a constrained complex execution harness and a plain Tool Agent control.
+- [x] Add A2A AgentTargetAdapter.
+- [x] Add MCP ToolTargetAdapter for Tool, Resource, and Prompt operations.
+- [x] Add DeepAgents as a constrained complex execution harness and a plain Tool Agent control.
 - [ ] Add Agent Skills versioning and security regression coverage.
 - [ ] Add OPA/Rego Policy-as-Code integration.
 - [ ] Add AG-UI AgentTargetAdapter.
 - [ ] Evaluate MCP Tasks as an experimental enhancement.
 - [ ] Treat Hermes only as an optional compatible target.
-- **Status:** in_progress; A2A is first and all unchecked items remain pending
+- **Status:** in_progress; A2A, MCP, and DeepAgents are verified, while all unchecked items remain pending/experimental
 
 ### Phase 5: Real-system targets
 

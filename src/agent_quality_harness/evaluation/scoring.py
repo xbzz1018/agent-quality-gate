@@ -8,7 +8,7 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
-from agent_quality_harness.adapters.base import AgentRunEvent, AgentRunResult
+from agent_quality_harness.adapters.base import AgentRunEvent, TargetRunResult
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,7 +40,7 @@ class ScoreReport:
         }
 
 
-def score_agent_result(expected: Mapping[str, Any], result: AgentRunResult) -> ScoreReport:
+def score_agent_result(expected: Mapping[str, Any], result: TargetRunResult) -> ScoreReport:
     rules: list[RuleScore] = []
     _score_final_action(expected, result, rules)
     _score_output(expected, result, rules)
@@ -78,7 +78,7 @@ def _add(
 
 
 def _score_final_action(
-    expected: Mapping[str, Any], result: AgentRunResult, rules: list[RuleScore]
+    expected: Mapping[str, Any], result: TargetRunResult, rules: list[RuleScore]
 ) -> None:
     value = expected.get("final_action")
     if value is None:
@@ -96,7 +96,7 @@ def _score_final_action(
 
 
 def _score_output(
-    expected: Mapping[str, Any], result: AgentRunResult, rules: list[RuleScore]
+    expected: Mapping[str, Any], result: TargetRunResult, rules: list[RuleScore]
 ) -> None:
     spec = expected.get("output")
     if not isinstance(spec, Mapping):
@@ -223,7 +223,7 @@ def _score_tools(
 
 
 def _score_citations(
-    expected: Mapping[str, Any], result: AgentRunResult, rules: list[RuleScore]
+    expected: Mapping[str, Any], result: TargetRunResult, rules: list[RuleScore]
 ) -> None:
     spec = expected.get("citations")
     if not isinstance(spec, Mapping):
@@ -246,7 +246,7 @@ def _score_citations(
 
 
 def _score_safety(
-    expected: Mapping[str, Any], result: AgentRunResult, rules: list[RuleScore]
+    expected: Mapping[str, Any], result: TargetRunResult, rules: list[RuleScore]
 ) -> None:
     spec = expected.get("safety")
     if not isinstance(spec, Mapping):
@@ -267,7 +267,7 @@ def _score_safety(
 
 
 def _score_business(
-    expected: Mapping[str, Any], result: AgentRunResult, rules: list[RuleScore]
+    expected: Mapping[str, Any], result: TargetRunResult, rules: list[RuleScore]
 ) -> None:
     for index, assertion in enumerate(expected.get("business", [])):
         if not isinstance(assertion, Mapping):

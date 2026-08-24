@@ -10,7 +10,9 @@ Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平�
 - Complete Web MVP：Vue 3 + TypeScript + Element Plus + Vite 操作台；登录/组织切换、目标/版本、数据集、运行、Case/Trace 双栏、版本对比、发布门禁、成本、审计和系统管理均使用真实 API。
 - Verified hardening：Collector/Jaeger 端到端导出、长批次 lease heartbeat、running 协作取消、Candidate-only `baseline_required`。
 - Real targets：AgriGraph 40/40 characterization 完成；Document Autoflow 1/1 Profile 烟测完成，24 条整轮因目标 REPROCESS 长任务保持 Pending。
-- Pending：Document Autoflow 24 条完整轮次、AG-UI、Agent Skills/OPA、DeepAgents、A2A、MCP。
+- Complete protocol adapters：A2A 1.1 AgentTargetAdapter，以及独立的 MCP 2.0 ToolTargetAdapter（Tool/Resource/Prompt）。
+- Complete execution target：DeepAgents 0.7.6 作为独立 HTTP 被测容器，并保留 plain control Baseline；它不进入平台 API/Worker 运行时。
+- Pending：Document Autoflow 24 条完整轮次、AG-UI、Agent Skills/OPA。
 - Optional：Kafka、Kubernetes、MCP Tasks、Hermes 兼容。
 
 Redis Worker 在 MVP 中领取整个 EvalRun，case 并发由 Inspect AI 控制。HTTP/SSE/A2A 属于 AgentTargetAdapter，MCP 属于 ToolTargetAdapter。
@@ -69,7 +71,7 @@ $env:AQH_JWT_SECRET = [Convert]::ToBase64String($bytes)
 
 docker compose up -d --build `
   postgres redis jaeger otel-collector `
-  api worker fake-agent web
+  api worker fake-agent fake-mcp deep-agent web
 ```
 
 Web 为 `http://127.0.0.1:5173`，API 文档为 `http://127.0.0.1:8000/docs`，Jaeger 为 `http://127.0.0.1:16686`。Nginx 将同源 `/api/v1` 请求代理到 API；生产 Web 不依赖 Vite 开发代理。Collector 健康端点为 `http://127.0.0.1:13133/`。真实 Trace 验证：
@@ -85,7 +87,7 @@ docker compose down
 Remove-Item Env:AQH_JWT_SECRET
 ```
 
-不要执行 `docker compose down -v`，该命令会删除 PostgreSQL/Redis 数据卷。生产镜像使用 `requirements-runtime.txt`，只包含 `v0.1.0` 已实现运行时；A2A、MCP、DeepAgents、Kafka 等 pending/optional 依赖不会因为存在于开发环境就被打包成已完成功能。
+不要执行 `docker compose down -v`，该命令会删除 PostgreSQL/Redis 数据卷。平台镜像使用 `requirements-runtime.txt`，包含已验收的 Inspect、A2A 与 MCP；DeepAgents 只存在于 `Dockerfile.deep-agent` 构建的被测容器中，Kafka 等 optional 依赖不会因为存在于开发环境就被打包成已完成功能。
 
 进入 Web 后点击“初始化 Demo Fixture”会创建明确标记的 Fake Agent Target、Baseline/Candidate、80 条冻结样例、GatePolicy 和 PricingSnapshot。该操作不伪造评测结果，仍需创建运行并由 Worker 实际执行。
 
@@ -114,6 +116,14 @@ aqh gate --report tests/fixtures/gate-ship.json
 ```
 
 `SHIP/WARN` 返回 0，`BLOCK/FAILED` 返回非零。`datasets/` 中的 80 条 core 和 20 条 stability 数据均明确标记为 Demo Fixture；两个真实 Profile 均已 live verification，但 Document Autoflow 24 条完整轮次仍为 Pending。
+
+## 协议目标
+
+- A2A Target 的 endpoint 是 Agent Card 基址，例如 `http://fake-agent:8020/a2a`；Adapter 使用官方 SDK 完成 Card 版本发现、消息/Task、状态轮询和取消。A2A 没有统一用量字段时 Token/费用保持 UNKNOWN/null。
+- MCP Target 必须使用 `target_kind=tool`，endpoint 支持 Streamable HTTP 或受控 `stdio://` 配置。数据集 case 通过 `operation` 选择 `call_tool`、`read_resource`、`get_prompt` 及对应 list 操作；MCP Tasks 仍明确为实验 pending。
+- DeepAgents Fixture 位于 `http://127.0.0.1:8040`。同一 HTTP Target 使用 `control` Baseline 和 `deepagents` Candidate，便于比较执行框架开销，而不是把 DeepAgents 变成平台依赖。
+
+已验证运行：A2A Run `#74` 为 2/2 通过且 `baseline_required`；MCP Run `#75` 为 Tool/Resource/Prompt 3/3 通过且 `baseline_required`；DeepAgents Run `#76` 为 4/4 结果通过，Candidate P95 33 ms 对 Baseline 17 ms，按策略产生真实 `WARN`。
 
 ## 真实目标 Characterization
 

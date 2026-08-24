@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from agent_quality_harness.domain.enums import MeasurementStatus
 
@@ -68,3 +68,31 @@ class AgentAdapter(Protocol):
     ) -> AsyncIterator[AgentRunEvent]: ...
 
     async def cancel(self, run_id: str) -> bool: ...
+
+
+@dataclass(frozen=True, slots=True)
+class ToolRunResult:
+    operation_id: str | None
+    final_action: str
+    output: Mapping[str, Any]
+    events: tuple[AgentRunEvent, ...] = ()
+    usage: TokenUsage = field(default_factory=TokenUsage)
+    model_cost: Decimal | None = None
+    external_tool_cost: Decimal | None = None
+
+    @property
+    def run_id(self) -> str | None:
+        return self.operation_id
+
+
+@runtime_checkable
+class ToolTargetAdapter(Protocol):
+    async def execute(
+        self, input_data: Mapping[str, Any], context: Mapping[str, Any]
+    ) -> ToolRunResult: ...
+
+    async def cancel(self, operation_id: str) -> bool: ...
+
+
+TargetAdapter = AgentAdapter | ToolTargetAdapter
+TargetRunResult = AgentRunResult | ToolRunResult

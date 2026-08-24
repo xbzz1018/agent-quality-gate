@@ -254,7 +254,7 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
                 json={
                     "name": f"pending-{suffix}",
                     "target_kind": "agent",
-                    "protocol": "a2a",
+                    "protocol": "ag_ui",
                     "endpoint": "http://pending/invoke",
                 },
             )

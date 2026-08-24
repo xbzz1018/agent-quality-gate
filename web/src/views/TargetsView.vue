@@ -41,7 +41,11 @@ async function load() {
 async function createTarget() {
   saving.value = true
   try {
-    await api.createTarget({ ...targetForm, target_kind: 'agent', capabilities: {} })
+    await api.createTarget({
+      ...targetForm,
+      target_kind: targetForm.protocol === 'mcp' ? 'tool' : 'agent',
+      capabilities: {},
+    })
     ElMessage.success('被测目标已创建')
     targetDialog.value = false
     Object.assign(targetForm, { name: '', protocol: 'http', endpoint: '', timeout_seconds: 30 })
@@ -116,14 +120,14 @@ onMounted(() => load().catch((error) => ElMessage.error(apiError(error))))
         <ElTableColumn label="状态" width="90"><template #default="{ row }"><span :class="row.enabled ? 'success-text' : 'muted'">{{ row.enabled ? '启用' : '停用' }}</span></template></ElTableColumn>
         <ElTableColumn label="操作" width="120" fixed="right"><template #default="{ row }"><ElButton link type="primary" @click="openVersion(row)">添加版本</ElButton></template></ElTableColumn>
       </ElTable>
-      <EmptyState v-else title="暂无被测目标" description="登记 HTTP/SSE Agent，或初始化明确标记的 Demo Fixture。" />
+      <EmptyState v-else title="暂无被测目标" description="登记 HTTP/SSE/A2A Agent 或 MCP Tool，或初始化明确标记的 Demo Fixture。" />
       <div v-if="total > 20" class="pagination-row"><ElPagination v-model:current-page="page" :total="total" :page-size="20" layout="prev, pager, next, total" @current-change="load" /></div>
     </section>
 
     <ElDialog v-model="targetDialog" title="新建被测目标" width="520px">
       <ElForm label-position="top">
         <ElFormItem label="名称" required><ElInput v-model="targetForm.name" /></ElFormItem>
-        <div class="form-grid"><ElFormItem label="协议" required><ElSelect v-model="targetForm.protocol"><ElOption label="HTTP" value="http" /><ElOption label="SSE" value="sse" /><ElOption label="AG-UI (Pending)" value="ag_ui" disabled /><ElOption label="A2A (Pending)" value="a2a" disabled /></ElSelect></ElFormItem><ElFormItem label="超时（秒）"><ElInputNumber v-model="targetForm.timeout_seconds" :min="1" :max="600" /></ElFormItem></div>
+        <div class="form-grid"><ElFormItem label="协议" required><ElSelect v-model="targetForm.protocol"><ElOption label="HTTP" value="http" /><ElOption label="SSE" value="sse" /><ElOption label="A2A" value="a2a" /><ElOption label="MCP" value="mcp" /><ElOption label="AG-UI (Pending)" value="ag_ui" disabled /></ElSelect></ElFormItem><ElFormItem label="超时（秒）"><ElInputNumber v-model="targetForm.timeout_seconds" :min="1" :max="600" /></ElFormItem></div>
         <ElFormItem label="Endpoint" required><ElInput v-model="targetForm.endpoint" placeholder="http://127.0.0.1:8020/invoke" /></ElFormItem>
       </ElForm>
       <template #footer><ElButton @click="targetDialog = false">取消</ElButton><ElButton type="primary" :loading="saving" :disabled="!targetForm.name || !targetForm.endpoint" @click="createTarget">创建</ElButton></template>

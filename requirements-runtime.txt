@@ -12,6 +12,8 @@ PyJWT==2.13.0
 argon2-cffi==25.1.0
 openai>=2.0,<3.0
 inspect-ai==0.3.258
+a2a-sdk==1.1.2
+mcp==2.0.0
 opentelemetry-api==1.44.0
 opentelemetry-sdk==1.44.0
 opentelemetry-exporter-otlp==1.44.0

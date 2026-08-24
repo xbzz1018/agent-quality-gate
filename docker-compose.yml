@@ -32,8 +32,29 @@ services:
   fake-agent:
     build: .
     command: ["uvicorn", "agent_quality_harness.fake_agent:app", "--host", "0.0.0.0", "--port", "8020"]
+    environment:
+      AQH_FAKE_A2A_URL: http://fake-agent:8020/a2a
     ports:
       - "8020:8020"
+
+  fake-mcp:
+    build: .
+    command: ["uvicorn", "agent_quality_harness.fake_mcp:app", "--host", "0.0.0.0", "--port", "8030"]
+    ports:
+      - "8030:8030"
+
+  deep-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.deep-agent
+    command: ["uvicorn", "agent_quality_harness.fake_deep_agent:app", "--host", "0.0.0.0", "--port", "8040"]
+    ports:
+      - "8040:8040"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8040/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   web:
     build:

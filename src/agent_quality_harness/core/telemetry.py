@@ -64,6 +64,15 @@ def agent_span_attributes(
     return attributes
 
 
+def tool_span_attributes(*, target_id: int, version_id: int, protocol: str) -> dict[str, Any]:
+    return {
+        "gen_ai.operation.name": "execute_tool",
+        "aqh.target.id": target_id,
+        "aqh.version.id": version_id,
+        "aqh.target.protocol": protocol,
+    }
+
+
 def add_usage_attributes(span: trace.Span, usage: Mapping[str, int | None]) -> None:
     mapping = {
         "input_tokens": "gen_ai.usage.input_tokens",

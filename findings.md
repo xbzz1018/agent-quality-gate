@@ -103,6 +103,16 @@
 - The container topology preserves the existing administrator and Runs #18/#53/#54/#55. `docker compose down` is safe for shutdown; `docker compose down -v` is destructive and is explicitly excluded from normal operations.
 - Run #68 proves replay, Worker Trace export, event persistence, and Jaeger queryability inside the production Compose network.
 
+## Protocol and Execution-target Findings
+
+- A2A SDK 1.1.2 returns a Client from `ClientFactory.create_from_url`; the Harness resolves the Agent Card separately so the version manifest can be persisted before creating the SDK Client.
+- A2A 1.1 Task status updates no longer carry the older `final` field. Terminal and interrupted states are derived from the protocol TaskState enum, and non-terminal Tasks are polled until completion or timeout.
+- The A2A specification does not provide a portable Token usage field. Run #74 therefore correctly persists UNKNOWN/null rather than inferring usage from message text or private metadata.
+- MCP is implemented through a separate `ToolTargetAdapter.execute` interface. Tool calls emit normalized `tool.completed` events for deterministic required/forbidden/argument/order scoring; Resource and Prompt results retain their own MCP shapes.
+- MCP 2.0 Streamable HTTP uses the SDK's `httpx2` transport. Run #75 proves Tool, Resource, and Prompt operations through API -> Redis -> Worker -> Inspect -> MCP -> PostgreSQL, with `tool.execute` and MCP client spans in Jaeger.
+- MCP Tasks have different lifecycle semantics and remain an explicit experimental pending operation. The Adapter never invents a portable operation id or successful cancellation for non-Task calls.
+- DeepAgents is packaged only in `Dockerfile.deep-agent`. Run #76 compares a plain control Baseline with a genuine `create_deep_agent` Candidate using a deterministic bindable model; equal correctness still produced WARN because P95 latency grew from 17 ms to 33 ms.
+
 ### Selected UI Design System
 
 - App shell: fixed 256px white sidebar, 64px white breadcrumb header, and a cool gray full-height work area; mobile uses a navigation drawer.

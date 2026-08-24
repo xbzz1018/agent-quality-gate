@@ -11,8 +11,8 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
-from agent_quality_harness.adapter_factory import TargetSpec, create_agent_adapter
-from agent_quality_harness.adapters import AgentAdapter
+from agent_quality_harness.adapter_factory import TargetSpec, create_target_adapter
+from agent_quality_harness.adapters import TargetAdapter
 from agent_quality_harness.core.database import Database
 from agent_quality_harness.core.telemetry import get_tracer
 from agent_quality_harness.domain.enums import RunStatus, VersionRole
@@ -62,7 +62,7 @@ class InspectRunExecutor:
         self,
         database: Database,
         harness: InspectHarness,
-        adapter_factory: Callable[[TargetSpec], AgentAdapter] = create_agent_adapter,
+        adapter_factory: Callable[[TargetSpec], TargetAdapter] = create_target_adapter,
         *,
         lease_seconds: int = 60,
         heartbeat_seconds: float = 10,

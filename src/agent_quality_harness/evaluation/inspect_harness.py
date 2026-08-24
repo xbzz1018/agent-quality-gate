@@ -14,12 +14,17 @@ from inspect_ai.model import ModelOutput
 from inspect_ai.scorer import Score, Scorer, Target, scorer
 from inspect_ai.solver import Generate, Solver, TaskState, solver
 
-from agent_quality_harness.adapters.base import AgentAdapter, AgentRunResult
+from agent_quality_harness.adapters.base import (
+    TargetAdapter,
+    TargetRunResult,
+    ToolTargetAdapter,
+)
 from agent_quality_harness.core.telemetry import (
     add_usage_attributes,
     agent_span_attributes,
     current_trace_id,
     get_tracer,
+    tool_span_attributes,
 )
 from agent_quality_harness.evaluation.scoring import ScoreReport, score_agent_result
 
@@ -35,7 +40,7 @@ class HarnessCase:
 @dataclass(frozen=True, slots=True)
 class HarnessResult:
     case_id: str
-    result: AgentRunResult
+    result: TargetRunResult
     trace_id: str | None
     latency_ms: int
     scores: ScoreReport
@@ -49,7 +54,7 @@ class InspectHarness:
     def build_task(
         self,
         cases: Sequence[HarnessCase],
-        adapter: AgentAdapter,
+        adapter: TargetAdapter,
         *,
         target_name: str,
         target_version: str,
@@ -106,7 +111,7 @@ class InspectHarness:
 
 @solver
 def _adapter_solver(
-    adapter: AgentAdapter,
+    adapter: TargetAdapter,
     target_name: str,
     target_version: str,
     target_id: int,
@@ -118,23 +123,37 @@ def _adapter_solver(
         tracer = get_tracer()
         case_id = str(state.sample_id)
         with tracer.start_as_current_span("eval.case", attributes={"aqh.case.id": case_id}):
-            attributes = agent_span_attributes(
-                target_id=target_id,
-                version_id=version_id,
-                protocol=protocol,
-                model=None,
+            is_tool = isinstance(adapter, ToolTargetAdapter)
+            attributes = (
+                tool_span_attributes(
+                    target_id=target_id,
+                    version_id=version_id,
+                    protocol=protocol,
+                )
+                if is_tool
+                else agent_span_attributes(
+                    target_id=target_id,
+                    version_id=version_id,
+                    protocol=protocol,
+                    model=None,
+                )
             )
-            attributes["gen_ai.agent.name"] = target_name
+            attributes["aqh.target.name"] = target_name
+            if not is_tool:
+                attributes["gen_ai.agent.name"] = target_name
             attributes["aqh.target.version"] = target_version
             started = perf_counter()
-            with tracer.start_as_current_span("agent.invoke", attributes=attributes) as span:
-                result = await adapter.invoke(
-                    state.metadata["input_data"],
-                    {
-                        "case_id": case_id,
-                        "target_name": target_name,
-                        "target_version": target_version,
-                    },
+            span_name = "tool.execute" if is_tool else "agent.invoke"
+            with tracer.start_as_current_span(span_name, attributes=attributes) as span:
+                target_context = {
+                    "case_id": case_id,
+                    "target_name": target_name,
+                    "target_version": target_version,
+                }
+                result = (
+                    await adapter.execute(state.metadata["input_data"], target_context)
+                    if is_tool
+                    else await adapter.invoke(state.metadata["input_data"], target_context)
                 )
                 latency_ms = round((perf_counter() - started) * 1000)
                 trace_id = current_trace_id()

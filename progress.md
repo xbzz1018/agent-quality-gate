@@ -274,3 +274,16 @@
 - Ran Chrome desktop/mobile QA through production Nginx with persistent admin and real Runs #18/#55; comparison, Gate, and `baseline_required` passed with zero browser errors.
 - Re-ran Ruff, the PostgreSQL/Redis-enabled suite (43 passed), Alembic drift, TypeScript, Vitest (3 passed), production build, and npm audit (0 vulnerabilities).
 - Confirmed the production Python image includes the implemented Inspect runtime and excludes pending A2A/MCP/DeepAgents/Kafka packages.
+
+## Session: 2026-08-24 - Protocol adapters and DeepAgents target
+
+- Created `codex/protocol-adapters` from the tagged `v0.1.0-local-mvp` baseline.
+- Implemented A2A 1.1.2 with official Agent Card resolution, JSON-RPC message/Task streaming, non-terminal polling, cancellation, Artifact mapping, version events, and strict UNKNOWN Token/cost semantics.
+- Added a deterministic A2A server fixture and enabled A2A target creation in Vue. Run #73 records the missing server-extra failure; after fixing the image boundary, Run #74 completed 2/2 cases with all rules passing.
+- Added a distinct MCP `ToolTargetAdapter.execute` path instead of an Agent `invoke` shim. Streamable HTTP and controlled stdio support Tool, Resource, and Prompt contracts; MCP Tasks remain explicit experimental pending.
+- Added a deterministic MCP server fixture and enabled MCP Tool target creation in Vue. Run #75 completed Tool/Resource/Prompt 3/3 with required-tool and argument scoring.
+- Added a separate DeepAgents 0.7.6 HTTP target image with a plain control Baseline. Run #76 completed 4/4 results; the real Gate is WARN because Candidate P95 was 33 ms versus 17 ms (94.12% growth).
+- Kept DeepAgents out of API/Worker images. Verified platform image packages: Inspect/A2A/MCP present, DeepAgents absent; target image: DeepAgents present, Inspect/A2A/MCP absent.
+- Verified A2A, MCP, and DeepAgents Worker traces in Jaeger with zero sensitive tags.
+- Verification: Ruff passed; full PostgreSQL/Redis suite 50 passed; Alembic no drift; Vue typecheck and 3 Vitest tests passed; production build exit 0; npm audit 0 vulnerabilities; Chrome desktop/mobile 0 browser errors.
+- A final cold rebuild after documentation-only changes was attempted twice and stopped after Docker's package index returned truncated JSON both times. Previously built protocol images remain verified and running; no failed build replaced them.
