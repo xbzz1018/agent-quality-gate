@@ -287,3 +287,17 @@
 - Verified A2A, MCP, and DeepAgents Worker traces in Jaeger with zero sensitive tags.
 - Verification: Ruff passed; full PostgreSQL/Redis suite 50 passed; Alembic no drift; Vue typecheck and 3 Vitest tests passed; production build exit 0; npm audit 0 vulnerabilities; Chrome desktop/mobile 0 browser errors.
 - A final cold rebuild after documentation-only changes was attempted twice and stopped after Docker's package index returned truncated JSON both times. Previously built protocol images remain verified and running; no failed build replaced them.
+
+## Session: 2026-08-24 - v0.2, Skills/OPA, and AG-UI execution
+
+- **Status:** in_progress
+- Approved sequence: publish `v0.2.0-protocols`, implement Agent Skills plus OPA sidecar and publish `v0.3.0-security-gate`, then implement AG-UI on a separate branch.
+- Boundaries retained: no AgriGraph/Document Autoflow changes or reruns; MCP Tasks, Kafka, and Kubernetes remain pending/optional.
+- Exported exact platform and DeepAgents dependency versions from the verified images, added lock files, pinned setuptools, and moved Docker installation to exact `--no-deps` locks plus `--no-build-isolation` project wheels.
+- The first no-cache build of API, DeepAgents, and Web passed; both Python images contain Agent Quality Harness `0.2.0`.
+- The first platform `pip check` exposed stale package metadata pointing at development dependencies. Packaging was corrected to runtime dependencies, and the isolated DeepAgents target now runs source via `PYTHONPATH` without claiming the platform distribution.
+- Final no-cache API and DeepAgents builds passed after the package-boundary correction. Platform and DeepAgents `pip check` both pass.
+- Full backend verification remains 50 passed with Ruff and Alembic drift clean; Web typecheck, 3 Vitest tests, production build, npm audit, and Chrome QA passed.
+- Recreated the complete Compose topology with a random session-only JWT secret; Runs #74/#75/#76 and all three Jaeger traces remain queryable with zero sensitive tags.
+- Docker Web rebuild after the version bump hit one npm `ECONNRESET`; the Docker install layer was changed to use a persistent npm cache and bounded fetch retries before retrying.
+- Web 0.2 Docker rebuild passed after the cache/retry change. The v0.2 release gate is complete.

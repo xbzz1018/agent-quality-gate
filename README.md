@@ -2,6 +2,8 @@
 
 Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平台。当前状态为 `本地多租户 MVP 已完成`；下列 Pending/Optional 能力仍不得作为已实现功能宣称。
 
+当前协议发布版本为 `v0.2.0-protocols`。平台与 DeepAgents 被测镜像分别使用 `requirements-runtime.lock` 和 `requirements-deep-agent.lock` 的精确传递依赖；生产安装不解析开发依赖。
+
 ## 当前实施边界
 
 - Complete backend MVP：FastAPI、PostgreSQL/Alembic、可靠 Redis Worker、Inspect AI、HTTP/SSE、确定性 Scorer、Baseline/Candidate、Gate、失败回放、Token/Cost、持久事件与 Gate CLI。

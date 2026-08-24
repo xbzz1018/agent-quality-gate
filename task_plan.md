@@ -6,7 +6,7 @@ Build a runnable, testable Agent evaluation, observability, replay, and release-
 
 ## Current Phase
 
-Phase 4 - Protocol and safety enhancements (A2A first)
+Phase 4.1 - v0.2 protocol release closure
 
 ## Status Semantics
 
@@ -106,6 +106,30 @@ Phase 4 - Protocol and safety enhancements (A2A first)
 - [ ] Evaluate MCP Tasks as an experimental enhancement.
 - [ ] Treat Hermes only as an optional compatible target.
 - **Status:** in_progress; A2A, MCP, and DeepAgents are verified, while all unchecked items remain pending/experimental
+
+### Phase 4.1: v0.2 protocol release closure
+
+- [x] Export exact platform and DeepAgents transitive dependency locks from verified images.
+- [x] Pass a no-cache production build, `pip check`, full Compose, backend, migration, Web, Chrome, and Trace verification.
+- [x] Fast-forward `codex/protocol-adapters` to `main` and create `v0.2.0-protocols`.
+- **Status:** complete
+
+### Phase 4.2: Agent Skills and OPA policy gate
+
+- [ ] Add immutable tenant-scoped Skill package/version/attachment/scan models and APIs.
+- [ ] Add deterministic security scanning and Baseline/Candidate Skill regression.
+- [ ] Add immutable Rego Policy Bundles, OPA sidecar evaluation, fail-closed composition, and audit APIs.
+- [ ] Replace the Skills Security placeholder with real Skill, regression, and Policy views.
+- [ ] Pass backend, OPA, migration, Web, E2E, Trace, and tenant-isolation acceptance.
+- [ ] Merge and create `v0.3.0-security-gate`.
+- **Status:** pending
+
+### Phase 4.3: AG-UI AgentTargetAdapter
+
+- [ ] Add the stable AG-UI protocol runtime and typed HTTP/SSE adapter.
+- [ ] Map lifecycle, message, tool, state, usage, cancellation, and redacted reasoning events.
+- [ ] Add a deterministic Fake AG-UI target, Compose E2E, Trace, and Web target registration.
+- **Status:** pending
 
 ### Phase 5: Real-system targets
 
