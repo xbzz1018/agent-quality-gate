@@ -7,7 +7,13 @@ import EmptyState from '@/components/EmptyState.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import { api, apiError } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
-import type { PolicyBundle, SkillPackage, SkillScan, SkillVersion } from '@/types/api'
+import type {
+  GatePolicy,
+  PolicyBundle,
+  SkillPackage,
+  SkillScan,
+  SkillVersion,
+} from '@/types/api'
 import { formatDate, pretty } from '@/utils/format'
 
 const auth = useAuthStore()
@@ -17,10 +23,12 @@ const packages = ref<SkillPackage[]>([])
 const versions = ref<SkillVersion[]>([])
 const scans = ref<SkillScan[]>([])
 const policies = ref<PolicyBundle[]>([])
+const gatePolicies = ref<GatePolicy[]>([])
 const selectedPackageId = ref<number | null>(null)
 const selectedVersionId = ref<number | null>(null)
 const importVisible = ref(false)
 const policyVisible = ref(false)
+const gatePolicyVisible = ref(false)
 const runId = ref<number | null>(null)
 const regression = ref<Record<string, unknown> | null>(null)
 const attachAgentVersionId = ref<number | null>(null)
@@ -40,6 +48,11 @@ const policyForm = reactive({
   entrypoint: 'decision',
   rego: '',
 })
+const gatePolicyForm = reactive({
+  name: '',
+  version: '1',
+  policy_bundle_id: null as number | null,
+})
 
 const selectedVersion = computed(() =>
   versions.value.find((item) => item.id === selectedVersionId.value),
@@ -48,9 +61,14 @@ const selectedVersion = computed(() =>
 async function loadCatalog() {
   loading.value = true
   try {
-    const [skillsPage, policyPage] = await Promise.all([api.skills(), api.policyBundles()])
+    const [skillsPage, policyPage, gatePolicyRows] = await Promise.all([
+      api.skills(),
+      api.policyBundles(),
+      api.policies(),
+    ])
     packages.value = skillsPage.items
     policies.value = policyPage.items
+    gatePolicies.value = gatePolicyRows
     if (!selectedPackageId.value && packages.value.length) {
       await selectPackage(packages.value[0].id)
     }
@@ -152,6 +170,28 @@ async function createPolicy() {
   }
 }
 
+async function createGatePolicy() {
+  if (!gatePolicyForm.policy_bundle_id) return
+  try {
+    await api.createGatePolicy({
+      name: gatePolicyForm.name,
+      version: gatePolicyForm.version,
+      policy_bundle_id: gatePolicyForm.policy_bundle_id,
+      thresholds: {},
+      active: true,
+    })
+    gatePolicyVisible.value = false
+    ElMessage.success('GatePolicy 已绑定 validated Bundle')
+    await loadCatalog()
+  } catch (error) {
+    ElMessage.error(apiError(error))
+  }
+}
+
+function bundleFor(policy: GatePolicy) {
+  return policies.value.find((item) => item.id === policy.policy_bundle_id)
+}
+
 onMounted(loadCatalog)
 </script>
 
@@ -226,7 +266,7 @@ onMounted(loadCatalog)
 
       <ElTabPane label="Rego Policy" name="policy">
         <section class="panel">
-          <div class="panel-header"><h2 class="panel-title">Policy Bundles</h2><span class="muted">OPA Data API 验证</span></div>
+          <div class="panel-header"><h2 class="panel-title">Policy Bundles</h2><ElButton size="small" @click="gatePolicyVisible = true">绑定 GatePolicy</ElButton></div>
           <ElTable :data="policies">
             <ElTableColumn prop="name" label="名称" min-width="170" />
             <ElTableColumn prop="version" label="版本" width="90" />
@@ -235,6 +275,16 @@ onMounted(loadCatalog)
             <ElTableColumn label="SHA-256" min-width="230"><template #default="{ row }"><span class="mono hash">{{ row.sha256 }}</span></template></ElTableColumn>
           </ElTable>
           <EmptyState v-if="!policies.length" title="尚无 Policy Bundle" description="创建 Rego 后由 OPA 编译验证，只有 validated 版本可绑定 GatePolicy。" />
+        </section>
+        <section class="panel gate-policy-list">
+          <div class="panel-header"><h2 class="panel-title">Gate Policies</h2><span class="muted">执行绑定</span></div>
+          <ElTable :data="gatePolicies">
+            <ElTableColumn prop="name" label="名称" min-width="170" />
+            <ElTableColumn prop="version" label="版本" width="90" />
+            <ElTableColumn label="Bundle" min-width="190"><template #default="{ row }">{{ bundleFor(row)?.name ?? 'Built-in only' }}</template></ElTableColumn>
+            <ElTableColumn label="Bundle SHA" min-width="230"><template #default="{ row }"><span class="mono hash">{{ bundleFor(row)?.sha256 ?? '—' }}</span></template></ElTableColumn>
+            <ElTableColumn label="状态" width="90"><template #default="{ row }"><StatusTag :value="row.active ? 'pass' : 'inactive'" /></template></ElTableColumn>
+          </ElTable>
         </section>
       </ElTabPane>
     </ElTabs>
@@ -258,6 +308,14 @@ onMounted(loadCatalog)
       </ElForm>
       <template #footer><ElButton @click="policyVisible = false">取消</ElButton><ElButton type="primary" @click="createPolicy">提交并验证</ElButton></template>
     </ElDialog>
+
+    <ElDialog v-model="gatePolicyVisible" title="绑定 GatePolicy" width="min(560px, 94vw)">
+      <ElForm label-position="top">
+        <div class="form-grid"><ElFormItem label="名称"><ElInput v-model="gatePolicyForm.name" /></ElFormItem><ElFormItem label="版本"><ElInput v-model="gatePolicyForm.version" /></ElFormItem></div>
+        <ElFormItem label="Validated Policy Bundle"><ElSelect v-model="gatePolicyForm.policy_bundle_id" style="width: 100%"><ElOption v-for="bundle in policies.filter((item) => item.status === 'validated')" :key="bundle.id" :label="`${bundle.name} · ${bundle.version} · ${bundle.sha256.slice(0, 12)}`" :value="bundle.id" /></ElSelect></ElFormItem>
+      </ElForm>
+      <template #footer><ElButton @click="gatePolicyVisible = false">取消</ElButton><ElButton type="primary" :disabled="!gatePolicyForm.name || !gatePolicyForm.policy_bundle_id" @click="createGatePolicy">创建并绑定</ElButton></template>
+    </ElDialog>
   </div>
 </template>
 
@@ -276,6 +334,7 @@ onMounted(loadCatalog)
 .regression-panel { min-height: 430px; }
 .regression-query { border-top: 0; border-bottom: 1px solid var(--border); }
 .regression-json { margin: 16px; max-height: 480px; }
+.gate-policy-list { margin-top: 14px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .code-input :deep(textarea) { font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; }
 @media (max-width: 950px) { .skills-layout { grid-template-columns: 1fr; } }

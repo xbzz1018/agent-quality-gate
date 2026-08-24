@@ -1,8 +1,11 @@
+import asyncio
+
 import httpx
 import pytest
 
 from agent_quality_harness.adapters.ag_ui import AgUiAgentAdapter
 from agent_quality_harness.domain.enums import MeasurementStatus, TargetProtocol
+from agent_quality_harness.execution import InspectRunExecutor, RunCancelled
 from agent_quality_harness.fake_ag_ui import create_fake_ag_ui_app
 
 
@@ -128,7 +131,7 @@ async def test_ag_ui_cancel_closes_active_http_stream() -> None:
     stream = TrackedStream()
     response = httpx.Response(200, stream=stream)
     adapter, client = await _adapter()
-    adapter._active["active-run"] = response
+    adapter._active["active-run"] = (asyncio.get_running_loop(), response)
     try:
         assert await adapter.cancel("active-run") is True
         assert stream.closed is True
@@ -151,3 +154,23 @@ def test_ag_ui_protocol_is_registered_as_runnable_agent_target() -> None:
     )
 
     assert isinstance(adapter, AgUiAgentAdapter)
+
+
+async def test_executor_propagates_running_cancel_to_active_adapter() -> None:
+    cancelled = asyncio.Event()
+
+    class ActiveAdapter:
+        async def cancel_active(self) -> int:
+            cancelled.set()
+            return 1
+
+    executor = object.__new__(InspectRunExecutor)
+    executor.heartbeat_seconds = 0.01
+    executor._cancel_requested = lambda run_id: True
+
+    async def active_work() -> None:
+        await cancelled.wait()
+
+    with pytest.raises(RunCancelled):
+        await executor._run_with_heartbeat(1, active_work(), adapter=ActiveAdapter())
+    assert cancelled.is_set()

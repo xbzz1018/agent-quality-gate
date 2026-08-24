@@ -131,6 +131,26 @@ Phase 4.3 - AG-UI AgentTargetAdapter (complete on feature branch)
 - [x] Add a deterministic Fake AG-UI target, Compose E2E, Trace, and Web target registration.
 - **Status:** complete on `codex/ag-ui-adapter`; no release tag has been assigned
 
+### Phase 4.4: v0.4 AG-UI reliability release
+
+- [x] Run OPA 1.17.0 in CI and include it in readiness checks.
+- [x] Propagate running cancellation into active AG-UI streams.
+- [x] Reject hardcoded-secret Skill imports before content persistence.
+- [x] Require a non-BLOCK scan before Skill binding and enforce frozen-row immutability.
+- [x] Complete PolicyBundle-to-GatePolicy Web workflow and container health checks.
+- [x] Cold-build, verify, merge, and create `v0.4.0-ag-ui`.
+- **Status:** complete
+
+### Phase 4.5: v0.5 multi-Skill reliability
+
+- [ ] Validate `aqh.skill-manifest/v1` and atomically validate/replace Skill bindings.
+- [ ] Normalize cross-protocol `aqh.skill-event/v1` telemetry without raw content.
+- [ ] Score Skill selection, identity, lifecycle, coverage, and evidence grounding.
+- [ ] Add versioned Skill/Evidence Gate controls with UNKNOWN fail-closed behavior.
+- [ ] Add binding, coverage, reliability, and Gate-source Web views.
+- [ ] Pass 32-Skill/200-Case scale checks and create `v0.5.0-multi-skill-reliability`.
+- **Status:** in_progress
+
 ### Phase 5: Real-system targets
 
 - [x] Register AgriGraph as a real target without modifying its repository.

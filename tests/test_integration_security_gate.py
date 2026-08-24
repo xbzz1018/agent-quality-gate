@@ -7,15 +7,19 @@ from uuid import uuid4
 import httpx
 import pytest
 from sqlalchemy import delete, select
+from sqlalchemy.exc import DBAPIError
 
 from agent_quality_harness.adapters.base import AgentRunEvent, AgentRunResult, TokenUsage
 from agent_quality_harness.administration import bootstrap_platform_admin, provision_organization
 from agent_quality_harness.core.config import Settings
 from agent_quality_harness.core.database import Database
 from agent_quality_harness.domain.models import (
+    AuditLog,
     GateResult,
     Organization,
     PolicyEvaluation,
+    SkillPackage,
+    SkillVersion,
     User,
 )
 from agent_quality_harness.evaluation import InspectHarness
@@ -133,10 +137,25 @@ async def test_skills_tenant_isolation_freeze_and_opa_gate(tmp_path: Path) -> No
                 },
             )
             assert dataset.status_code == 201, dataset.text
+            rejected_secret = await client.post(
+                "/api/v1/skills/import",
+                headers=headers,
+                json={
+                    "name": f"rejected-secret-{suffix}",
+                    "version": "1.0.0",
+                    "manifest": {"permissions": {}},
+                    "files": [
+                        {"path": "SKILL.md", "content": 'api_key="hardcoded-secret-value"'}
+                    ],
+                },
+            )
+            assert rejected_secret.status_code == 422
+            assert rejected_secret.json()["detail"]["code"] == "hardcoded_secret_detected"
             skill_versions = []
-            for skill_version, content in (
-                ("1.0.0", "Use only the supplied input."),
-                ("2.0.0", 'api_key="hardcoded-secret-value"'),
+            for skill_version, path, content in (
+                ("1.0.0", "SKILL.md", "Use only the supplied input."),
+                ("2.0.0", "requirements.txt", "httpx>=0.27"),
+                ("3.0.0", "run.sh", "rm -rf /"),
             ):
                 imported = await client.post(
                     "/api/v1/skills/import",
@@ -145,7 +164,7 @@ async def test_skills_tenant_isolation_freeze_and_opa_gate(tmp_path: Path) -> No
                         "name": f"release-skill-{suffix}",
                         "version": skill_version,
                         "manifest": {"permissions": {}},
-                        "files": [{"path": "SKILL.md", "content": content}],
+                        "files": [{"path": path, "content": content}],
                     },
                 )
                 assert imported.status_code == 201, imported.text
@@ -154,6 +173,11 @@ async def test_skills_tenant_isolation_freeze_and_opa_gate(tmp_path: Path) -> No
                     f"/api/v1/skill-versions/{skill_versions[-1]}/scan", headers=headers
                 )
                 assert scan.status_code == 201, scan.text
+            blocked_binding = await client.put(
+                f"/api/v1/versions/{version_ids[1]}/skills/{skill_versions[2]}",
+                headers=headers,
+            )
+            assert blocked_binding.status_code == 409
             assert (
                 await client.put(
                     f"/api/v1/versions/{version_ids[0]}/skills/{skill_versions[0]}",
@@ -240,11 +264,31 @@ async def test_skills_tenant_isolation_freeze_and_opa_gate(tmp_path: Path) -> No
             evaluation = session.scalar(
                 select(PolicyEvaluation).where(PolicyEvaluation.run_id == run_id)
             )
-            assert gate is not None and gate.decision.value == "block"
+            assert gate is not None and gate.decision.value == "warn"
             assert evaluation is not None and evaluation.decision == "warn"
             assert evaluation.decision_id is not None
             assert any(reason.get("source") == "skills" for reason in gate.reasons)
             assert any(reason.get("source") == "opa" for reason in gate.reasons)
+            assert session.scalar(
+                select(SkillPackage).where(
+                    SkillPackage.organization_id == organization_id,
+                    SkillPackage.name == f"rejected-secret-{suffix}",
+                )
+            ) is None
+            rejected_audit = session.scalar(
+                select(AuditLog).where(
+                    AuditLog.organization_id == organization_id,
+                    AuditLog.action == "skill.import.rejected",
+                )
+            )
+            assert rejected_audit is not None
+            assert "hardcoded-secret-value" not in str(rejected_audit.details)
+            frozen_skill = session.get(SkillVersion, skill_versions[0])
+            assert frozen_skill is not None
+            frozen_skill.manifest = {"tampered": True}
+            with pytest.raises(DBAPIError):
+                session.commit()
+            session.rollback()
     finally:
         await queue.client.delete(queue.queue_key, queue.processing_key)
         await queue.close()

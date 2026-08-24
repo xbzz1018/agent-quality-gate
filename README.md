@@ -2,9 +2,9 @@
 
 Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平台。当前状态为 `本地多租户 MVP 已完成`；下列 Pending/Optional 能力仍不得作为已实现功能宣称。
 
-当前安全门禁发布版本为 `v0.3.0-security-gate`。平台与 DeepAgents 被测镜像分别使用 `requirements-runtime.lock` 和 `requirements-deep-agent.lock` 的精确传递依赖；生产安装不解析开发依赖。
+当前发布候选版本为 `v0.4.0-ag-ui`。平台与 DeepAgents 被测镜像分别使用 `requirements-runtime.lock` 和 `requirements-deep-agent.lock` 的精确传递依赖；生产安装不解析开发依赖。
 
-`codex/ag-ui-adapter` 分支在该标签之后增加了经 Compose/Trace 验证的 AG-UI 0.1.19 Adapter；它尚未创建独立发布标签，不反写为 `v0.3.0` 标签能力。
+`v0.3.0-security-gate` 保留为安全门禁基线；`v0.4.0-ag-ui` 在其后加入 AG-UI 0.1.19、运行中流取消、OPA CI/readiness、密钥导入拒绝和 Policy 绑定 UI。
 
 ## 当前实施边界
 

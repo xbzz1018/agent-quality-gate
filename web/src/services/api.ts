@@ -133,6 +133,8 @@ export const api = {
   gateAudits: (params: Record<string, unknown> = {}) =>
     http.get<Page<GateResult>>('/gate-audits', { params }).then(({ data }) => data),
   policies: () => http.get<GatePolicy[]>('/gate-policies').then(({ data }) => data),
+  createGatePolicy: (payload: Record<string, unknown>) =>
+    http.post<GatePolicy>('/gate-policies', payload).then(({ data }) => data),
   skills: (params: Record<string, unknown> = {}) =>
     http.get<Page<SkillPackage>>('/skills', { params }).then(({ data }) => data),
   skillVersions: (skillId: number) =>

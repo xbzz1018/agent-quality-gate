@@ -42,6 +42,21 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt -e .
+      - name: Start OPA 1.17.0
+        run: >-
+          docker run -d --name aqh-opa -p 8181:8181
+          openpolicyagent/opa:1.17.0 run --server --addr=0.0.0.0:8181
+          --set=decision_logs.console=true
+      - name: Wait for OPA readiness
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8181/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs aqh-opa
+          exit 1
       - run: python -m ruff check .
       - run: python -m alembic upgrade head
       - run: python -m pytest

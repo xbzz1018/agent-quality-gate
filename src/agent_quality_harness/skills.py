@@ -66,6 +66,12 @@ class SkillValidationError(ValueError):
     pass
 
 
+class SkillSecretError(SkillValidationError):
+    def __init__(self, findings: list[dict[str, Any]]) -> None:
+        super().__init__("hardcoded_secret_detected")
+        self.findings = findings
+
+
 def normalize_skill_files(files: list[dict[str, str]]) -> list[dict[str, str]]:
     if not files or len(files) > MAX_SKILL_FILES:
         raise SkillValidationError(f"files must contain 1 to {MAX_SKILL_FILES} entries")
@@ -120,6 +126,9 @@ def import_skill(
     files: list[dict[str, str]],
 ) -> tuple[SkillPackage, SkillVersion]:
     normalized = normalize_skill_files(files)
+    secret_findings = detect_hardcoded_secrets(normalized)
+    if secret_findings:
+        raise SkillSecretError(secret_findings)
     digest = skill_sha256(manifest, normalized)
     package = session.scalar(
         select(SkillPackage).where(
@@ -299,6 +308,23 @@ def scan_skill_version(skill_version: SkillVersion) -> tuple[str, list[dict[str,
     return status, findings, counts
 
 
+def detect_hardcoded_secrets(files: list[dict[str, str]]) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    for file in files:
+        path = str(file["path"])
+        for line_number, line in enumerate(str(file["content"]).splitlines(), 1):
+            if any(pattern.search(line) for pattern in _SECRET_PATTERNS):
+                _finding(
+                    findings,
+                    "skill.hardcoded_secret",
+                    "block",
+                    path,
+                    line_number,
+                    "Possible hardcoded credential detected; value omitted",
+                )
+    return findings
+
+
 def create_skill_scan(session: Session, skill_version: SkillVersion) -> SkillScan:
     status, findings, summary = scan_skill_version(skill_version)
     scan = SkillScan(
@@ -338,6 +364,16 @@ def attach_skill_version(
     )
     if version is None or skill_version is None:
         raise LookupError("version or skill version not found")
+    latest_scan = session.scalar(
+        select(SkillScan)
+        .where(SkillScan.skill_version_id == skill_version_id)
+        .order_by(SkillScan.created_at.desc(), SkillScan.id.desc())
+        .limit(1)
+    )
+    if latest_scan is None:
+        raise SkillValidationError("skill version must be scanned before binding")
+    if latest_scan.status == "block":
+        raise SkillValidationError("BLOCK skill version cannot be bound")
     used = session.scalar(
         select(EvalRun.id).where(
             or_(

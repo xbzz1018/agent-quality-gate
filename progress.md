@@ -320,3 +320,13 @@
 - Compose Run #96 completed 3/3 with one UNKNOWN usage case. Jaeger Trace `7a233a7fe8b7c339f9dc3a2b0c8e2eb3` has Worker service, 10 spans, and zero sensitive tags.
 - A front-end verification command was first invoked from the repository root and failed immediately because no root `package.json` exists; the same checks passed from `web/`.
 - Final verification: Ruff passed; full PostgreSQL/Redis/OPA suite 72 passed; Alembic no drift; API/Worker/local `pip check` passed; Web typecheck, 3 Vitest, production/Compose builds and audit passed; Chrome desktop/mobile including Run #96 reported 0 browser errors.
+
+## Session: 2026-08-24 - v0.4/v0.5 reliability hardening
+
+- **Status:** in_progress
+- Confirmed the platform remains an evaluation and release-gate system; it will not execute or route Skills.
+- Locked decisions: Skill telemetry is UNKNOWN when missing and fail-closed only when Skill controls are enabled; binding conflicts are rejected before persistence; hardcoded-secret imports never persist Skill file content; hallucination coverage is deterministic Skill identity/lifecycle plus frozen evidence attribution.
+- Added Phase 4.4 and 4.5 acceptance checklists before implementation.
+- First v0.4 check found only two Ruff import-order findings. A combined frontend check was again launched from the repository root and failed because `package.json` exists only under `web/`; subsequent npm checks use the explicit Web working directory.
+- The first Web healthcheck used `localhost`, which BusyBox resolved to IPv6 `::1` while Nginx listened on IPv4; changed the probe to explicit `127.0.0.1` after direct container diagnostics.
+- v0.4 verification passed: Ruff, 74 backend tests with PostgreSQL/Redis/OPA, reversible migration and drift, Web typecheck/3 Vitest/build/audit, no-cache API/Worker/Web/OPA/Fake AG-UI builds, container `pip check`, all declared health checks, and Chrome desktop/mobile with 0 browser errors.

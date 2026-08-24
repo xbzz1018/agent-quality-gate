@@ -39,6 +39,10 @@ from agent_quality_harness.services import verify_dataset_integrity
 from agent_quality_harness.skills import skill_regression
 
 
+class RunCancelled(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True, slots=True)
 class VersionExecution:
     role: VersionRole
@@ -123,7 +127,16 @@ class InspectRunExecutor:
                             protocol=version.target.protocol.value,
                             capture=version_captures,
                         )
-                        logs = await self._run_with_heartbeat(run_id, self.harness.run_async(task))
+                        try:
+                            logs = await self._run_with_heartbeat(
+                                run_id,
+                                self.harness.run_async(task),
+                                adapter=adapter,
+                            )
+                        except RunCancelled:
+                            captures.extend((version.role, item) for item in version_captures)
+                            cancelled = True
+                            break
                         if len(logs) != 1 or logs[0].status != "success":
                             raise RuntimeError(f"Inspect AI failed for {version.role.value}")
                         expected_ids = {case.id for case in batch}
@@ -517,13 +530,30 @@ class InspectRunExecutor:
             status = session.scalar(select(EvalRun.status).where(EvalRun.id == run_id))
             return status is RunStatus.CANCEL_REQUESTED
 
-    async def _run_with_heartbeat(self, run_id: int, work: Awaitable[Any]) -> Any:
+    async def _run_with_heartbeat(
+        self,
+        run_id: int,
+        work: Awaitable[Any],
+        *,
+        adapter: TargetAdapter | None = None,
+    ) -> Any:
         task = asyncio.ensure_future(work)
         try:
             while True:
                 done, _ = await asyncio.wait({task}, timeout=self.heartbeat_seconds)
                 if task in done:
                     return task.result()
+                if self._cancel_requested(run_id):
+                    cancel_active = getattr(adapter, "cancel_active", None)
+                    if cancel_active is not None:
+                        await cancel_active()
+                    try:
+                        await asyncio.wait_for(
+                            asyncio.shield(task), timeout=max(5.0, self.heartbeat_seconds * 2)
+                        )
+                    except (TimeoutError, Exception):
+                        pass
+                    raise RunCancelled("run cancellation requested")
                 owned = await asyncio.to_thread(self._heartbeat, run_id)
                 if not owned:
                     task.cancel()

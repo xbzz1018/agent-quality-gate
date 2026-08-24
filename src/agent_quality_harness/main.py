@@ -37,7 +37,7 @@ def create_app(
         if close_database is not None:
             close_database()
 
-    app = FastAPI(title=settings.app_name, version="0.3.0", lifespan=lifespan)
+    app = FastAPI(title=settings.app_name, version="0.4.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.database = database
     app.state.run_queue = run_queue

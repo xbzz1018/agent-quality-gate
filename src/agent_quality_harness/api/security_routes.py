@@ -18,6 +18,7 @@ from agent_quality_harness.policy import (
 )
 from agent_quality_harness.security import audit
 from agent_quality_harness.skills import (
+    SkillSecretError,
     SkillValidationError,
     attach_skill_version,
     create_skill_scan,
@@ -210,6 +211,33 @@ def post_skill_import(payload: SkillImport, request: Request, session: SessionDe
         session.refresh(package)
         session.refresh(version)
         return SkillImportRead(package=package, version=version)
+    except SkillSecretError as exc:
+        session.rollback()
+        audit(
+            session,
+            action="skill.import.rejected",
+            outcome="blocked",
+            context=current_context(request),
+            resource_type="skill_import",
+            details={
+                "package": payload.name,
+                "version": payload.version,
+                "file_count": len(payload.files),
+                "rule_ids": sorted({item["rule_id"] for item in exc.findings}),
+                "locations": [
+                    {"path": item["path"], "line": item["line"]}
+                    for item in exc.findings[:20]
+                ],
+            },
+        )
+        session.commit()
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "hardcoded_secret_detected",
+                "findings": exc.findings,
+            },
+        ) from exc
     except (SkillValidationError, IntegrityError) as exc:
         session.rollback()
         raise HTTPException(status_code=409, detail=str(exc)) from exc

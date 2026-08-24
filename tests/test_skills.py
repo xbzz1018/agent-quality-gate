@@ -1,9 +1,13 @@
+from unittest.mock import Mock
+
 import pytest
 
 from agent_quality_harness.domain.models import SkillVersion
 from agent_quality_harness.skills import (
     SCANNER_VERSION,
+    SkillSecretError,
     SkillValidationError,
+    import_skill,
     normalize_skill_files,
     scan_skill_version,
     skill_sha256,
@@ -106,3 +110,22 @@ def test_skill_import_rejects_duplicate_binary_and_oversized_content() -> None:
         normalize_skill_files([{"path": "a.txt", "content": "\x00data"}])
     with pytest.raises(SkillValidationError, match="1 MiB"):
         normalize_skill_files([{"path": "a.txt", "content": "x" * (1024 * 1024)}])
+
+
+def test_skill_import_rejects_secret_before_session_write() -> None:
+    session = Mock()
+
+    with pytest.raises(SkillSecretError) as raised:
+        import_skill(
+            session,
+            organization_id=1,
+            name="unsafe",
+            version="1.0.0",
+            description="",
+            source_ref=None,
+            manifest={},
+            files=[{"path": "SKILL.md", "content": 'api_key="super-secret-value"'}],
+        )
+
+    assert raised.value.findings[0]["rule_id"] == "skill.hardcoded_secret"
+    session.add.assert_not_called()

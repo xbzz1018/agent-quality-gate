@@ -5,6 +5,7 @@ import copy
 import hashlib
 import json
 import re
+import threading
 from collections.abc import AsyncIterator, Mapping
 from typing import Any
 from urllib.parse import urljoin
@@ -70,8 +71,8 @@ class AgUiAgentAdapter:
         self.headers = dict(headers or {})
         self.capabilities = dict(capabilities or {})
         self._client = client
-        self._active: dict[str, httpx.Response] = {}
-        self._active_lock = asyncio.Lock()
+        self._active: dict[str, tuple[asyncio.AbstractEventLoop, httpx.Response]] = {}
+        self._active_lock = threading.Lock()
 
     async def invoke(
         self, input_data: Mapping[str, Any], context: Mapping[str, Any]
@@ -98,8 +99,8 @@ class AgUiAgentAdapter:
                 timeout=self.timeout_seconds,
             ) as response:
                 response.raise_for_status()
-                async with self._active_lock:
-                    self._active[request.run_id] = response
+                with self._active_lock:
+                    self._active[request.run_id] = (asyncio.get_running_loop(), response)
                 try:
                     async for event in _event_stream(response):
                         if terminal:
@@ -259,7 +260,7 @@ class AgUiAgentAdapter:
                                 )
                             )
                 finally:
-                    async with self._active_lock:
+                    with self._active_lock:
                         self._active.pop(request.run_id, None)
         if not terminal:
             raise ValueError("AG-UI stream ended without RUN_FINISHED or RUN_ERROR")
@@ -285,12 +286,9 @@ class AgUiAgentAdapter:
             yield event
 
     async def cancel(self, run_id: str) -> bool:
-        async with self._active_lock:
-            response = self._active.get(run_id)
-        closed = False
-        if response is not None:
-            await response.aclose()
-            closed = True
+        with self._active_lock:
+            active = self._active.get(run_id)
+        closed = await _close_active(active)
         endpoint = self.capabilities.get("cancel_endpoint")
         if not isinstance(endpoint, str) or not endpoint:
             return closed
@@ -305,6 +303,11 @@ class AgUiAgentAdapter:
                 timeout=self.timeout_seconds,
             )
         return closed or result.status_code in {200, 202, 204}
+
+    async def cancel_active(self) -> int:
+        with self._active_lock:
+            active = list(self._active.values())
+        return sum([await _close_active(item) for item in active])
 
     def _client_context(self) -> _ClientContext:
         return _ClientContext(self._client)
@@ -323,6 +326,20 @@ class _ClientContext:
     async def __aexit__(self, *_: object) -> None:
         if self.owned and self.client is not None:
             await self.client.aclose()
+
+
+async def _close_active(
+    active: tuple[asyncio.AbstractEventLoop, httpx.Response] | None,
+) -> bool:
+    if active is None:
+        return False
+    loop, response = active
+    if loop is asyncio.get_running_loop():
+        await response.aclose()
+        return True
+    future = asyncio.run_coroutine_threadsafe(response.aclose(), loop)
+    await asyncio.wrap_future(future)
+    return True
 
 
 async def _event_stream(response: httpx.Response) -> AsyncIterator[Any]:

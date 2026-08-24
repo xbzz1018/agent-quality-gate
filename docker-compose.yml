@@ -15,6 +15,11 @@ services:
       AQH_REFRESH_COOKIE_SECURE: "false"
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/ready')"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
     depends_on:
       postgres:
         condition: service_healthy
@@ -27,6 +32,11 @@ services:
     build: .
     command: ["python", "-m", "agent_quality_harness.worker"]
     environment: *app-environment
+    healthcheck:
+      test: ["CMD", "python", "-m", "agent_quality_harness.worker_health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,7 +90,9 @@ services:
       retries: 30
 
   fake-ag-ui:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.fake-ag-ui
     command: ["uvicorn", "agent_quality_harness.fake_ag_ui:app", "--host", "0.0.0.0", "--port", "8050"]
     ports:
       - "8050:8050"
@@ -95,6 +107,11 @@ services:
       context: ./web
     ports:
       - "5173:80"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     depends_on:
       api:
         condition: service_started
@@ -132,6 +149,11 @@ services:
     ports:
       - "4317:4317"
       - "13133:13133"
+    healthcheck:
+      test: ["CMD", "/otelcol-contrib", "validate", "--config=/etc/otelcol/config.yaml"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     depends_on:
       jaeger:
         condition: service_healthy
