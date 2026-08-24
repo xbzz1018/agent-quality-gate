@@ -2,6 +2,8 @@ import json
 from collections.abc import AsyncIterator, Mapping
 from typing import Any
 
+from agent_quality_harness.skill_events import skill_event_from_transport
+
 from .base import AgentRunEvent, AgentRunResult
 from .http import HttpAgentAdapter
 
@@ -65,6 +67,9 @@ def _event(event_name: str, event_id: str | None, data_lines: list[str]) -> Agen
     raw = "\n".join(data_lines)
     decoded = json.loads(raw)
     data = decoded if isinstance(decoded, dict) else {"value": decoded}
+    skill_event = skill_event_from_transport(event_name, data)
+    if skill_event is not None:
+        return skill_event
     return AgentRunEvent(event_type=event_name, event_id=event_id, data=data)
 
 

@@ -2,9 +2,11 @@
 
 Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平台。当前状态为 `本地多租户 MVP 已完成`；下列 Pending/Optional 能力仍不得作为已实现功能宣称。
 
-当前发布候选版本为 `v0.4.0-ag-ui`。平台与 DeepAgents 被测镜像分别使用 `requirements-runtime.lock` 和 `requirements-deep-agent.lock` 的精确传递依赖；生产安装不解析开发依赖。
+当前发布候选版本为 `v0.5.0-multi-skill-reliability`。平台与 DeepAgents 被测镜像分别使用 `requirements-runtime.lock` 和 `requirements-deep-agent.lock` 的精确传递依赖；生产安装不解析开发依赖。
 
 `v0.3.0-security-gate` 保留为安全门禁基线；`v0.4.0-ag-ui` 在其后加入 AG-UI 0.1.19、运行中流取消、OPA CI/readiness、密钥导入拒绝和 Policy 绑定 UI。
+
+`v0.5.0-multi-skill-reliability` 增加 `aqh.skill-manifest/v1`、原子绑定冲突检查、跨协议 `aqh.skill-event/v1`、Skill 选择/身份/生命周期 Scorer、冻结数据集 Coverage 和 EvidenceRef 归因门禁。平台仍不执行或路由 Skill。
 
 ## 当前实施边界
 
@@ -145,6 +147,14 @@ python scripts/run_ag_ui_fixture.py
 ```
 
 当前验证 Run `#96` 为 3/3 规则通过，包含 1 条真实 UNKNOWN 用量记录；Worker Trace `7a233a7fe8b7c339f9dc3a2b0c8e2eb3` 在 Jaeger 中包含 10 spans、敏感 tag 0。Agent 事件中的 reasoning 只保留空载荷开始/结束元数据。
+
+多 Skill 可重复验收：
+
+```powershell
+python scripts/run_multi_skill_fixture.py
+```
+
+Run `#119` 的 Baseline/Candidate 共 4/4 结果通过，Skill selection、Evidence 和 Coverage 均为 1.0，发布门禁为 `SHIP`。平台只验证冻结 Claim→EvidenceRef 映射和引用完整性，不宣称识别所有开放域事实幻觉。
 
 ## 真实目标 Characterization
 

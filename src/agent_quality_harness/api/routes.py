@@ -659,6 +659,7 @@ def post_gate_policy(payload: GatePolicyCreate, request: Request, session: Sessi
         name=payload.name,
         version=payload.version,
         thresholds=DEFAULT_THRESHOLDS | payload.thresholds,
+        controls=payload.controls.model_dump(mode="json"),
         policy_bundle_id=payload.policy_bundle_id,
         active=payload.active,
     )

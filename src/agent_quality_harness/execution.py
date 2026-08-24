@@ -36,7 +36,7 @@ from agent_quality_harness.gates import aggregate_metrics, evaluate_gate
 from agent_quality_harness.policy import OpaClient
 from agent_quality_harness.pricing import calculate_model_cost
 from agent_quality_harness.services import verify_dataset_integrity
-from agent_quality_harness.skills import skill_regression
+from agent_quality_harness.skills import skill_regression, version_skill_snapshot
 
 
 class RunCancelled(RuntimeError):
@@ -50,6 +50,7 @@ class VersionExecution:
     version: str
     target_name: str
     target: TargetSpec
+    skills: tuple[dict[str, Any], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +75,7 @@ class RunExecution:
     prices: dict[str, Any] | None
     gate_policy_id: int | None
     gate_thresholds: dict[str, Any] | None
+    gate_controls: dict[str, Any] | None
     policy: PolicyExecution | None
 
 
@@ -125,6 +127,7 @@ class InspectRunExecutor:
                             target_id=version.target.id,
                             version_id=version.version_id,
                             protocol=version.target.protocol.value,
+                            bound_skills=version.skills,
                             capture=version_captures,
                         )
                         try:
@@ -266,6 +269,7 @@ class InspectRunExecutor:
                 prices=None if pricing is None else dict(pricing.prices),
                 gate_policy_id=None if policy is None else policy.id,
                 gate_thresholds=None if policy is None else dict(policy.thresholds),
+                gate_controls=None if policy is None else dict(policy.controls),
                 policy=None
                 if bundle is None
                 else PolicyExecution(
@@ -307,6 +311,7 @@ class InspectRunExecutor:
                         timeout_seconds=target.timeout_seconds,
                         capabilities=dict(target.capabilities),
                     ),
+                    skills=tuple(version_skill_snapshot(session, version.id)),
                 )
             )
         return versions
@@ -417,7 +422,23 @@ class InspectRunExecutor:
             if not cancelled and execution.gate_policy_id is not None and run.baseline_version_id:
                 baseline = aggregate_metrics(metric_rows[VersionRole.BASELINE])
                 candidate = aggregate_metrics(metric_rows[VersionRole.CANDIDATE])
-                gate = evaluate_gate(baseline, candidate, execution.gate_thresholds)
+                coverage = run.manifest.get("skill_coverage", {})
+                baseline["skill_coverage_ratio"] = (
+                    (coverage.get("baseline") or {}).get("coverage_ratio")
+                    if isinstance(coverage, dict)
+                    else None
+                )
+                candidate["skill_coverage_ratio"] = (
+                    (coverage.get("candidate") or {}).get("coverage_ratio")
+                    if isinstance(coverage, dict)
+                    else None
+                )
+                gate = evaluate_gate(
+                    baseline,
+                    candidate,
+                    execution.gate_thresholds,
+                    execution.gate_controls,
+                )
                 regression = skill_regression(session, run)
                 decision = gate.decision
                 reasons = [{**reason, "source": "builtin"} for reason in gate.reasons]

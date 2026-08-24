@@ -133,6 +133,17 @@ class AgentVersionSkillRead(ApiModel):
     attached_at: datetime
 
 
+class SkillBindingSet(ApiModel):
+    skill_version_ids: list[int] = Field(default_factory=list, max_length=64)
+
+
+class SkillBindingValidationRead(ApiModel):
+    valid: bool
+    agent_version_id: int
+    skill_version_ids: list[int]
+    issues: list[dict[str, Any]]
+
+
 class PolicyBundleCreate(ApiModel):
     name: str = Field(min_length=1, max_length=200)
     version: str = Field(min_length=1, max_length=100)
@@ -303,10 +314,33 @@ class ReplayCreate(ApiModel):
     case_ids: list[str] | None = None
 
 
+class SkillGateControls(ApiModel):
+    enabled: bool = False
+    require_telemetry: bool = True
+    minimum_selection_accuracy: float = Field(default=1.0, ge=0, le=1)
+    block_unbound: bool = True
+    block_lifecycle_errors: bool = True
+    minimum_coverage_ratio: float = Field(default=1.0, ge=0, le=1)
+    redundant_call_growth_warn: float = Field(default=0.20, ge=0)
+
+
+class EvidenceGateControls(ApiModel):
+    enabled: bool = False
+    minimum_coverage: float = Field(default=1.0, ge=0, le=1)
+    block_invalid_refs: bool = True
+    block_unsupported_claims: bool = True
+
+
+class GateControls(ApiModel):
+    skill: SkillGateControls = Field(default_factory=SkillGateControls)
+    evidence: EvidenceGateControls = Field(default_factory=EvidenceGateControls)
+
+
 class GatePolicyCreate(ApiModel):
     name: str = Field(min_length=1, max_length=200)
     version: str = Field(min_length=1, max_length=100)
     thresholds: dict[str, float] = Field(default_factory=dict)
+    controls: GateControls = Field(default_factory=GateControls)
     policy_bundle_id: int | None = None
     active: bool = True
 
@@ -380,6 +414,29 @@ class ToolRules(ApiModel):
     arguments: list[ToolArgumentRule] = Field(default_factory=list)
 
 
+class SkillRules(ApiModel):
+    required: list[str] = Field(default_factory=list)
+    allowed: list[str] = Field(default_factory=list)
+    forbidden: list[str] = Field(default_factory=list)
+    order: list[str] | None = None
+    max_calls: int | None = Field(default=None, ge=0)
+    allow_repeats: bool = False
+    telemetry_required: bool = False
+    arguments_sha256: dict[str, str] = Field(default_factory=dict)
+
+
+class EvidenceClaimRule(ApiModel):
+    id: str = Field(min_length=1, max_length=200)
+    allowed_refs: list[str] = Field(default_factory=list)
+
+
+class EvidenceRules(ApiModel):
+    required: bool = False
+    allowed_refs: list[str] = Field(default_factory=list)
+    required_claims: list[EvidenceClaimRule] = Field(default_factory=list)
+    minimum_coverage: float = Field(default=1.0, ge=0, le=1)
+
+
 class CitationRules(ApiModel):
     required: bool = False
     min_count: int = Field(default=0, ge=0)
@@ -394,6 +451,8 @@ class ExpectedRules(ApiModel):
     final_action: str | list[str] | None = None
     output: OutputRules | None = None
     tools: ToolRules | None = None
+    skills: SkillRules | None = None
     citations: CitationRules | None = None
+    evidence: EvidenceRules | None = None
     safety: SafetyRules | None = None
     business: list[AssertionRule] = Field(default_factory=list)

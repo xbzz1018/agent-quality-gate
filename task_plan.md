@@ -6,7 +6,7 @@ Build a runnable, testable Agent evaluation, observability, replay, and release-
 
 ## Current Phase
 
-Phase 4.3 - AG-UI AgentTargetAdapter (complete on feature branch)
+Phase 4.5 - Multi-Skill reliability (complete)
 
 ## Status Semantics
 
@@ -143,13 +143,13 @@ Phase 4.3 - AG-UI AgentTargetAdapter (complete on feature branch)
 
 ### Phase 4.5: v0.5 multi-Skill reliability
 
-- [ ] Validate `aqh.skill-manifest/v1` and atomically validate/replace Skill bindings.
-- [ ] Normalize cross-protocol `aqh.skill-event/v1` telemetry without raw content.
-- [ ] Score Skill selection, identity, lifecycle, coverage, and evidence grounding.
-- [ ] Add versioned Skill/Evidence Gate controls with UNKNOWN fail-closed behavior.
-- [ ] Add binding, coverage, reliability, and Gate-source Web views.
-- [ ] Pass 32-Skill/200-Case scale checks and create `v0.5.0-multi-skill-reliability`.
-- **Status:** in_progress
+- [x] Validate `aqh.skill-manifest/v1` and atomically validate/replace Skill bindings.
+- [x] Normalize cross-protocol `aqh.skill-event/v1` telemetry without raw content.
+- [x] Score Skill selection, identity, lifecycle, coverage, and evidence grounding.
+- [x] Add versioned Skill/Evidence Gate controls with UNKNOWN fail-closed behavior.
+- [x] Add binding, coverage, reliability, and Gate-source Web views.
+- [x] Pass 32-Skill/200-Case scale checks and create `v0.5.0-multi-skill-reliability`.
+- **Status:** complete
 
 ### Phase 5: Real-system targets
 

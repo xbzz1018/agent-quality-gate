@@ -163,7 +163,13 @@ async def test_skills_tenant_isolation_freeze_and_opa_gate(tmp_path: Path) -> No
                     json={
                         "name": f"release-skill-{suffix}",
                         "version": skill_version,
-                        "manifest": {"permissions": {}},
+                        "manifest": {
+                            "schema": "aqh.skill-manifest/v1",
+                            "routing": {"intents": [f"intent-{skill_version}"]},
+                            "dependencies": [],
+                            "conflicts": [],
+                            "permissions": {},
+                        },
                         "files": [{"path": path, "content": content}],
                     },
                 )
@@ -184,6 +190,30 @@ async def test_skills_tenant_isolation_freeze_and_opa_gate(tmp_path: Path) -> No
                     headers=headers,
                 )
             ).status_code == 200
+            invalid_set = await client.post(
+                f"/api/v1/versions/{version_ids[0]}/skills/validate",
+                headers=headers,
+                json={"skill_version_ids": skill_versions[:2]},
+            )
+            assert invalid_set.status_code == 200
+            assert invalid_set.json()["valid"] is False
+            assert any(
+                item["code"] == "multiple_package_versions"
+                for item in invalid_set.json()["issues"]
+            )
+            rejected_set = await client.put(
+                f"/api/v1/versions/{version_ids[0]}/skills",
+                headers=headers,
+                json={"skill_version_ids": skill_versions[:2]},
+            )
+            assert rejected_set.status_code == 409
+            coverage = await client.get(
+                f"/api/v1/datasets/{dataset.json()['id']}/skill-coverage",
+                params={"version_id": version_ids[0]},
+                headers=headers,
+            )
+            assert coverage.status_code == 200
+            assert coverage.json()["coverage_ratio"] == 0.0
             assert (
                 await client.put(
                     f"/api/v1/versions/{version_ids[1]}/skills/{skill_versions[1]}",

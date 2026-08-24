@@ -82,6 +82,36 @@ async def test_ag_ui_unknown_token_usage_stays_unknown() -> None:
     assert result.usage.output_tokens is None
 
 
+async def test_ag_ui_custom_event_normalizes_skill_telemetry() -> None:
+    identity = {"name": "lookup", "version": "1.0.0", "sha256": "a" * 64}
+    lifecycle = [
+        {
+            "schema": "aqh.skill-event/v1",
+            "type": event_type,
+            "invocation_id": "skill-one",
+            "skill": identity,
+            "status": "success" if event_type == "skill.completed" else None,
+        }
+        for event_type in ("skill.selected", "skill.started", "skill.completed")
+    ]
+    adapter, client = await _adapter()
+    try:
+        result = await adapter.invoke(
+            {"prompt": "skill", "forwarded_props": {"skill_events": lifecycle}},
+            {"target_name": "AG-UI Fixture", "case_id": "skill"},
+        )
+    finally:
+        await client.aclose()
+
+    skill_events = [event for event in result.events if event.event_type.startswith("skill.")]
+    assert [event.event_type for event in skill_events] == [
+        "skill.selected",
+        "skill.started",
+        "skill.completed",
+    ]
+    assert result.output["skills_used"] == ["lookup"]
+
+
 @pytest.mark.parametrize(
     ("mode", "message"),
     [

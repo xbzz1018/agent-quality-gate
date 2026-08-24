@@ -250,8 +250,19 @@ export interface GatePolicy {
   version: string
   thresholds: Record<string, number>
   policy_bundle_id: number | null
+  controls: {
+    skill: Record<string, number | boolean>
+    evidence: Record<string, number | boolean>
+  }
   active: boolean
   created_at: string
+}
+
+export interface SkillBindingValidation {
+  valid: boolean
+  agent_version_id: number
+  skill_version_ids: number[]
+  issues: Array<{ code: string; message: string; skill: string | null }>
 }
 
 export interface SkillPackage {

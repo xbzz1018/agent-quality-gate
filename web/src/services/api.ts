@@ -26,6 +26,7 @@ import type {
   RunEvent,
   ServiceAccount,
   SkillPackage,
+  SkillBindingValidation,
   SkillScan,
   SkillVersion,
   SystemSetting,
@@ -147,6 +148,22 @@ export const api = {
     http.post<SkillScan>(`/skill-versions/${versionId}/scan`).then(({ data }) => data),
   attachSkill: (versionId: number, skillVersionId: number) =>
     http.put(`/versions/${versionId}/skills/${skillVersionId}`).then(({ data }) => data),
+  validateSkillBindings: (versionId: number, skillVersionIds: number[]) =>
+    http
+      .post<SkillBindingValidation>(`/versions/${versionId}/skills/validate`, {
+        skill_version_ids: skillVersionIds,
+      })
+      .then(({ data }) => data),
+  replaceSkillBindings: (versionId: number, skillVersionIds: number[]) =>
+    http
+      .put(`/versions/${versionId}/skills`, { skill_version_ids: skillVersionIds })
+      .then(({ data }) => data),
+  skillCoverage: (datasetId: number, versionId: number) =>
+    http
+      .get(`/datasets/${datasetId}/skill-coverage`, { params: { version_id: versionId } })
+      .then(({ data }) => data),
+  skillReliability: (runId: number) =>
+    http.get(`/eval-runs/${runId}/skill-reliability`).then(({ data }) => data),
   skillRegression: (runId: number) =>
     http.get(`/eval-runs/${runId}/skill-regression`).then(({ data }) => data),
   policyBundles: (params: Record<string, unknown> = {}) =>

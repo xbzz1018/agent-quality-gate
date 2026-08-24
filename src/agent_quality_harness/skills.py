@@ -6,12 +6,14 @@ import re
 from pathlib import PurePosixPath
 from typing import Any
 
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
 from agent_quality_harness.domain.models import (
     AgentVersion,
     AgentVersionSkill,
+    EvalCase,
+    EvalDataset,
     EvalRun,
     EvaluationTarget,
     SkillPackage,
@@ -22,6 +24,8 @@ from agent_quality_harness.domain.models import (
 MAX_SKILL_FILES = 100
 MAX_SKILL_BYTES = 1024 * 1024
 SCANNER_VERSION = "skills-static-v1"
+SKILL_MANIFEST_SCHEMA = "aqh.skill-manifest/v1"
+MAX_BOUND_SKILLS = 64
 
 _KNOWN_SUFFIXES = {
     ".md",
@@ -346,6 +350,32 @@ def attach_skill_version(
     agent_version_id: int,
     skill_version_id: int,
 ) -> AgentVersionSkill:
+    current = list(
+        session.scalars(
+            select(AgentVersionSkill.skill_version_id).where(
+                AgentVersionSkill.agent_version_id == agent_version_id
+            )
+        )
+    )
+    replace_skill_bindings(
+        session,
+        organization_id=organization_id,
+        agent_version_id=agent_version_id,
+        skill_version_ids=sorted({*current, skill_version_id}),
+    )
+    attachment = session.get(AgentVersionSkill, (agent_version_id, skill_version_id))
+    if attachment is None:
+        raise RuntimeError("skill attachment was not persisted")
+    return attachment
+
+
+def validate_skill_bindings(
+    session: Session,
+    *,
+    organization_id: int,
+    agent_version_id: int,
+    skill_version_ids: list[int],
+) -> dict[str, Any]:
     version = session.scalar(
         select(AgentVersion)
         .join(EvaluationTarget, EvaluationTarget.id == AgentVersion.target_id)
@@ -354,26 +384,33 @@ def attach_skill_version(
             EvaluationTarget.organization_id == organization_id,
         )
     )
-    skill_version = session.scalar(
-        select(SkillVersion)
+    if version is None:
+        raise LookupError("agent version not found")
+    requested = list(dict.fromkeys(skill_version_ids))
+    issues: list[dict[str, Any]] = []
+    if len(requested) != len(skill_version_ids):
+        issues.append(_binding_issue("duplicate_skill_version", "duplicate ids are not allowed"))
+    if len(requested) > MAX_BOUND_SKILLS:
+        issues.append(
+            _binding_issue(
+                "too_many_skills",
+                f"at most {MAX_BOUND_SKILLS} Skill versions may be bound",
+            )
+        )
+    versions = list(
+        session.scalars(
+            select(SkillVersion)
         .join(SkillPackage, SkillPackage.id == SkillVersion.package_id)
         .where(
-            SkillVersion.id == skill_version_id,
+                SkillVersion.id.in_(requested),
             SkillPackage.organization_id == organization_id,
         )
+        )
     )
-    if version is None or skill_version is None:
-        raise LookupError("version or skill version not found")
-    latest_scan = session.scalar(
-        select(SkillScan)
-        .where(SkillScan.skill_version_id == skill_version_id)
-        .order_by(SkillScan.created_at.desc(), SkillScan.id.desc())
-        .limit(1)
-    )
-    if latest_scan is None:
-        raise SkillValidationError("skill version must be scanned before binding")
-    if latest_scan.status == "block":
-        raise SkillValidationError("BLOCK skill version cannot be bound")
+    if len(versions) != len(requested):
+        issues.append(
+            _binding_issue("skill_not_found", "one or more Skill versions were not found")
+        )
     used = session.scalar(
         select(EvalRun.id).where(
             or_(
@@ -383,19 +420,313 @@ def attach_skill_version(
         )
     )
     if used is not None:
-        raise SkillValidationError(
-            "agent version is frozen because it is referenced by an eval run"
+        issues.append(
+            _binding_issue(
+                "agent_version_frozen",
+                "Agent version is referenced by an EvalRun",
+            )
         )
-    existing = session.get(AgentVersionSkill, (agent_version_id, skill_version_id))
-    if existing is not None:
-        return existing
-    attachment = AgentVersionSkill(
+    packages = {
+        row.id: row
+        for row in session.scalars(
+            select(SkillPackage).where(
+                SkillPackage.id.in_([item.package_id for item in versions])
+            )
+        )
+    }
+    by_name: dict[str, tuple[SkillVersion, SkillPackage]] = {}
+    intents: dict[str, str] = {}
+    exclusive_groups: dict[str, str] = {}
+    strict_manifests = len(versions) > 1
+    for skill_version in versions:
+        package = packages[skill_version.package_id]
+        if package.name in by_name:
+            issues.append(
+                _binding_issue(
+                    "multiple_package_versions",
+                    f"multiple versions of {package.name} cannot be bound",
+                    skill=package.name,
+                )
+            )
+        by_name[package.name] = (skill_version, package)
+        manifest_issues = validate_skill_manifest(skill_version.manifest)
+        if strict_manifests and manifest_issues:
+            issues.extend(
+                {**item, "skill": package.name} for item in manifest_issues
+            )
+        latest_scan = session.scalar(
+            select(SkillScan)
+            .where(SkillScan.skill_version_id == skill_version.id)
+            .order_by(SkillScan.created_at.desc(), SkillScan.id.desc())
+            .limit(1)
+        )
+        if latest_scan is None:
+            issues.append(
+                _binding_issue("scan_missing", "Skill version has no scan", skill=package.name)
+            )
+        elif latest_scan.status == "block":
+            issues.append(
+                _binding_issue("scan_block", "Skill version scan is BLOCK", skill=package.name)
+            )
+        routing = skill_version.manifest.get("routing", {})
+        routing = routing if isinstance(routing, dict) else {}
+        group = routing.get("exclusive_group")
+        if isinstance(group, str) and group:
+            if group in exclusive_groups:
+                issues.append(
+                    _binding_issue(
+                        "exclusive_group_conflict",
+                        f"exclusive group {group} is shared with {exclusive_groups[group]}",
+                        skill=package.name,
+                    )
+                )
+            exclusive_groups[group] = package.name
+        for intent in routing.get("intents", []):
+            if intent in intents:
+                issues.append(
+                    _binding_issue(
+                        "duplicate_routing_intent",
+                        f"routing intent {intent} is shared with {intents[intent]}",
+                        skill=package.name,
+                    )
+                )
+            intents[str(intent)] = package.name
+    for name, (skill_version, _) in by_name.items():
+        manifest = skill_version.manifest
+        for conflict in manifest.get("conflicts", []):
+            if conflict in by_name:
+                issues.append(
+                    _binding_issue(
+                        "declared_conflict",
+                        f"{name} conflicts with {conflict}",
+                        skill=name,
+                    )
+                )
+        for dependency in manifest.get("dependencies", []):
+            if not isinstance(dependency, dict):
+                continue
+            dependency_name = str(dependency.get("name", ""))
+            bound = by_name.get(dependency_name)
+            if bound is None:
+                issues.append(
+                    _binding_issue(
+                        "dependency_missing",
+                        f"{name} requires {dependency_name}",
+                        skill=name,
+                    )
+                )
+                continue
+            bound_version = bound[0]
+            expected_version = dependency.get("version")
+            expected_sha = dependency.get("sha256")
+            if expected_version and bound_version.version != expected_version:
+                issues.append(
+                    _binding_issue(
+                        "dependency_version_mismatch",
+                        f"{dependency_name} must be version {expected_version}",
+                        skill=name,
+                    )
+                )
+            if expected_sha and bound_version.sha256 != expected_sha:
+                issues.append(
+                    _binding_issue(
+                        "dependency_sha_mismatch",
+                        f"{dependency_name} SHA-256 does not match",
+                        skill=name,
+                    )
+                )
+    return {
+        "valid": not issues,
+        "agent_version_id": agent_version_id,
+        "skill_version_ids": requested,
+        "issues": issues,
+    }
+
+
+def replace_skill_bindings(
+    session: Session,
+    *,
+    organization_id: int,
+    agent_version_id: int,
+    skill_version_ids: list[int],
+) -> list[AgentVersionSkill]:
+    validation = validate_skill_bindings(
+        session,
+        organization_id=organization_id,
         agent_version_id=agent_version_id,
-        skill_version_id=skill_version_id,
+        skill_version_ids=skill_version_ids,
     )
-    session.add(attachment)
+    if not validation["valid"]:
+        raise SkillValidationError(json.dumps(validation["issues"], ensure_ascii=False))
+    session.execute(
+        delete(AgentVersionSkill).where(
+            AgentVersionSkill.agent_version_id == agent_version_id
+        )
+    )
+    rows = [
+        AgentVersionSkill(
+            agent_version_id=agent_version_id,
+            skill_version_id=skill_version_id,
+        )
+        for skill_version_id in validation["skill_version_ids"]
+    ]
+    session.add_all(rows)
     session.flush()
-    return attachment
+    return rows
+
+
+def validate_skill_manifest(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    if manifest.get("schema") != SKILL_MANIFEST_SCHEMA:
+        return [_binding_issue("manifest_schema", f"schema must be {SKILL_MANIFEST_SCHEMA}")]
+    issues: list[dict[str, Any]] = []
+    routing = manifest.get("routing")
+    if not isinstance(routing, dict):
+        issues.append(_binding_issue("routing_missing", "routing must be an object"))
+    else:
+        intents = routing.get("intents")
+        if not isinstance(intents, list) or not intents or any(
+            not isinstance(item, str) or not item for item in intents
+        ):
+            issues.append(
+                _binding_issue("routing_intents", "routing.intents must contain strings")
+            )
+    dependencies = manifest.get("dependencies", [])
+    if not isinstance(dependencies, list):
+        issues.append(_binding_issue("dependencies", "dependencies must be a list"))
+    else:
+        for dependency in dependencies:
+            if (
+                not isinstance(dependency, dict)
+                or not isinstance(dependency.get("name"), str)
+                or not dependency.get("name")
+                or not dependency.get("version")
+                and not dependency.get("sha256")
+            ):
+                issues.append(
+                    _binding_issue(
+                        "dependency_not_exact",
+                        "each dependency requires name and exact version or SHA-256",
+                    )
+                )
+    conflicts = manifest.get("conflicts", [])
+    if not isinstance(conflicts, list) or any(not isinstance(item, str) for item in conflicts):
+        issues.append(_binding_issue("conflicts", "conflicts must be a string list"))
+    return issues
+
+
+def skill_coverage(
+    session: Session,
+    *,
+    organization_id: int,
+    dataset_id: int,
+    agent_version_id: int,
+) -> dict[str, Any]:
+    dataset = session.scalar(
+        select(EvalDataset).where(
+            EvalDataset.id == dataset_id,
+            EvalDataset.organization_id == organization_id,
+        )
+    )
+    version = session.scalar(
+        select(AgentVersion)
+        .join(EvaluationTarget, EvaluationTarget.id == AgentVersion.target_id)
+        .where(
+            AgentVersion.id == agent_version_id,
+            EvaluationTarget.organization_id == organization_id,
+        )
+    )
+    if dataset is None or version is None:
+        raise LookupError("dataset or agent version not found")
+    bound = _version_skill_snapshot(session, agent_version_id)
+    cases = list(session.scalars(select(EvalCase).where(EvalCase.dataset_id == dataset_id)))
+    coverage_rows = []
+    interactions = []
+    covered = required = 0
+    for skill in bound:
+        name = skill["package_name"]
+        positives = 0
+        negatives = 0
+        for case in cases:
+            rules = case.expected.get("skills") if isinstance(case.expected, dict) else None
+            if not isinstance(rules, dict):
+                continue
+            positives += int(name in rules.get("required", []))
+            negatives += int(name in rules.get("forbidden", []))
+        coverage_rows.append(
+            {"skill": name, "positive_cases": positives, "negative_cases": negatives}
+        )
+        required += 2
+        covered += int(positives > 0) + int(negatives > 0)
+    bound_versions = {
+        item["package_name"]: session.get(SkillVersion, item["skill_version_id"])
+        for item in bound
+    }
+    seen_interactions: set[tuple[str, str, str]] = set()
+    for name, skill_version in bound_versions.items():
+        if skill_version is None:
+            continue
+        for dependency in skill_version.manifest.get("dependencies", []):
+            if not isinstance(dependency, dict):
+                continue
+            other = str(dependency.get("name", ""))
+            key = ("dependency", name, other)
+            if not other or key in seen_interactions:
+                continue
+            seen_interactions.add(key)
+            matched = any(_case_has_skill_order(case, [other, name]) for case in cases)
+            interactions.append(
+                {"type": "dependency", "skill": name, "other": other, "covered": matched}
+            )
+            required += 1
+            covered += int(matched)
+        for conflict in skill_version.manifest.get("conflicts", []):
+            other = str(conflict)
+            pair = tuple(sorted((name, other)))
+            key = ("conflict", pair[0], pair[1])
+            if not other or key in seen_interactions:
+                continue
+            seen_interactions.add(key)
+            matched = any(_case_disambiguates(case, name, other) for case in cases)
+            interactions.append(
+                {"type": "conflict", "skill": name, "other": other, "covered": matched}
+            )
+            required += 1
+            covered += int(matched)
+    ratio = covered / required if required else 1.0
+    return {
+        "dataset_id": dataset_id,
+        "agent_version_id": agent_version_id,
+        "bound_skill_count": len(bound),
+        "covered_requirements": covered,
+        "total_requirements": required,
+        "coverage_ratio": ratio,
+        "skills": coverage_rows,
+        "interactions": interactions,
+    }
+
+
+def _binding_issue(code: str, message: str, *, skill: str | None = None) -> dict[str, Any]:
+    return {"code": code, "message": message, "skill": skill}
+
+
+def _case_skill_rules(case: EvalCase) -> dict[str, Any]:
+    rules = case.expected.get("skills") if isinstance(case.expected, dict) else None
+    return rules if isinstance(rules, dict) else {}
+
+
+def _case_has_skill_order(case: EvalCase, wanted: list[str]) -> bool:
+    order = _case_skill_rules(case).get("order", [])
+    positions = [order.index(name) for name in wanted if name in order]
+    return len(positions) == len(wanted) and positions == sorted(positions)
+
+
+def _case_disambiguates(case: EvalCase, first: str, second: str) -> bool:
+    rules = _case_skill_rules(case)
+    required = set(rules.get("required", []))
+    forbidden = set(rules.get("forbidden", []))
+    return (first in required and second in forbidden) or (
+        second in required and first in forbidden
+    )
 
 
 def skill_regression(session: Session, run: EvalRun) -> dict[str, Any]:

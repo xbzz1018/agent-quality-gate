@@ -27,7 +27,7 @@ from agent_quality_harness.domain.models import (
     PolicyBundle,
     PricingSnapshot,
 )
-from agent_quality_harness.skills import version_skill_snapshot
+from agent_quality_harness.skills import skill_coverage, version_skill_snapshot
 
 RUNNABLE_PROTOCOLS = {"http", "sse", "ag_ui", "a2a", "mcp"}
 
@@ -312,6 +312,22 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
             "baseline": _version_snapshot(session, baseline),
             "candidate": _version_snapshot(session, candidate),
         },
+        "skill_coverage": {
+            "baseline": None
+            if baseline is None
+            else skill_coverage(
+                session,
+                organization_id=organization_id,
+                dataset_id=dataset.id,
+                agent_version_id=baseline.id,
+            ),
+            "candidate": skill_coverage(
+                session,
+                organization_id=organization_id,
+                dataset_id=dataset.id,
+                agent_version_id=candidate.id,
+            ),
+        },
         "target": _target_snapshot(candidate_target),
         "config_sha256": _sha256(config),
         "gate_policy": _policy_snapshot(session, gate_policy),
@@ -438,6 +454,7 @@ def _policy_snapshot(session: Session, policy: GatePolicy | None) -> dict | None
         "name": policy.name,
         "version": policy.version,
         "thresholds": policy.thresholds,
+        "controls": policy.controls,
         "policy_bundle": None
         if bundle is None
         else {

@@ -10,6 +10,8 @@ from a2a.client import A2ACardResolver, A2AClientError, Client, ClientConfig, Cl
 from google.protobuf.json_format import MessageToDict, ParseDict
 from google.protobuf.struct_pb2 import Value
 
+from agent_quality_harness.skill_events import normalize_skill_event
+
 from .base import AgentRunEvent, AgentRunResult, TokenUsage
 
 _TERMINAL_STATES = {
@@ -229,6 +231,10 @@ def _result_from_task(
     ]
     if message:
         text_parts.extend(str(part["text"]) for part in message["parts"] if "text" in part)
+    for artifact in artifacts:
+        events.extend(_skill_events_from_parts(artifact["parts"]))
+    if message:
+        events.extend(_skill_events_from_parts(message["parts"]))
     state = _state_name(task.status.state)
     output: dict[str, Any] = {
         "protocol": "a2a",
@@ -256,6 +262,7 @@ def _result_from_message(
     events: list[AgentRunEvent],
 ) -> AgentRunResult:
     payload = _message_payload(message)
+    events.extend(_skill_events_from_parts(payload["parts"]))
     text_parts = [str(part["text"]) for part in payload["parts"] if "text" in part]
     output: dict[str, Any] = {
         "protocol": "a2a",
@@ -311,6 +318,18 @@ def _part_payload(part: types.Part) -> dict[str, Any]:
     if kind == "url":
         return {"url": part.url, "media_type": part.media_type or None}
     return {"text": part.text}
+
+
+def _skill_events_from_parts(parts: list[dict[str, Any]]) -> list[AgentRunEvent]:
+    events: list[AgentRunEvent] = []
+    for part in parts:
+        data = part.get("data")
+        if not isinstance(data, dict):
+            continue
+        payload = data.get("aqh_skill_event")
+        if isinstance(payload, dict):
+            events.append(normalize_skill_event(payload))
+    return events
 
 
 def _state_name(state: int) -> str:

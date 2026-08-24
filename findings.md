@@ -148,6 +148,15 @@
 
 ## Resources
 
+## Multi-Skill Reliability Findings (2026-08-24)
+
+- AgentVersion Skill bindings are evaluation metadata, not executable routing. The platform requires observed `aqh.skill-event/v1` telemetry from the target and never installs or invokes Skill package code.
+- Multi-Skill binding safety requires atomic set validation; validating individual additions cannot reliably enforce dependency, exclusive-group, package-version, and duplicate-intent constraints.
+- Missing Skill telemetry remains distinguishable from zero calls. It becomes BLOCK only when the versioned GatePolicy enables Skill controls and requires telemetry.
+- Deterministic evidence checks can prove reference identity, coverage, and frozen Claim-to-EvidenceRef mapping. They cannot prove arbitrary open-domain factual truth, so the product does not claim general hallucination detection.
+- Run #119 proves two bound Skills through AG-UI CUSTOM events, Inspect scoring, PostgreSQL aggregation, frozen coverage, and a real SHIP Gate with Skill/Evidence metrics all at 1.0.
+
+
 - Project book: `F:\code\homework\plan-md\03-Agent质量评测与发布门禁平台项目书.md`
 - Project root: `F:\code\homework\project\agent-quality-gate`
 - OpenTelemetry GenAI registry: `https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/`

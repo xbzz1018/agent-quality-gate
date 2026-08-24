@@ -2,15 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
+from agent_quality_harness.domain.enums import VersionRole
 from agent_quality_harness.domain.models import (
     AgentVersionSkill,
+    CaseResult,
     EvalRun,
     PolicyBundle,
     PolicyEvaluation,
     SkillPackage,
     SkillScan,
     SkillVersion,
+    UsageMeasurement,
 )
+from agent_quality_harness.gates import aggregate_metrics
 from agent_quality_harness.policy import (
     OpaClient,
     canonical_policy_sha256,
@@ -23,7 +27,10 @@ from agent_quality_harness.skills import (
     attach_skill_version,
     create_skill_scan,
     import_skill,
+    replace_skill_bindings,
+    skill_coverage,
     skill_regression,
+    validate_skill_bindings,
 )
 
 from .dependencies import (
@@ -38,6 +45,8 @@ from .schemas import (
     PolicyBundleCreate,
     PolicyBundleRead,
     PolicyEvaluationRead,
+    SkillBindingSet,
+    SkillBindingValidationRead,
     SkillImport,
     SkillImportRead,
     SkillPackageRead,
@@ -46,6 +55,86 @@ from .schemas import (
 )
 
 router = APIRouter()
+
+
+@router.post(
+    "/versions/{version_id}/skills/validate",
+    response_model=SkillBindingValidationRead,
+    dependencies=[Depends(require_permission("skill:manage"))],
+)
+def post_validate_skill_bindings(
+    version_id: int,
+    payload: SkillBindingSet,
+    request: Request,
+    session: SessionDependency,
+):
+    try:
+        return validate_skill_bindings(
+            session,
+            organization_id=current_organization_id(request),
+            agent_version_id=version_id,
+            skill_version_ids=payload.skill_version_ids,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.put(
+    "/versions/{version_id}/skills",
+    response_model=list[AgentVersionSkillRead],
+    dependencies=[Depends(require_permission("skill:manage"))],
+)
+def put_skill_bindings(
+    version_id: int,
+    payload: SkillBindingSet,
+    request: Request,
+    session: SessionDependency,
+):
+    try:
+        rows = replace_skill_bindings(
+            session,
+            organization_id=current_organization_id(request),
+            agent_version_id=version_id,
+            skill_version_ids=payload.skill_version_ids,
+        )
+        audit(
+            session,
+            action="agent_version.skills.replace",
+            outcome="success",
+            context=current_context(request),
+            resource_type="agent_version",
+            resource_id=version_id,
+            details={"skill_version_ids": payload.skill_version_ids},
+        )
+        session.commit()
+        return rows
+    except LookupError as exc:
+        session.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except SkillValidationError as exc:
+        session.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get(
+    "/datasets/{dataset_id}/skill-coverage",
+    dependencies=[Depends(require_permission("skill:read"))],
+)
+def get_skill_coverage(
+    dataset_id: int,
+    version_id: int,
+    request: Request,
+    session: SessionDependency,
+):
+    try:
+        return skill_coverage(
+            session,
+            organization_id=current_organization_id(request),
+            dataset_id=dataset_id,
+            agent_version_id=version_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post(
@@ -425,6 +514,53 @@ def get_skill_regression(run_id: int, request: Request, session: SessionDependen
     if run is None:
         raise HTTPException(status_code=404, detail="eval run not found")
     return skill_regression(session, run)
+
+
+@router.get(
+    "/eval-runs/{run_id}/skill-reliability",
+    dependencies=[Depends(require_permission("skill:read"))],
+)
+def get_skill_reliability(run_id: int, request: Request, session: SessionDependency):
+    run = session.scalar(
+        select(EvalRun).where(
+            EvalRun.id == run_id,
+            EvalRun.organization_id == current_organization_id(request),
+        )
+    )
+    if run is None:
+        raise HTTPException(status_code=404, detail="eval run not found")
+    metrics = {}
+    for role in (VersionRole.BASELINE, VersionRole.CANDIDATE):
+        rows = session.execute(
+            select(CaseResult, UsageMeasurement)
+            .outerjoin(
+                UsageMeasurement,
+                UsageMeasurement.case_result_id == CaseResult.id,
+            )
+            .where(
+                CaseResult.run_id == run_id,
+                CaseResult.version_role == role,
+            )
+        )
+        metrics[role.value] = aggregate_metrics(
+            [
+                {
+                    "scores": result.scores,
+                    "latency_ms": result.latency_ms,
+                    "model_cost": None if usage is None else usage.model_cost,
+                    "external_tool_cost": (
+                        None if usage is None else usage.external_tool_cost
+                    ),
+                }
+                for result, usage in rows
+            ]
+        )
+    return {
+        "run_id": run_id,
+        "coverage": run.manifest.get("skill_coverage", {}),
+        "baseline": metrics["baseline"],
+        "candidate": metrics["candidate"],
+    }
 
 
 def _tenant_package(session, skill_id: int, organization_id: int):

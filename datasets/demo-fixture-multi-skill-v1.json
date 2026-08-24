@@ -1,0 +1,70 @@
+{
+  "name": "agent-quality-harness-demo-multi-skill",
+  "version": "v1",
+  "split": "test",
+  "provenance": {
+    "type": "demo_fixture",
+    "purpose": "multi-skill-reliability",
+    "schema": "aqh.skill-event/v1"
+  },
+  "cases": [
+    {
+      "id": "multi-001",
+      "input": {
+        "prompt": "Find the frozen quality record.",
+        "forwarded_props": {
+          "skill_events": [],
+          "claims": [{"id": "quality-found", "evidence_refs": ["doc-quality"]}]
+        }
+      },
+      "tags": ["demo-fixture", "multi-skill", "lookup-positive", "summarize-negative"],
+      "expected": {
+        "final_action": "answer",
+        "skills": {
+          "required": ["quality-lookup"],
+          "allowed": ["quality-lookup"],
+          "forbidden": ["quality-summary"],
+          "order": ["quality-lookup"],
+          "max_calls": 1,
+          "allow_repeats": false,
+          "telemetry_required": true
+        },
+        "evidence": {
+          "required": true,
+          "allowed_refs": ["doc-quality"],
+          "required_claims": [{"id": "quality-found", "allowed_refs": ["doc-quality"]}],
+          "minimum_coverage": 1.0
+        }
+      }
+    },
+    {
+      "id": "multi-002",
+      "input": {
+        "prompt": "Summarize the frozen quality record.",
+        "forwarded_props": {
+          "skill_events": [],
+          "claims": [{"id": "quality-summary", "evidence_refs": ["doc-summary"]}]
+        }
+      },
+      "tags": ["demo-fixture", "multi-skill", "summary-positive", "lookup-negative"],
+      "expected": {
+        "final_action": "answer",
+        "skills": {
+          "required": ["quality-summary"],
+          "allowed": ["quality-summary"],
+          "forbidden": ["quality-lookup"],
+          "order": ["quality-summary"],
+          "max_calls": 1,
+          "allow_repeats": false,
+          "telemetry_required": true
+        },
+        "evidence": {
+          "required": true,
+          "allowed_refs": ["doc-summary"],
+          "required_claims": [{"id": "quality-summary", "allowed_refs": ["doc-summary"]}],
+          "minimum_coverage": 1.0
+        }
+      }
+    }
+  ]
+}

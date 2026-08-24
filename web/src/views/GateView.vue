@@ -26,6 +26,13 @@ const message = computed(() => {
   if (gate.value?.decision === 'warn') return '候选版本可继续流程，但存在需要确认的性能或成本增长。'
   return '候选版本触发阻断规则，不应发布。'
 })
+const decisionSources = computed(() => {
+  const sources = ['Built-in']
+  if (policy.value?.controls.skill.enabled) sources.push('Skills')
+  if (policy.value?.controls.evidence.enabled) sources.push('Evidence')
+  if (policyEvaluation.value) sources.push('OPA')
+  return sources.join(' + ')
+})
 
 onMounted(async () => {
   try {
@@ -60,12 +67,12 @@ onMounted(async () => {
     <section v-if="gate" class="gate-decision" :class="`gate-decision--${gate.decision}`">
       <component :is="icon" :size="38" />
       <div><div class="gate-label">发布决策</div><div class="gate-word">{{ gate.decision.toUpperCase() }}</div><p>{{ message }}</p></div>
-      <div class="gate-meta"><span>策略版本</span><strong>{{ policy ? `${policy.name} · ${policy.version}` : `Policy #${gate.policy_id}` }}</strong><span>决策来源</span><strong>{{ policyEvaluation ? 'Built-in + Skills + OPA' : 'Built-in + Skills' }}</strong><span>OPA Decision ID</span><strong class="mono">{{ policyEvaluation?.decision_id ?? '未绑定 OPA Policy' }}</strong><span>评估时间</span><strong>{{ formatDate(gate.evaluated_at) }}</strong></div>
+      <div class="gate-meta"><span>策略版本</span><strong>{{ policy ? `${policy.name} · ${policy.version}` : `Policy #${gate.policy_id}` }}</strong><span>决策来源</span><strong>{{ decisionSources }}</strong><span>OPA Decision ID</span><strong class="mono">{{ policyEvaluation?.decision_id ?? '未绑定 OPA Policy' }}</strong><span>评估时间</span><strong>{{ formatDate(gate.evaluated_at) }}</strong></div>
     </section>
 
     <div v-if="gate" class="gate-grid">
       <section class="panel"><div class="panel-header"><h2 class="panel-title">触发规则</h2><StatusTag :value="gate.decision" /></div><ElTable v-if="gate.reasons.length" :data="gate.reasons"><ElTableColumn prop="rule_id" label="规则 ID" min-width="170"><template #default="{ row }"><span class="mono">{{ row.rule_id }}</span></template></ElTableColumn><ElTableColumn prop="source" label="来源" width="90"><template #default="{ row }"><span class="source-label">{{ row.source ?? 'builtin' }}</span></template></ElTableColumn><ElTableColumn label="级别" width="90"><template #default="{ row }"><StatusTag :value="row.severity" /></template></ElTableColumn><ElTableColumn label="阈值" min-width="120"><template #default="{ row }"><span class="mono">{{ pretty(row.threshold) }}</span></template></ElTableColumn><ElTableColumn label="实际值" min-width="120"><template #default="{ row }"><strong class="mono">{{ pretty(row.actual) }}</strong></template></ElTableColumn></ElTable><div v-else class="ship-empty"><CheckCircle2 :size="24" /><strong>没有触发 WARN 或 BLOCK 规则</strong></div></section>
-      <section class="panel"><div class="panel-header"><h2 class="panel-title">策略快照</h2><span class="muted">不可变版本</span></div><div class="panel-body"><h3 class="policy-heading">Thresholds</h3><pre class="json-block">{{ pretty(policy?.thresholds ?? {}) }}</pre><h3 class="policy-heading">Metric Deltas</h3><pre class="json-block">{{ pretty(gate.metric_deltas) }}</pre></div></section>
+      <section class="panel"><div class="panel-header"><h2 class="panel-title">策略快照</h2><span class="muted">不可变版本</span></div><div class="panel-body"><h3 class="policy-heading">Thresholds</h3><pre class="json-block">{{ pretty(policy?.thresholds ?? {}) }}</pre><h3 class="policy-heading">Controls</h3><pre class="json-block">{{ pretty(policy?.controls ?? {}) }}</pre><h3 class="policy-heading">Metric Deltas</h3><pre class="json-block">{{ pretty(gate.metric_deltas) }}</pre></div></section>
     </div>
   </div>
 </template>

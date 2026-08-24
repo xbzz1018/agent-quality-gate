@@ -10,6 +10,7 @@ const displayName = process.env.AQH_QA_DISPLAY_NAME ?? username
 const runId = Number(process.env.AQH_QA_RUN_ID)
 const characterizationRunId = Number(process.env.AQH_QA_CHARACTERIZATION_RUN_ID)
 const agUiRunId = Number(process.env.AQH_QA_AG_UI_RUN_ID)
+const multiSkillRunId = Number(process.env.AQH_QA_MULTI_SKILL_RUN_ID)
 const switchOrganization = process.env.AQH_QA_SWITCH_ORGANIZATION
 if (!username || !password || !runId) {
   throw new Error('AQH_QA_USERNAME, AQH_QA_PASSWORD and AQH_QA_RUN_ID are required')
@@ -91,6 +92,10 @@ try {
 
   await desktop.page.goto(`${baseUrl}/skills`, { waitUntil: 'networkidle' })
   await desktop.page.getByRole('heading', { name: 'Skills 安全' }).waitFor()
+  await desktop.page.getByRole('tab', { name: '绑定验证' }).click()
+  await desktop.page.getByText('原子绑定与冲突检查').waitFor()
+  await desktop.page.getByRole('tab', { name: '覆盖矩阵' }).click()
+  await desktop.page.getByText('冻结数据集 Skill Coverage').waitFor()
   await desktop.page.getByRole('tab', { name: 'Rego Policy' }).click()
   await assertNoHorizontalOverflow(desktop.page, 'skills desktop')
   await desktop.page.screenshot({ path: resolve(outputDir, 'skills-desktop.png'), fullPage: true })
@@ -109,6 +114,15 @@ try {
     await desktop.page.getByRole('tab', { name: '实际输出' }).click()
     await assertNoHorizontalOverflow(desktop.page, 'AG-UI run desktop')
     await desktop.page.screenshot({ path: resolve(outputDir, 'ag-ui-run-desktop.png'), fullPage: true })
+  }
+
+  if (multiSkillRunId) {
+    await desktop.page.goto(`${baseUrl}/runs/${multiSkillRunId}`, { waitUntil: 'networkidle' })
+    await desktop.page.getByRole('heading', { name: `评测运行 #${multiSkillRunId}` }).waitFor()
+    await desktop.page.screenshot({ path: resolve(outputDir, 'multi-skill-run-desktop.png'), fullPage: true })
+    await desktop.page.goto(`${baseUrl}/runs/${multiSkillRunId}/gate`, { waitUntil: 'networkidle' })
+    await desktop.page.locator('.gate-word').getByText('SHIP', { exact: true }).waitFor()
+    await desktop.page.screenshot({ path: resolve(outputDir, 'multi-skill-gate-desktop.png'), fullPage: true })
   }
 
   await desktop.page.goto(`${baseUrl}/admin/members`, { waitUntil: 'networkidle' })

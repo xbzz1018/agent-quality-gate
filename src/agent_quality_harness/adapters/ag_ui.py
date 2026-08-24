@@ -16,6 +16,7 @@ import jsonpatch
 from ag_ui.core.events import (
     ActivityDeltaEvent,
     ActivitySnapshotEvent,
+    CustomEvent,
     Event,
     EventType,
     ReasoningEndEvent,
@@ -46,6 +47,8 @@ from ag_ui.core.events import (
 )
 from ag_ui.core.types import Context, Message, RunAgentInput, Tool, UserMessage
 from pydantic import TypeAdapter, ValidationError
+
+from agent_quality_harness.skill_events import normalize_skill_event
 
 from .base import AgentRunEvent, AgentRunResult, TokenUsage
 
@@ -239,6 +242,10 @@ class AgUiAgentAdapter:
                                     },
                                 )
                             )
+                        elif isinstance(event, CustomEvent) and event.name == "aqh.skill":
+                            if not isinstance(event.value, Mapping):
+                                raise ValueError("AG-UI aqh.skill value must be an object")
+                            events.append(normalize_skill_event(event.value))
                         elif isinstance(event, RunErrorEvent):
                             code = event.code or "unspecified"
                             raise ValueError(f"AG-UI RUN_ERROR ({code})")

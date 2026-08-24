@@ -1,6 +1,8 @@
 from decimal import Decimal
 from typing import Any
 
+from agent_quality_harness.skill_events import skill_event_from_transport
+
 from .base import AgentRunEvent, AgentRunResult, TokenUsage
 
 
@@ -23,14 +25,7 @@ def run_result_from_payload(payload: dict[str, Any]) -> AgentRunResult:
     output = payload.get("output", {})
     if not isinstance(output, dict):
         output = {"text": str(output)}
-    events = tuple(
-        AgentRunEvent(
-            event_type=str(item["event_type"]),
-            event_id=item.get("event_id"),
-            data=item.get("data") or {},
-        )
-        for item in payload.get("events", [])
-    )
+    events = tuple(_payload_event(item) for item in payload.get("events", []))
     return AgentRunResult(
         run_id=_optional_str(payload.get("run_id")),
         final_action=str(payload.get("final_action", "answer")),
@@ -57,3 +52,12 @@ def _optional_decimal(value: Any) -> Decimal | None:
 
 def _optional_str(value: Any) -> str | None:
     return None if value is None else str(value)
+
+
+def _payload_event(item: dict[str, Any]) -> AgentRunEvent:
+    event_type = str(item["event_type"])
+    data = item.get("data") or {}
+    skill_event = skill_event_from_transport(event_type, data)
+    if skill_event is not None:
+        return skill_event
+    return AgentRunEvent(event_type=event_type, event_id=item.get("event_id"), data=data)

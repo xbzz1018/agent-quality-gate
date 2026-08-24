@@ -497,6 +497,7 @@ class GatePolicy(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     version: Mapped[str] = mapped_column(Text, nullable=False)
     thresholds: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, nullable=False)
+    controls: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
     policy_bundle_id: Mapped[int | None] = mapped_column(
         ForeignKey("policy_bundles.id", ondelete="RESTRICT"), index=True
     )

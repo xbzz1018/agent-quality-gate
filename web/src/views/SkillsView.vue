@@ -11,6 +11,7 @@ import type {
   GatePolicy,
   PolicyBundle,
   SkillPackage,
+  SkillBindingValidation,
   SkillScan,
   SkillVersion,
 } from '@/types/api'
@@ -32,6 +33,13 @@ const gatePolicyVisible = ref(false)
 const runId = ref<number | null>(null)
 const regression = ref<Record<string, unknown> | null>(null)
 const attachAgentVersionId = ref<number | null>(null)
+const bindingVersionId = ref<number | null>(null)
+const bindingSkillIds = ref('')
+const bindingValidation = ref<SkillBindingValidation | null>(null)
+const coverageDatasetId = ref<number | null>(null)
+const coverageVersionId = ref<number | null>(null)
+const coverage = ref<Record<string, unknown> | null>(null)
+const reliability = ref<Record<string, unknown> | null>(null)
 
 const importForm = reactive({
   name: '',
@@ -40,6 +48,17 @@ const importForm = reactive({
   source_ref: '',
   path: 'SKILL.md',
   content: '',
+  manifest: JSON.stringify(
+    {
+      schema: 'aqh.skill-manifest/v1',
+      routing: { intents: ['replace-with-stable-intent'] },
+      dependencies: [],
+      conflicts: [],
+      permissions: {},
+    },
+    null,
+    2,
+  ),
 })
 const policyForm = reactive({
   name: '',
@@ -52,6 +71,8 @@ const gatePolicyForm = reactive({
   name: '',
   version: '1',
   policy_bundle_id: null as number | null,
+  skill_enabled: false,
+  evidence_enabled: false,
 })
 
 const selectedVersion = computed(() =>
@@ -101,7 +122,7 @@ async function importPackage() {
       version: importForm.version,
       description: importForm.description,
       source_ref: importForm.source_ref || null,
-      manifest: { permissions: {} },
+      manifest: JSON.parse(importForm.manifest),
       files: [{ path: importForm.path, content: importForm.content }],
     })
     importVisible.value = false
@@ -137,9 +158,53 @@ async function attachSelected() {
 async function loadRegression() {
   if (!runId.value) return
   try {
-    regression.value = await api.skillRegression(runId.value)
+    const [regressionRow, reliabilityRow] = await Promise.all([
+      api.skillRegression(runId.value),
+      api.skillReliability(runId.value),
+    ])
+    regression.value = regressionRow
+    reliability.value = reliabilityRow
   } catch (error) {
     regression.value = null
+    ElMessage.error(apiError(error))
+  }
+}
+
+function parsedBindingIds() {
+  return bindingSkillIds.value
+    .split(',')
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isInteger(item) && item > 0)
+}
+
+async function validateBindings() {
+  if (!bindingVersionId.value) return
+  try {
+    bindingValidation.value = await api.validateSkillBindings(
+      bindingVersionId.value,
+      parsedBindingIds(),
+    )
+  } catch (error) {
+    ElMessage.error(apiError(error))
+  }
+}
+
+async function applyBindings() {
+  if (!bindingVersionId.value || bindingValidation.value?.valid !== true) return
+  try {
+    await api.replaceSkillBindings(bindingVersionId.value, parsedBindingIds())
+    ElMessage.success('Skill 绑定集合已原子更新')
+  } catch (error) {
+    ElMessage.error(apiError(error))
+  }
+}
+
+async function loadCoverage() {
+  if (!coverageDatasetId.value || !coverageVersionId.value) return
+  try {
+    coverage.value = await api.skillCoverage(coverageDatasetId.value, coverageVersionId.value)
+  } catch (error) {
+    coverage.value = null
     ElMessage.error(apiError(error))
   }
 }
@@ -178,6 +243,23 @@ async function createGatePolicy() {
       version: gatePolicyForm.version,
       policy_bundle_id: gatePolicyForm.policy_bundle_id,
       thresholds: {},
+      controls: {
+        skill: {
+          enabled: gatePolicyForm.skill_enabled,
+          require_telemetry: true,
+          minimum_selection_accuracy: 1,
+          block_unbound: true,
+          block_lifecycle_errors: true,
+          minimum_coverage_ratio: 1,
+          redundant_call_growth_warn: 0.2,
+        },
+        evidence: {
+          enabled: gatePolicyForm.evidence_enabled,
+          minimum_coverage: 1,
+          block_invalid_refs: true,
+          block_unsupported_claims: true,
+        },
+      },
       active: true,
     })
     gatePolicyVisible.value = false
@@ -255,11 +337,29 @@ onMounted(loadCatalog)
         </section>
       </ElTabPane>
 
+      <ElTabPane label="绑定验证" name="bindings">
+        <section class="panel regression-panel">
+          <div class="panel-header"><h2 class="panel-title">原子绑定与冲突检查</h2><span class="muted">最多 64 个 Skill</span></div>
+          <div class="binding-form"><ElInputNumber v-model="bindingVersionId" :min="1" placeholder="Agent Version ID" /><ElInput v-model="bindingSkillIds" placeholder="Skill Version IDs，例如 12, 13, 14" /><ElButton @click="validateBindings">验证</ElButton><ElButton type="primary" :disabled="bindingValidation?.valid !== true" @click="applyBindings">应用集合</ElButton></div>
+          <pre v-if="bindingValidation" class="json-block regression-json">{{ pretty(bindingValidation) }}</pre>
+          <EmptyState v-else title="先验证完整绑定集合" description="平台会检查扫描状态、依赖、互斥组、显式冲突、重复 Intent 和冻结状态。" />
+        </section>
+      </ElTabPane>
+
+      <ElTabPane label="覆盖矩阵" name="coverage">
+        <section class="panel regression-panel">
+          <div class="panel-header"><h2 class="panel-title">冻结数据集 Skill Coverage</h2></div>
+          <div class="binding-form"><ElInputNumber v-model="coverageDatasetId" :min="1" placeholder="Dataset ID" /><ElInputNumber v-model="coverageVersionId" :min="1" placeholder="Agent Version ID" /><ElButton type="primary" @click="loadCoverage">计算覆盖率</ElButton></div>
+          <pre v-if="coverage" class="json-block regression-json">{{ pretty(coverage) }}</pre>
+          <EmptyState v-else title="输入 Dataset 与 Agent Version" description="每个绑定 Skill 至少需要一个 required 正向样例和一个 forbidden 负向样例。" />
+        </section>
+      </ElTabPane>
+
       <ElTabPane label="版本回归" name="regression">
         <section class="panel regression-panel">
           <div class="panel-header"><h2 class="panel-title">Baseline / Candidate Skill 回归</h2></div>
           <div class="regression-query"><ElInputNumber v-model="runId" :min="1" controls-position="right" /><ElButton type="primary" @click="loadRegression">查询 Run</ElButton></div>
-          <pre v-if="regression" class="json-block regression-json">{{ pretty(regression) }}</pre>
+          <div v-if="regression" class="reliability-grid"><pre class="json-block regression-json">{{ pretty(regression) }}</pre><pre class="json-block regression-json">{{ pretty(reliability) }}</pre></div>
           <EmptyState v-else title="输入 EvalRun ID" description="平台只比较该运行清单中冻结的 Baseline 与 Candidate Skill 扫描摘要。" />
         </section>
       </ElTabPane>
@@ -295,6 +395,7 @@ onMounted(loadCatalog)
         <ElFormItem label="描述"><ElInput v-model="importForm.description" /></ElFormItem>
         <ElFormItem label="来源（非敏感引用）"><ElInput v-model="importForm.source_ref" /></ElFormItem>
         <ElFormItem label="文件路径"><ElInput v-model="importForm.path" /></ElFormItem>
+        <ElFormItem label="Manifest JSON"><ElInput v-model="importForm.manifest" type="textarea" :rows="8" class="code-input" /></ElFormItem>
         <ElFormItem label="UTF-8 文本内容"><ElInput v-model="importForm.content" type="textarea" :rows="9" /></ElFormItem>
       </ElForm>
       <template #footer><ElButton @click="importVisible = false">取消</ElButton><ElButton type="primary" @click="importPackage">冻结版本</ElButton></template>
@@ -313,6 +414,7 @@ onMounted(loadCatalog)
       <ElForm label-position="top">
         <div class="form-grid"><ElFormItem label="名称"><ElInput v-model="gatePolicyForm.name" /></ElFormItem><ElFormItem label="版本"><ElInput v-model="gatePolicyForm.version" /></ElFormItem></div>
         <ElFormItem label="Validated Policy Bundle"><ElSelect v-model="gatePolicyForm.policy_bundle_id" style="width: 100%"><ElOption v-for="bundle in policies.filter((item) => item.status === 'validated')" :key="bundle.id" :label="`${bundle.name} · ${bundle.version} · ${bundle.sha256.slice(0, 12)}`" :value="bundle.id" /></ElSelect></ElFormItem>
+        <div class="form-grid"><ElFormItem label="Skill Gate"><ElSwitch v-model="gatePolicyForm.skill_enabled" active-text="启用 UNKNOWN fail-closed" /></ElFormItem><ElFormItem label="Evidence Gate"><ElSwitch v-model="gatePolicyForm.evidence_enabled" active-text="启用 EvidenceRef 门禁" /></ElFormItem></div>
       </ElForm>
       <template #footer><ElButton @click="gatePolicyVisible = false">取消</ElButton><ElButton type="primary" :disabled="!gatePolicyForm.name || !gatePolicyForm.policy_bundle_id" @click="createGatePolicy">创建并绑定</ElButton></template>
     </ElDialog>
@@ -335,8 +437,10 @@ onMounted(loadCatalog)
 .regression-query { border-top: 0; border-bottom: 1px solid var(--border); }
 .regression-json { margin: 16px; max-height: 480px; }
 .gate-policy-list { margin-top: 14px; }
+.binding-form { display: grid; grid-template-columns: 170px minmax(240px, 1fr) auto auto; gap: 9px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.reliability-grid { display: grid; grid-template-columns: 1fr 1fr; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .code-input :deep(textarea) { font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; }
-@media (max-width: 950px) { .skills-layout { grid-template-columns: 1fr; } }
+@media (max-width: 950px) { .skills-layout, .reliability-grid { grid-template-columns: 1fr; } .binding-form { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; gap: 0; } .attach-bar { align-items: stretch; flex-direction: column; } .attach-bar .el-input-number { width: 100%; margin-left: 0; } }
 </style>

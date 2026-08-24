@@ -2,6 +2,7 @@ import asyncio
 from collections.abc import AsyncIterator
 
 from ag_ui.core.events import (
+    CustomEvent,
     ReasoningEncryptedValueEvent,
     ReasoningEndEvent,
     ReasoningMessageContentEvent,
@@ -77,6 +78,14 @@ def create_fake_ag_ui_app() -> FastAPI:
             )
             yield encoder.encode(StateDeltaEvent(delta=patch))
             answer = _answer(payload)
+            skill_events = (
+                payload.forwarded_props.get("skill_events", [])
+                if isinstance(payload.forwarded_props, dict)
+                else []
+            )
+            for skill_event in skill_events:
+                if isinstance(skill_event, dict):
+                    yield encoder.encode(CustomEvent(name="aqh.skill", value=skill_event))
             yield encoder.encode(
                 ToolCallStartEvent(
                     tool_call_id="tool-1",
@@ -113,6 +122,14 @@ def create_fake_ag_ui_app() -> FastAPI:
                 },
                 "finalAction": "answer",
             }
+            if skill_events:
+                result["output"]["skills_used"] = [
+                    item["skill"]["name"]
+                    for item in skill_events
+                    if isinstance(item, dict) and item.get("type") == "skill.completed"
+                ]
+            if isinstance(payload.forwarded_props, dict) and "claims" in payload.forwarded_props:
+                result["output"]["claims"] = payload.forwarded_props["claims"]
             if mode != "unknown_usage":
                 result["tokenUsage"] = {"inputTokens": 4, "outputTokens": 2}
             yield encoder.encode(

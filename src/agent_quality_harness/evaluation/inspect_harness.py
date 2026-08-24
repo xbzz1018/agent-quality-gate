@@ -61,6 +61,7 @@ class InspectHarness:
         target_id: int = 0,
         version_id: int = 0,
         protocol: str = "unknown",
+        bound_skills: Sequence[Mapping[str, Any]] = (),
         capture: list[HarnessResult] | None = None,
     ) -> Task:
         samples = [
@@ -85,6 +86,7 @@ class InspectHarness:
                 target_id,
                 version_id,
                 protocol,
+                bound_skills,
                 capture,
             ),
             scorer=_deterministic_scorer(),
@@ -117,6 +119,7 @@ def _adapter_solver(
     target_id: int,
     version_id: int,
     protocol: str,
+    bound_skills: Sequence[Mapping[str, Any]],
     capture: list[HarnessResult] | None,
 ) -> Solver:
     async def solve(state: TaskState, _: Generate) -> TaskState:
@@ -158,7 +161,9 @@ def _adapter_solver(
                 latency_ms = round((perf_counter() - started) * 1000)
                 trace_id = current_trace_id()
                 usage = asdict(result.usage)
-                scores = score_agent_result(state.metadata["expected"], result)
+                scores = score_agent_result(
+                    state.metadata["expected"], result, bound_skills=bound_skills
+                )
                 add_usage_attributes(span, usage)
                 state.metadata["aqh_result"] = {
                     "run_id": result.run_id,
