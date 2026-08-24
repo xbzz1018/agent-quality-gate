@@ -42,3 +42,16 @@ async def test_liveness_and_readiness() -> None:
         "status": "ready",
         "components": {"postgresql": "ok", "redis": "ok"},
     }
+
+
+async def test_business_routes_require_authentication() -> None:
+    app = create_app(
+        Settings(environment="production", otel_enabled=False),
+        database=HealthyDatabase(),
+        run_queue=HealthyQueue(),
+    )
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post("/api/v1/demo/bootstrap", json={})
+
+    assert response.status_code == 401

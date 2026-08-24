@@ -1,12 +1,14 @@
 # Agent Quality Harness
 
-Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平台。当前状态为 `MVP 开发中`，已安装依赖不等同于已实现功能。
+Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平台。当前状态为 `本地多租户 MVP 已完成`；下列 Pending/Optional 能力仍不得作为已实现功能宣称。
 
 ## 当前实施边界
 
 - Complete backend MVP：FastAPI、PostgreSQL/Alembic、可靠 Redis Worker、Inspect AI、HTTP/SSE、确定性 Scorer、Baseline/Candidate、Gate、失败回放、Token/Cost、持久事件与 Gate CLI。
 - Verified：运行前 Dataset 哈希复核、同 Target 默认约束、pending Adapter 预检、真实 Trace ID、失败 case 回放、queued 取消、版本对比和 SHIP/WARN/BLOCK 边界。
-- Pending：Vue 3 核心页面、Collector/Jaeger 端到端导出、running 取消的慢目标验收、AgriGraph/Document Autoflow 真实轮次、AG-UI、Agent Skills/OPA、DeepAgents、A2A、MCP。
+- Complete multi-tenant management：Organization、全局 User/多组织 Membership、动态 Role/Permission、Argon2id、15 分钟 Access JWT、7 天轮换 Refresh Session、组织级 Service Account/API Key 和脱敏审计。
+- Complete Web MVP：Vue 3 + TypeScript + Element Plus + Vite 操作台；登录/组织切换、目标/版本、数据集、运行、Case/Trace 双栏、版本对比、发布门禁、成本、审计和系统管理均使用真实 API。
+- Pending：Collector/Jaeger 端到端导出、running 取消的慢目标验收、AgriGraph/Document Autoflow 真实轮次、AG-UI、Agent Skills/OPA、DeepAgents、A2A、MCP。
 - Optional：Kafka、Kubernetes、MCP Tasks、Hermes 兼容。
 
 Redis Worker 在 MVP 中领取整个 EvalRun，case 并发由 Inspect AI 控制。HTTP/SSE/A2A 属于 AgentTargetAdapter，MCP 属于 ToolTargetAdapter。
@@ -28,7 +30,8 @@ conda activate agent-quality-gate
 python -m pip install -e . --no-deps
 docker compose up -d postgres redis
 python -m alembic upgrade head
-python -m uvicorn agent_quality_harness.main:app --host 127.0.0.1 --port 8000
+\"请在这里输入至少 12 位强密码\" | aqh admin bootstrap --username admin --display-name \"Platform Administrator\" --password-stdin
+python -m uvicorn agent_quality_harness.main:app --host 127.0.0.1 --port 8010
 ```
 
 另开终端启动 Worker：
@@ -38,7 +41,30 @@ conda activate agent-quality-gate
 python -m agent_quality_harness.worker
 ```
 
-API 文档：`http://127.0.0.1:8000/docs`。
+另开终端启动明确命名的本地 Fake Agent：
+
+```powershell
+conda activate agent-quality-gate
+python -m uvicorn agent_quality_harness.fake_agent:app --host 127.0.0.1 --port 8020
+```
+
+启动 Vue 开发服务器（`/api` 自动代理到端口 8010）：
+
+```powershell
+cd web
+npm install
+npm run dev
+```
+
+Web：`http://127.0.0.1:5173`。API 文档：`http://127.0.0.1:8010/docs`。平台不内置默认密码，首次启动必须通过上面的 stdin 命令创建管理员。
+
+也可以用 Compose 启动完整容器拓扑；首次使用需要拉取 Web、Collector 和 Jaeger 镜像：
+
+```powershell
+docker compose up -d --build api worker fake-agent web postgres redis otel-collector jaeger
+```
+
+进入 Web 后点击“初始化 Demo Fixture”会创建明确标记的 Fake Agent Target、Baseline/Candidate、80 条冻结样例、GatePolicy 和 PricingSnapshot。该操作不伪造评测结果，仍需创建运行并由 Worker 实际执行。
 
 ## 验证
 
@@ -48,6 +74,10 @@ python -m pytest -m "not integration"
 $env:AQH_RUN_INTEGRATION = "1"
 python -m pytest tests/test_integration_run.py -q
 python -m alembic check
+cd web
+npm run typecheck
+npm test
+npm run build
 ```
 
 集成测试只使用项目三的 PostgreSQL/Redis，并按本次测试创建的 ID 清理数据。
@@ -55,7 +85,8 @@ python -m alembic check
 Gate CLI：
 
 ```powershell
-aqh gate --run-id 123 --api-url http://127.0.0.1:8000
+$env:AQH_API_KEY = \"只显示一次的组织级 API Key\"
+aqh gate --run-id 123 --api-url http://127.0.0.1:8010
 aqh gate --report tests/fixtures/gate-ship.json
 ```
 

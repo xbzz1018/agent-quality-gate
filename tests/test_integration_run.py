@@ -9,6 +9,7 @@ import pytest
 from sqlalchemy import delete, select
 
 from agent_quality_harness.adapters.base import AgentRunEvent, AgentRunResult, TokenUsage
+from agent_quality_harness.administration import bootstrap_platform_admin
 from agent_quality_harness.core.config import Settings
 from agent_quality_harness.core.database import Database
 from agent_quality_harness.domain.enums import RunStatus
@@ -23,6 +24,7 @@ from agent_quality_harness.domain.models import (
     PricingSnapshot,
     RunEvent,
     UsageMeasurement,
+    User,
 )
 from agent_quality_harness.evaluation import InspectHarness
 from agent_quality_harness.execution import InspectRunExecutor
@@ -69,16 +71,45 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
         redis_url="redis://localhost:6379/0",
         redis_queue_key=f"aqh:test:{suffix}",
         otel_enabled=False,
+        jwt_secret=f"integration-secret-long-enough-{suffix}",
     )
     database = Database(settings.database_url)
     queue = RedisRunQueue(settings.redis_url, settings.redis_queue_key)
     app = create_app(settings, database=database, run_queue=queue)
     transport = httpx.ASGITransport(app=app)
     created: dict[str, int] = {}
+    auth_headers: dict[str, str] = {}
+    username = f"integration-{suffix}"
+    password = "Integration!Password123"
+    with database.session() as session:
+        admin = bootstrap_platform_admin(
+            session,
+            username=username,
+            password=password,
+            display_name="Integration Admin",
+            email=None,
+        )
+        created["user"] = admin.id
+        created["organization"] = admin.id
     try:
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             readiness = await client.get("/api/v1/health/ready")
             assert readiness.status_code == 200
+
+            login = await client.post(
+                "/api/v1/auth/login",
+                json={"username": username, "password": password},
+            )
+            assert login.status_code == 200, login.text
+            organization_id = login.json()["organizations"][0]["id"]
+            created["organization"] = organization_id
+            client.headers.update(
+                {
+                    "Authorization": f"Bearer {login.json()['access_token']}",
+                    "X-Organization-ID": str(organization_id),
+                }
+            )
+            auth_headers = dict(client.headers)
 
             target = await client.post(
                 "/api/v1/targets",
@@ -100,6 +131,10 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
                 )
                 assert response.status_code == 201, response.text
                 version_ids.append(response.json()["id"])
+
+            listed_versions = await client.get(f"/api/v1/targets/{created['target']}/versions")
+            assert listed_versions.status_code == 200
+            assert {item["id"] for item in listed_versions.json()} == set(version_ids)
 
             policy = await client.post(
                 "/api/v1/gate-policies",
@@ -251,6 +286,10 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
             assert stored_run is not None
             assert stored_run.status is RunStatus.COMPLETED
             assert stored_run.completed_case_count == 2
+            assert stored_run.started_at is not None
+            assert stored_run.finished_at is not None
+            assert stored_run.started_at >= stored_run.created_at
+            assert stored_run.finished_at >= stored_run.started_at
             results = list(
                 session.scalars(select(CaseResult).where(CaseResult.run_id == stored_run.id))
             )
@@ -272,7 +311,11 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
             events = list(session.scalars(select(RunEvent).where(RunEvent.run_id == stored_run.id)))
             assert any(event.event_type == "gate.evaluated" for event in events)
 
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers=auth_headers,
+        ) as client:
             comparison = await client.get(f"/api/v1/eval-runs/{created['run']}/comparison")
             assert comparison.status_code == 200
             assert comparison.json()["candidate"]["success_rate"] == 0.5
@@ -297,7 +340,11 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
             )
             assert len(replay_results) == 2
 
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers=auth_headers,
+        ) as client:
             queued = await client.post(
                 "/api/v1/eval-runs",
                 json={
@@ -366,5 +413,11 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
                     delete(PricingSnapshot).where(PricingSnapshot.id == created.get("pricing"))
                 )
                 session.commit()
+        if created.get("user") is not None:
+            with database.session() as session:
+                user = session.get(User, created["user"])
+                if user is not None:
+                    session.delete(user)
+                    session.commit()
         await queue.close()
         database.close()

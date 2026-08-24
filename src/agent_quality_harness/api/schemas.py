@@ -18,6 +18,13 @@ class ApiModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class Page[PageItem](ApiModel):
+    items: list[PageItem]
+    total: int
+    page: int
+    page_size: int
+
+
 class TargetCreate(ApiModel):
     name: str = Field(min_length=1, max_length=200)
     target_kind: TargetKind = TargetKind.AGENT
@@ -44,6 +51,7 @@ class TargetCreate(ApiModel):
 
 class TargetRead(ApiModel):
     id: int
+    organization_id: int
     name: str
     target_kind: TargetKind
     protocol: TargetProtocol
@@ -74,6 +82,21 @@ class VersionRead(ApiModel):
     created_at: datetime
 
 
+class DemoBootstrapCreate(ApiModel):
+    agent_endpoint: str | None = None
+
+
+class DemoBootstrapRead(ApiModel):
+    demo_fixture: bool = True
+    target_id: int
+    baseline_version_id: int
+    candidate_version_id: int
+    dataset_id: int
+    gate_policy_id: int
+    pricing_snapshot_id: int
+    created_resources: list[str]
+
+
 class DatasetCaseImport(ApiModel):
     id: str = Field(min_length=1, max_length=200)
     input: dict[str, Any]
@@ -90,6 +113,7 @@ class DatasetImport(ApiModel):
 
 class DatasetRead(ApiModel):
     id: int
+    organization_id: int
     name: str
     version: str
     split: str
@@ -124,6 +148,7 @@ class EvalRunCreate(ApiModel):
 
 class EvalRunRead(ApiModel):
     id: int
+    organization_id: int
     dataset_id: int
     baseline_version_id: int | None
     candidate_version_id: int
@@ -201,6 +226,7 @@ class GatePolicyCreate(ApiModel):
 
 class GatePolicyRead(GatePolicyCreate):
     id: int
+    organization_id: int
     created_at: datetime
 
 
@@ -226,6 +252,7 @@ class PricingSnapshotCreate(ApiModel):
 
 class PricingSnapshotRead(PricingSnapshotCreate):
     id: int
+    organization_id: int
     created_at: datetime
 
 

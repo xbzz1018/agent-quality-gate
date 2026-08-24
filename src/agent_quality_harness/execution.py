@@ -148,7 +148,7 @@ class InspectRunExecutor:
                 return None
             if run.status is RunStatus.CANCEL_REQUESTED:
                 run.status = RunStatus.CANCELLED
-                run.finished_at = now
+                run.finished_at = max(now, run.started_at or run.created_at)
                 self._add_event(session, run.id, "run.cancelled", "worker", {})
                 session.commit()
                 return None
@@ -192,7 +192,7 @@ class InspectRunExecutor:
                 None if run.gate_policy_id is None else session.get(GatePolicy, run.gate_policy_id)
             )
             run.status = RunStatus.RUNNING
-            run.started_at = run.started_at or now
+            run.started_at = run.started_at or max(now, run.created_at)
             run.worker_id = self.worker_id
             run.heartbeat_at = now
             run.lease_expires_at = now + timedelta(seconds=self.lease_seconds)
@@ -352,7 +352,7 @@ class InspectRunExecutor:
                     candidate_cases.add(captured.case_id)
             run.completed_case_count = len(candidate_cases)
             run.status = RunStatus.CANCELLED if cancelled else RunStatus.COMPLETED
-            run.finished_at = datetime.now(UTC)
+            run.finished_at = max(datetime.now(UTC), run.started_at or run.created_at)
             run.lease_expires_at = None
             self._add_event(
                 session,
@@ -412,7 +412,7 @@ class InspectRunExecutor:
                 return
             run.status = RunStatus.FAILED
             run.failure_reason = f"{type(exc).__name__}: {exc}"[:1000]
-            run.finished_at = datetime.now(UTC)
+            run.finished_at = max(datetime.now(UTC), run.started_at or run.created_at)
             run.lease_expires_at = None
             self._add_event(
                 session,

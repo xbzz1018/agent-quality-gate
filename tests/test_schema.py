@@ -17,6 +17,18 @@ def test_postgresql_schema_compiles_with_expected_tables() -> None:
         "pricing_snapshots",
         "usage_measurements",
         "run_events",
+        "organizations",
+        "users",
+        "memberships",
+        "roles",
+        "permissions",
+        "role_permissions",
+        "membership_roles",
+        "auth_sessions",
+        "service_accounts",
+        "api_keys",
+        "audit_logs",
+        "system_settings",
     }
 
     assert set(Base.metadata.tables) == expected

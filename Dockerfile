@@ -8,6 +8,7 @@ COPY requirements.txt pyproject.toml README.md ./
 COPY src ./src
 COPY alembic ./alembic
 COPY alembic.ini ./
+COPY datasets ./datasets
 RUN pip install --no-cache-dir .
 
 CMD ["uvicorn", "agent_quality_harness.main:app", "--host", "0.0.0.0", "--port", "8000"]

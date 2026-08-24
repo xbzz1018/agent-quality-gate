@@ -3,17 +3,19 @@ import json
 import os
 import subprocess
 from datetime import UTC, datetime
+from pathlib import Path
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from agent_quality_harness.api.schemas import (
     DatasetImport,
+    DemoBootstrapRead,
     EvalRunCreate,
     TargetCreate,
     VersionCreate,
 )
-from agent_quality_harness.domain.enums import RunStatus
+from agent_quality_harness.domain.enums import RunStatus, TargetKind, TargetProtocol
 from agent_quality_harness.domain.models import (
     AgentVersion,
     EvalCase,
@@ -26,17 +28,36 @@ from agent_quality_harness.domain.models import (
 
 RUNNABLE_PROTOCOLS = {"http", "sse"}
 
+DEMO_TARGET_NAME = "Demo Fixture Agent"
+DEMO_DATASET_NAME = "agent-quality-harness-demo-core"
+DEMO_POLICY_NAME = "Demo Fixture Release Gate"
+DEMO_PRICING_PROVIDER = "demo-fixture"
+DEMO_PRICING_MODEL = "deterministic-fake-agent"
 
-def create_target(session: Session, payload: TargetCreate) -> EvaluationTarget:
-    target = EvaluationTarget(**payload.model_dump())
+
+def create_target(
+    session: Session, payload: TargetCreate, organization_id: int
+) -> EvaluationTarget:
+    target = EvaluationTarget(organization_id=organization_id, **payload.model_dump())
     session.add(target)
     session.commit()
     session.refresh(target)
     return target
 
 
-def create_version(session: Session, target_id: int, payload: VersionCreate) -> AgentVersion:
-    if session.get(EvaluationTarget, target_id) is None:
+def create_version(
+    session: Session,
+    target_id: int,
+    payload: VersionCreate,
+    organization_id: int,
+) -> AgentVersion:
+    target = session.scalar(
+        select(EvaluationTarget).where(
+            EvaluationTarget.id == target_id,
+            EvaluationTarget.organization_id == organization_id,
+        )
+    )
+    if target is None:
         raise LookupError("target not found")
     data = payload.model_dump()
     metadata = data.pop("metadata")
@@ -47,7 +68,134 @@ def create_version(session: Session, target_id: int, payload: VersionCreate) -> 
     return version
 
 
-def import_dataset(session: Session, payload: DatasetImport) -> tuple[EvalDataset, int]:
+def bootstrap_demo(
+    session: Session, *, organization_id: int, dataset_path: Path, agent_endpoint: str
+) -> DemoBootstrapRead:
+    created: list[str] = []
+    target = session.scalar(
+        select(EvaluationTarget).where(
+            EvaluationTarget.organization_id == organization_id,
+            EvaluationTarget.name == DEMO_TARGET_NAME,
+        )
+    )
+    if target is None:
+        target = create_target(
+            session,
+            TargetCreate(
+                name=DEMO_TARGET_NAME,
+                target_kind=TargetKind.AGENT,
+                protocol=TargetProtocol.HTTP,
+                endpoint=agent_endpoint,
+                capabilities={"demo_fixture": True},
+            ),
+            organization_id,
+        )
+        created.append("target")
+    elif target.endpoint != agent_endpoint:
+        target.endpoint = agent_endpoint
+        session.commit()
+        session.refresh(target)
+        created.append("target_endpoint")
+
+    versions: dict[str, AgentVersion] = {}
+    for role in ("baseline", "candidate"):
+        version = session.scalar(
+            select(AgentVersion).where(
+                AgentVersion.target_id == target.id,
+                AgentVersion.version == role,
+            )
+        )
+        if version is None:
+            version = create_version(
+                session,
+                target.id,
+                VersionCreate(
+                    version=role,
+                    model=DEMO_PRICING_MODEL,
+                    metadata={"demo_fixture": True, "role": role},
+                ),
+                organization_id,
+            )
+            created.append(f"version:{role}")
+        versions[role] = version
+
+    dataset = session.scalar(
+        select(EvalDataset).where(
+            EvalDataset.organization_id == organization_id,
+            EvalDataset.name == DEMO_DATASET_NAME,
+            EvalDataset.version == "v1",
+        )
+    )
+    if dataset is None:
+        document = json.loads(dataset_path.read_text(encoding="utf-8"))
+        dataset, _ = import_dataset(
+            session, DatasetImport.model_validate(document), organization_id
+        )
+        created.append("dataset")
+
+    policy = session.scalar(
+        select(GatePolicy).where(
+            GatePolicy.organization_id == organization_id,
+            GatePolicy.name == DEMO_POLICY_NAME,
+            GatePolicy.version == "v1",
+        )
+    )
+    if policy is None:
+        from agent_quality_harness.gates import DEFAULT_THRESHOLDS
+
+        policy = GatePolicy(
+            organization_id=organization_id,
+            name=DEMO_POLICY_NAME,
+            version="v1",
+            thresholds=DEFAULT_THRESHOLDS,
+            active=True,
+        )
+        session.add(policy)
+        session.commit()
+        session.refresh(policy)
+        created.append("gate_policy")
+
+    pricing = session.scalar(
+        select(PricingSnapshot).where(
+            PricingSnapshot.organization_id == organization_id,
+            PricingSnapshot.provider == DEMO_PRICING_PROVIDER,
+            PricingSnapshot.model == DEMO_PRICING_MODEL,
+            PricingSnapshot.version == "v1",
+        )
+    )
+    if pricing is None:
+        pricing = PricingSnapshot(
+            organization_id=organization_id,
+            provider=DEMO_PRICING_PROVIDER,
+            model=DEMO_PRICING_MODEL,
+            version="v1",
+            currency="USD",
+            effective_at=datetime(2026, 1, 1, tzinfo=UTC),
+            prices={
+                "input_tokens": "0.000001",
+                "output_tokens": "0.000002",
+            },
+            source="Demo Fixture synthetic pricing",
+        )
+        session.add(pricing)
+        session.commit()
+        session.refresh(pricing)
+        created.append("pricing_snapshot")
+
+    return DemoBootstrapRead(
+        target_id=target.id,
+        baseline_version_id=versions["baseline"].id,
+        candidate_version_id=versions["candidate"].id,
+        dataset_id=dataset.id,
+        gate_policy_id=policy.id,
+        pricing_snapshot_id=pricing.id,
+        created_resources=created,
+    )
+
+
+def import_dataset(
+    session: Session, payload: DatasetImport, organization_id: int
+) -> tuple[EvalDataset, int]:
     case_rows: list[tuple[dict, str]] = []
     seen_ids: set[str] = set()
     for case in payload.cases:
@@ -63,6 +211,7 @@ def import_dataset(session: Session, payload: DatasetImport) -> tuple[EvalDatase
         "case_hashes": [case_hash for _, case_hash in case_rows],
     }
     dataset = EvalDataset(
+        organization_id=organization_id,
         name=payload.name,
         version=payload.version,
         split=payload.split,
@@ -86,11 +235,23 @@ def import_dataset(session: Session, payload: DatasetImport) -> tuple[EvalDatase
     return dataset, len(case_rows)
 
 
-def create_eval_run(session: Session, payload: EvalRunCreate) -> EvalRun:
-    dataset = session.get(EvalDataset, payload.dataset_id)
+def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: int) -> EvalRun:
+    dataset = session.scalar(
+        select(EvalDataset).where(
+            EvalDataset.id == payload.dataset_id,
+            EvalDataset.organization_id == organization_id,
+        )
+    )
     if dataset is None:
         raise LookupError("dataset not found")
-    candidate = session.get(AgentVersion, payload.candidate_version_id)
+    candidate = session.scalar(
+        select(AgentVersion)
+        .join(EvaluationTarget, EvaluationTarget.id == AgentVersion.target_id)
+        .where(
+            AgentVersion.id == payload.candidate_version_id,
+            EvaluationTarget.organization_id == organization_id,
+        )
+    )
     if candidate is None:
         raise LookupError("candidate version not found")
     candidate_target = session.get(EvaluationTarget, candidate.target_id)
@@ -102,7 +263,14 @@ def create_eval_run(session: Session, payload: EvalRunCreate) -> EvalRun:
         )
     baseline: AgentVersion | None = None
     if payload.baseline_version_id is not None:
-        baseline = session.get(AgentVersion, payload.baseline_version_id)
+        baseline = session.scalar(
+            select(AgentVersion)
+            .join(EvaluationTarget, EvaluationTarget.id == AgentVersion.target_id)
+            .where(
+                AgentVersion.id == payload.baseline_version_id,
+                EvaluationTarget.organization_id == organization_id,
+            )
+        )
         if baseline is None:
             raise LookupError("baseline version not found")
         if payload.baseline_version_id == payload.candidate_version_id:
@@ -122,8 +290,8 @@ def create_eval_run(session: Session, payload: EvalRunCreate) -> EvalRun:
     case_count = session.scalar(
         select(func.count(EvalCase.id)).where(EvalCase.dataset_id == dataset.id)
     )
-    gate_policy = _resolve_policy(session, payload.gate_policy_id)
-    pricing = _resolve_pricing(session, payload.pricing_snapshot_id)
+    gate_policy = _resolve_policy(session, payload.gate_policy_id, organization_id)
+    pricing = _resolve_pricing(session, payload.pricing_snapshot_id, organization_id)
     config = dict(payload.config)
     manifest = {
         "dataset": {
@@ -142,6 +310,7 @@ def create_eval_run(session: Session, payload: EvalRunCreate) -> EvalRun:
         "code_version": _code_version(),
     }
     run = EvalRun(
+        organization_id=organization_id,
         dataset_id=dataset.id,
         baseline_version_id=payload.baseline_version_id,
         candidate_version_id=payload.candidate_version_id,
@@ -182,21 +351,40 @@ def verify_dataset_integrity(dataset: EvalDataset, cases: list[EvalCase]) -> Non
         raise ValueError("dataset integrity mismatch")
 
 
-def _resolve_policy(session: Session, policy_id: int | None) -> GatePolicy | None:
+def _resolve_policy(
+    session: Session, policy_id: int | None, organization_id: int
+) -> GatePolicy | None:
     if policy_id is not None:
-        policy = session.get(GatePolicy, policy_id)
+        policy = session.scalar(
+            select(GatePolicy).where(
+                GatePolicy.id == policy_id,
+                GatePolicy.organization_id == organization_id,
+            )
+        )
         if policy is None:
             raise LookupError("gate policy not found")
         return policy
     return session.scalar(
-        select(GatePolicy).where(GatePolicy.active.is_(True)).order_by(GatePolicy.id.desc())
+        select(GatePolicy)
+        .where(
+            GatePolicy.organization_id == organization_id,
+            GatePolicy.active.is_(True),
+        )
+        .order_by(GatePolicy.id.desc())
     )
 
 
-def _resolve_pricing(session: Session, pricing_id: int | None) -> PricingSnapshot | None:
+def _resolve_pricing(
+    session: Session, pricing_id: int | None, organization_id: int
+) -> PricingSnapshot | None:
     if pricing_id is None:
         return None
-    pricing = session.get(PricingSnapshot, pricing_id)
+    pricing = session.scalar(
+        select(PricingSnapshot).where(
+            PricingSnapshot.id == pricing_id,
+            PricingSnapshot.organization_id == organization_id,
+        )
+    )
     if pricing is None:
         raise LookupError("pricing snapshot not found")
     return pricing

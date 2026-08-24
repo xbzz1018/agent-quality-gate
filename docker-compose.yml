@@ -8,6 +8,9 @@ services:
       AQH_OTEL_ENABLED: "true"
       AQH_OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       AQH_JAEGER_BASE_URL: http://localhost:16686
+      AQH_DEMO_AGENT_ENDPOINT: http://fake-agent:8020/invoke
+      AQH_JWT_SECRET: ${AQH_JWT_SECRET:-development-only-change-me-please-use-a-random-64-character-secret}
+      AQH_REFRESH_COOKIE_SECURE: "false"
     ports:
       - "8000:8000"
     depends_on:
@@ -25,6 +28,21 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  fake-agent:
+    build: .
+    command: ["uvicorn", "agent_quality_harness.fake_agent:app", "--host", "0.0.0.0", "--port", "8020"]
+    ports:
+      - "8020:8020"
+
+  web:
+    build:
+      context: ./web
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_started
   postgres:
     image: postgres:17
     environment:

@@ -2,8 +2,13 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
+from agent_quality_harness.api.admin_routes import router as admin_router
+from agent_quality_harness.api.analytics_routes import router as analytics_router
+from agent_quality_harness.api.auth_routes import router as auth_router
+from agent_quality_harness.api.dependencies import require_organization
+from agent_quality_harness.api.public_routes import router as public_router
 from agent_quality_harness.api.routes import router
 from agent_quality_harness.core.config import Settings, get_settings
 from agent_quality_harness.core.database import Database
@@ -35,7 +40,19 @@ def create_app(
     app.state.settings = settings
     app.state.database = database
     app.state.run_queue = run_queue
-    app.include_router(router, prefix=settings.api_prefix)
+    app.include_router(public_router, prefix=settings.api_prefix)
+    app.include_router(auth_router, prefix=settings.api_prefix)
+    app.include_router(admin_router, prefix=settings.api_prefix)
+    app.include_router(
+        router,
+        prefix=settings.api_prefix,
+        dependencies=[Depends(require_organization)],
+    )
+    app.include_router(
+        analytics_router,
+        prefix=settings.api_prefix,
+        dependencies=[Depends(require_organization)],
+    )
     configure_telemetry(app, settings)
     return app
 

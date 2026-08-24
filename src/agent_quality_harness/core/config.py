@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     otel_worker_service_name: str = "agent-quality-harness-worker"
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
     jaeger_base_url: str = "http://localhost:16686"
+    demo_agent_endpoint: str = "http://127.0.0.1:8020/invoke"
+    demo_dataset_path: Path = Path("datasets/demo-fixture-core-v1.json")
+    jwt_secret: str = "development-only-change-me-please-use-a-random-64-character-secret"
+    access_token_minutes: int = Field(default=15, ge=1, le=120)
+    refresh_session_days: int = Field(default=7, ge=1, le=30)
+    refresh_cookie_name: str = "aqh_refresh"
+    refresh_cookie_secure: bool = False
 
 
 @lru_cache

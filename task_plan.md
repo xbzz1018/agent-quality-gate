@@ -6,7 +6,7 @@ Build a runnable, testable Agent evaluation, observability, replay, and release-
 
 ## Current Phase
 
-Phase 3 - Visual concept selection blocked on Image Gen availability
+Phase 3.5 - Multi-tenant administration and Chenguang-aligned console upgrade (complete)
 
 ## Status Semantics
 
@@ -48,13 +48,29 @@ Phase 3 - Visual concept selection blocked on Image Gen availability
 
 ### Phase 3: Vue operations console
 
-- [ ] Select one of three approved visual concepts before scaffolding UI code.
-- [ ] Create Vue 3 + TypeScript + Element Plus + Vite application shell.
-- [ ] Implement Eval Run detail with Eval Case + Trace split view.
-- [ ] Implement Baseline/Candidate comparison.
-- [ ] Implement release-gate audit view.
-- [ ] Bind all product states to real APIs; label demo fixtures explicitly.
-- **Status:** pending
+- [x] Select Chenguang's operations-console structure as the visual reference without copying its React/mock implementation.
+- [x] Add target-version listing and an explicit Demo bootstrap path required by the UI.
+- [x] Create Vue 3 + TypeScript + Element Plus + Vite application shell.
+- [x] Implement target/version, dataset import, and run creation workflows.
+- [x] Implement Eval Run detail with Eval Case + Trace split view.
+- [x] Implement Baseline/Candidate comparison.
+- [x] Implement release-gate audit view.
+- [x] Bind all product states to real APIs; label demo fixtures explicitly.
+- [x] Add the Web service and same-origin API proxy to Docker Compose.
+- [x] Verify TypeScript, tests, production build, real-API E2E, and Chrome desktop/mobile rendering.
+- **Status:** complete for local MVP; Compose configuration is validated, while Web image pull/runtime and Collector/Jaeger export remain pending environment checks
+
+### Phase 3.5: Multi-tenant administration and console upgrade
+
+- [x] Add Organization, User, Membership, dynamic Role/Permission, session, service-account, API-key, audit, and setting models.
+- [x] Backfill all existing business data into a generated `default` organization without data loss.
+- [x] Enforce 15-minute access JWTs, rotating 7-day refresh sessions, Argon2id passwords, and organization-bound API keys.
+- [x] Enforce tenant-scoped resource lookup and dynamic backend permissions; cross-tenant identifiers return 404.
+- [x] Add organization-scoped pagination, search, dashboard, usage/cost, trace/failure, gate-audit, and management APIs.
+- [x] Add the `aqh admin bootstrap --password-stdin` path and API-key-aware Gate CLI.
+- [x] Upgrade the Vue shell to the captured Chenguang operations-console density and add login, organization switching, cost, audit, and administration workflows.
+- [x] Verify migration reversibility, auth/RBAC/tenant isolation, backend suites, Web type/test/build/audit, and Chrome desktop/mobile flows.
+- **Status:** complete for the local multi-tenant console; Collector/Jaeger export remains the separate pending integration boundary
 
 ### Phase 4: Protocol and safety enhancements
 

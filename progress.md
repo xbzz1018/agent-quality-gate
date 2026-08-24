@@ -2,6 +2,39 @@
 
 ## Session: 2026-08-21
 
+## Session: 2026-08-22 - Multi-tenant management upgrade
+
+### Phase 3.5: Multi-tenant administration and console upgrade
+
+- **Status:** complete
+- Actions taken:
+  - Recovered the existing implementation plan and verified that the current dirty worktree contains the completed local MVP and Vue console work.
+  - Reconfirmed the captured Chenguang pages as the visual source and the user's selected Chrome browser for final QA.
+  - Locked the upgrade boundary: local JWT and rotating refresh sessions, organization-bound service API keys, dynamic RBAC, logical tenant isolation, and platform/organization settings without secrets.
+  - Recorded that existing AgriGraph and Document Autoflow repositories remain untouched and are not rerun by this phase.
+  - Added the multi-tenant schema and reversible migration, including default-organization backfill, permission catalog, and built-in Administrator/Evaluator/Viewer roles.
+  - Added Argon2id login, short-lived JWT, rotating Refresh Session reuse detection, organization-bound API keys, dynamic route permissions, tenant-scoped lookup, and redacted audit events.
+  - Added paginated/searchable Target, Dataset, and Run APIs plus dashboard, usage/cost, cross-run result search, Gate audit, platform health, role, member, session, settings, and credential management APIs.
+  - Added the administrator bootstrap CLI and API-key-aware Gate CLI.
+  - Rebuilt the Vue shell against the captured Chenguang proportions and added login, organization switching, dashboard charts, cost analysis, Trace search, Gate audit, and tabbed system administration.
+  - Verified Chrome desktop and 390px mobile flows with real authentication and organization switching; temporary QA credentials and tenant data were removed afterward.
+
+### Phase 3.5 Verification
+
+| Check | Result |
+|---|---|
+| Ruff | All checks passed |
+| Full backend suite with PostgreSQL/Redis | 34 passed |
+| Alembic downgrade/upgrade | Passed |
+| Alembic drift | No new upgrade operations detected |
+| Auth/RBAC/tenant integration | Password failure, Refresh rotation/reuse, Viewer denial, cross-tenant 404, API Key revoke passed |
+| Web TypeScript | Passed |
+| Web Vitest | 3 passed |
+| Web production build | Passed; ECharts bundle advisory only |
+| npm audit | 0 vulnerabilities |
+| Docker Compose config | Passed |
+| Chrome desktop/mobile | Login, organization switch, Run detail, comparison, cost, Gate audit, admin; 0 browser errors |
+
 ### Phase 0: Scope and decision baseline
 
 - **Status:** needs hardening
@@ -47,6 +80,23 @@
   - Added 80 core plus 20 stability Demo Fixture cases and read-only target templates for AgriGraph and Document Autoflow.
   - Collector/Jaeger export, Vue UI, and live target rounds remain pending.
 
+## Session: 2026-08-22 - Vue operations console
+
+### Phase 3: Vue operations console
+
+- **Status:** complete for local MVP
+- Actions taken:
+  - Recovered the existing project plan and verified the Git worktree is clean on `main`.
+  - Confirmed the running API readiness on port 8010 and healthy project PostgreSQL/Redis containers.
+  - Inspected the Apache-2.0 Chenguang React frontend and selected its operations-console structure as the visual reference.
+  - Confirmed Vue 3 + TypeScript + Element Plus + Vite, real API data only, and Chrome desktop/mobile verification.
+  - Added the target-version API and an idempotent, development-only Demo bootstrap that creates a Fake Agent target, Baseline/Candidate versions, one 80-case frozen dataset, a GatePolicy, and a PricingSnapshot.
+  - Built the Vue operations console with target/version, dataset import, run creation, run detail, comparison, gate, and explicitly pending enhancement views.
+  - Added Web/Nginx Compose configuration, the Vite development proxy, GitHub Actions Web checks, and a reproducible Chrome QA script.
+  - Completed a real 80-case Demo run: 160 version results, 160 non-null Trace IDs, 483 redacted events, a failed-case replay, and a `BLOCK` gate caused by tool argument accuracy.
+  - Kept cost values with missing usage/pricing as `UNKNOWN`, never zero; marked all Demo Fixture states visibly.
+  - Verified the final desktop and 390px mobile layouts in the user-selected Chrome with no console errors or horizontal overflow.
+
 ## Test Results
 
 | Test | Command | Expected | Actual | Status |
@@ -68,6 +118,15 @@
 | Enhanced E2E | `AQH_RUN_INTEGRATION=1 pytest tests/test_integration_run.py` | Score, Trace, Gate, replay, cancel | 1 passed | PASS |
 | Phase 2 migration reversibility | downgrade one revision, upgrade head, `alembic check` | Reversible and no drift | All three commands passed | PASS |
 | Compose validation | `docker compose config --quiet` | Valid configuration | Exit 0 | PASS |
+| Phase 3 full backend suite | `AQH_RUN_INTEGRATION=1 python -m pytest` | All backend and real dependency tests pass | 30 passed in 21.67s | PASS |
+| Phase 3 Ruff | `python -m ruff check .` | No findings | All checks passed | PASS |
+| Phase 3 Alembic drift | `python -m alembic check` | No metadata drift | No new upgrade operations | PASS |
+| Web TypeScript | `npm run typecheck` | Strict project source check passes | Exit 0 | PASS |
+| Web component tests | `npm run test` | Formatting and UNKNOWN semantics pass | 3 passed | PASS |
+| Web production build | `npm run build` | Production assets emitted | Build succeeded; bundle-size advisory only | PASS |
+| Web dependency audit | `npm audit --audit-level=high` | No known high-severity issue | 0 vulnerabilities | PASS |
+| Chrome visual/interaction QA | `npm run qa:chrome` | Core routes work on desktop/mobile without browser errors or overflow | Run #18; 0 browser errors | PASS |
+| Live Gate CLI | `aqh gate --run-id 18 --api-url http://127.0.0.1:8010` | BLOCK emits CI annotation and non-zero status | BLOCK; exit code 2 | PASS |
 
 ## Error Log
 
@@ -95,13 +154,30 @@
 | 2026-08-22 | Built-in Image Gen tool is unavailable in this task | 1 | Stop before Vue scaffolding; the CLI fallback requires explicit user approval and an API key. |
 | 2026-08-22 | Combined background-service PowerShell command was rejected by execution policy | 1 | Start API and Worker with separate literal `Start-Process -WindowStyle Hidden` commands. |
 | 2026-08-22 | `New-Item` in this PowerShell runtime rejected `-LiteralPath` | 1 | The existing ignored `.tmp` directory was already present; use `-Path` if creation is needed later. |
+| 2026-08-22 | First direct Chrome screenshot calls produced no files because the desktop browser process was reused | 1 | Use isolated temporary Chrome profiles, absolute screenshot paths, and wait for each headless process. |
+| 2026-08-22 | Isolated Chrome command was rejected by process policy, then direct Chrome still reused the desktop process | 2-3 | Switched to Playwright with the user-selected `chrome` channel. |
+| 2026-08-22 | Chenguang reference routes render Vite's unresolved `@/lib/utils` error instead of the UI | 1 | Do not modify the unrelated Chenguang project; use its inspected layout/tokens as structural evidence and build a self-contained Vue implementation. |
+| 2026-08-22 | First planning-file patch for the Chenguang screenshot finding had an invalid hunk separator | 1 | Corrected the patch structure and reapplied it once. |
+| 2026-08-22 | First backend Ruff pass found a missing `AgentVersion` import and one 102-character line | 1 | Added the model import and wrapped the query without changing behavior. |
+| 2026-08-22 | Initial targeted reads used stale guesses for `tests/test_api.py` and the core fixture filename | 1 | Enumerated the existing test and dataset files, then used `test_integration_run.py` and `demo-fixture-core-v1.json`. |
+| 2026-08-22 | Initial Vitest run returned code 1 because the new Web project had no test files yet | 1 | Added focused tests for UNKNOWN-vs-zero and structured observation formatting. |
+| 2026-08-22 | npm marked `lucide-vue-next` deprecated after the first install | 1 | Replaced it with the current official `@lucide/vue` package before handoff. |
+| 2026-08-22 | Parallel Web checks exposed missing Node globals and third-party declaration incompatibilities | 1 | Add current `@types/node`, target ESNext disposable types, and skip third-party declaration checking while retaining strict project-source checks. |
+| 2026-08-22 | First patch for the Web TypeScript toolchain fix used an invalid hunk boundary | 1 | Inspected the exact package and TypeScript blocks, then applied a context-valid patch. |
+| 2026-08-22 | A combined parallel Alembic/npm/diff orchestration script had invalid JavaScript quoting | 1 | Ran Alembic separately, then parallelized only the two simple shell checks. |
+| 2026-08-22 | Live Demo Run #18 showed Worker `started_at` about two seconds before database `created_at` due host/container clock skew | 1 | Clamp persisted start/end timestamps to the preceding run timestamp so audit chronology remains monotonic. |
+| 2026-08-22 | `npx -p playwright node -e` could not resolve the ephemeral Playwright module | 1 | Add Playwright as a reproducible Web development dependency and a dedicated Chrome QA script. |
+| 2026-08-22 | First Chrome QA run timed out opening mobile navigation because the script used `viewportSize` instead of Playwright's `viewport` context option | 1 | Correct the context option and rerun all desktop/mobile routes. |
+| 2026-08-22 | Chrome QA then found one 404 console error for `/favicon.ico` | 1 | Add the same Lucide ShieldCheck mark used by the app shell as an explicit SVG favicon. |
+| 2026-08-22 | Initial Chrome QA selected the latest one-case replay instead of the representative 80-case run | 1 | Select the completed comparison run with the largest expected case count. |
+| 2026-08-22 | Mobile QA screenshots captured the navigation drawer during its CSS transition | 1 | Wait for the open/close transition before capturing both states. |
 
 ## Reboot Check
 
 | Question | Answer |
 |---|---|
-| Where am I? | Phase 2, deterministic evaluation and release-gate core. |
-| Where am I going? | Gate/Trace/Cost, UI, protocol/safety enhancements, real targets, optional distributed deployment. |
+| Where am I? | Local MVP handoff complete; Phase 4 protocol and safety enhancements remain pending. |
+| Where am I going? | Collector/Jaeger verification, real targets, protocol/safety enhancements, then optional distributed deployment. |
 | What's the goal? | A reproducible Agent evaluation, observability, replay, and release-gate platform. |
 | What have I learned? | See `findings.md`. |
-| What have I done? | Phase 1 is verified; frozen dataset and Baseline/Candidate execution are already present. |
+| What have I done? | Backend, deterministic gate loop, Demo bootstrap, and the real-API Vue operations console are verified end to end. |

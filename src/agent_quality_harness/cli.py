@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
 
 import httpx
+
+from agent_quality_harness.administration import bootstrap_platform_admin
+from agent_quality_harness.core.config import get_settings
+from agent_quality_harness.core.database import Database
 
 
 def gate_exit_code(decision: str) -> int:
@@ -18,8 +23,12 @@ def _load_gate(args: argparse.Namespace) -> dict[str, Any]:
         return json.loads(Path(args.report).read_text(encoding="utf-8"))
     if args.run_id is None:
         raise ValueError("either --run-id or --report is required")
+    headers = {} if args.api_key is None else {"X-API-Key": args.api_key}
+    if args.organization_id is not None:
+        headers["X-Organization-ID"] = str(args.organization_id)
     response = httpx.get(
         f"{args.api_url.rstrip('/')}/api/v1/eval-runs/{args.run_id}/gate",
+        headers=headers,
         timeout=10,
     )
     response.raise_for_status()
@@ -47,6 +56,33 @@ def gate_command(args: argparse.Namespace) -> int:
     return gate_exit_code(decision)
 
 
+def admin_bootstrap_command(args: argparse.Namespace) -> int:
+    if not args.password_stdin:
+        print("FAILED: --password-stdin is required", file=sys.stderr)
+        return 2
+    password = sys.stdin.readline().rstrip("\r\n")
+    if not password:
+        print("FAILED: password stdin was empty", file=sys.stderr)
+        return 2
+    database = Database(get_settings().database_url)
+    try:
+        with database.session() as session:
+            user = bootstrap_platform_admin(
+                session,
+                username=args.username,
+                password=password,
+                display_name=args.display_name or args.username,
+                email=args.email,
+            )
+        print(f"Platform administrator created: {user.username} (id={user.id})")
+        return 0
+    except (LookupError, ValueError) as exc:
+        print(f"FAILED: {exc}", file=sys.stderr)
+        return 2
+    finally:
+        database.close()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="aqh")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -54,7 +90,17 @@ def build_parser() -> argparse.ArgumentParser:
     gate.add_argument("--run-id", type=int)
     gate.add_argument("--report", type=Path)
     gate.add_argument("--api-url", default="http://127.0.0.1:8000")
+    gate.add_argument("--api-key", default=os.getenv("AQH_API_KEY"))
+    gate.add_argument("--organization-id", type=int)
     gate.set_defaults(handler=gate_command)
+    admin = commands.add_parser("admin", help="platform administration")
+    admin_commands = admin.add_subparsers(dest="admin_command", required=True)
+    bootstrap = admin_commands.add_parser("bootstrap", help="create the first administrator")
+    bootstrap.add_argument("--username", required=True)
+    bootstrap.add_argument("--display-name")
+    bootstrap.add_argument("--email")
+    bootstrap.add_argument("--password-stdin", action="store_true")
+    bootstrap.set_defaults(handler=admin_bootstrap_command)
     return parser
 
 
