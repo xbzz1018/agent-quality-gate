@@ -4,6 +4,8 @@ Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平�
 
 当前安全门禁发布版本为 `v0.3.0-security-gate`。平台与 DeepAgents 被测镜像分别使用 `requirements-runtime.lock` 和 `requirements-deep-agent.lock` 的精确传递依赖；生产安装不解析开发依赖。
 
+`codex/ag-ui-adapter` 分支在该标签之后增加了经 Compose/Trace 验证的 AG-UI 0.1.19 Adapter；它尚未创建独立发布标签，不反写为 `v0.3.0` 标签能力。
+
 ## 当前实施边界
 
 - Complete backend MVP：FastAPI、PostgreSQL/Alembic、可靠 Redis Worker、Inspect AI、HTTP/SSE、确定性 Scorer、Baseline/Candidate、Gate、失败回放、Token/Cost、持久事件与 Gate CLI。
@@ -15,7 +17,8 @@ Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平�
 - Complete protocol adapters：A2A 1.1 AgentTargetAdapter，以及独立的 MCP 2.0 ToolTargetAdapter（Tool/Resource/Prompt）。
 - Complete execution target：DeepAgents 0.7.6 作为独立 HTTP 被测容器，并保留 plain control Baseline；它不进入平台 API/Worker 运行时。
 - Complete security gate：组织隔离的 Agent Skills 不可变版本、确定性安全扫描、Baseline/Candidate 安全回归，以及 OPA/Rego Policy-as-Code fail-closed 组合门禁。
-- Pending：Document Autoflow 24 条完整轮次、AG-UI。
+- Complete AG-UI branch：标准 RunAgentInput/SSE BaseEvent、文本/Tool/State/Token 映射、活动流关闭取消与隐藏推理丢弃。
+- Pending：Document Autoflow 24 条完整轮次。
 - Optional：Kafka、Kubernetes、MCP Tasks、Hermes 兼容。
 
 Redis Worker 在 MVP 中领取整个 EvalRun，case 并发由 Inspect AI 控制。HTTP/SSE/A2A 属于 AgentTargetAdapter，MCP 属于 ToolTargetAdapter。
@@ -74,7 +77,7 @@ $env:AQH_JWT_SECRET = [Convert]::ToBase64String($bytes)
 
 docker compose up -d --build `
   postgres redis opa jaeger otel-collector `
-  api worker fake-agent fake-mcp deep-agent web
+  api worker fake-agent fake-mcp fake-ag-ui deep-agent web
 ```
 
 Web 为 `http://127.0.0.1:5173`，API 文档为 `http://127.0.0.1:8000/docs`，OPA 为 `http://127.0.0.1:8181`，Jaeger 为 `http://127.0.0.1:16686`。Nginx 将同源 `/api/v1` 请求代理到 API；生产 Web 不依赖 Vite 开发代理。Collector 健康端点为 `http://127.0.0.1:13133/`。真实 Trace 验证：
@@ -128,11 +131,20 @@ aqh gate --report tests/fixtures/gate-ship.json
 
 ## 协议目标
 
+- AG-UI Target 使用标准 HTTP POST `RunAgentInput` 与 SSE `BaseEvent`，当前锁定 `ag-ui-protocol==0.1.19`。Adapter 要求 RUN_STARTED 和 RUN_FINISHED/RUN_ERROR 完整生命周期，使用 RFC 6902 应用 State Delta，合并 Tool Call 参数分片，并丢弃 reasoning content 与 encrypted value。Fake Target 为 `http://127.0.0.1:8050/ag-ui`。
 - A2A Target 的 endpoint 是 Agent Card 基址，例如 `http://fake-agent:8020/a2a`；Adapter 使用官方 SDK 完成 Card 版本发现、消息/Task、状态轮询和取消。A2A 没有统一用量字段时 Token/费用保持 UNKNOWN/null。
 - MCP Target 必须使用 `target_kind=tool`，endpoint 支持 Streamable HTTP 或受控 `stdio://` 配置。数据集 case 通过 `operation` 选择 `call_tool`、`read_resource`、`get_prompt` 及对应 list 操作；MCP Tasks 仍明确为实验 pending。
 - DeepAgents Fixture 位于 `http://127.0.0.1:8040`。同一 HTTP Target 使用 `control` Baseline 和 `deepagents` Candidate，便于比较执行框架开销，而不是把 DeepAgents 变成平台依赖。
 
 已验证运行：A2A Run `#74` 为 2/2 通过且 `baseline_required`；MCP Run `#75` 为 Tool/Resource/Prompt 3/3 通过且 `baseline_required`；DeepAgents Run `#76` 为 4/4 结果通过，Candidate P95 33 ms 对 Baseline 17 ms，按策略产生真实 `WARN`。
+
+AG-UI Compose Fixture 可重复执行：
+
+```powershell
+python scripts/run_ag_ui_fixture.py
+```
+
+当前验证 Run `#96` 为 3/3 规则通过，包含 1 条真实 UNKNOWN 用量记录；Worker Trace `7a233a7fe8b7c339f9dc3a2b0c8e2eb3` 在 Jaeger 中包含 10 spans、敏感 tag 0。Agent 事件中的 reasoning 只保留空载荷开始/结束元数据。
 
 ## 真实目标 Characterization
 

@@ -141,7 +141,7 @@ onBeforeUnmount(() => pollTimer && window.clearInterval(pollTimer))
     <div class="metric-strip">
       <div class="metric"><div class="metric-label">运行状态</div><div class="metric-value metric-tag"><StatusTag v-if="run" :value="run.status" /></div><div class="metric-detail">Worker 批量领取 EvalRun</div></div>
       <div class="metric"><div class="metric-label">Case 进度</div><div class="metric-value">{{ run?.completed_case_count ?? 0 }} / {{ run?.expected_case_count ?? 0 }}</div><div class="metric-detail">每个版本分别执行</div></div>
-      <div class="metric"><div class="metric-label">结果记录</div><div class="metric-value">{{ results.length }}</div><div class="metric-detail">Baseline + Candidate</div></div>
+      <div class="metric"><div class="metric-label">结果记录</div><div class="metric-value">{{ results.length }}</div><div class="metric-detail">{{ run?.baseline_version_id ? 'Baseline + Candidate' : 'Candidate only' }}</div></div>
       <div class="metric"><div class="metric-label">持久事件</div><div class="metric-value">{{ events.length }}</div><div class="metric-detail">全部已脱敏</div></div>
     </div>
 

@@ -1,4 +1,5 @@
 from .a2a import A2AAgentAdapter
+from .ag_ui import AgUiAgentAdapter
 from .agrigraph import AgriGraphAdapter
 from .base import (
     AgentAdapter,
@@ -20,6 +21,7 @@ __all__ = [
     "AgentRunEvent",
     "AgentRunResult",
     "A2AAgentAdapter",
+    "AgUiAgentAdapter",
     "AgriGraphAdapter",
     "DocumentAutoflowAdapter",
     "HttpAgentAdapter",

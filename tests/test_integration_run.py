@@ -256,6 +256,7 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
                     "target_kind": "agent",
                     "protocol": "ag_ui",
                     "endpoint": "http://pending/invoke",
+                    "capabilities": {"contract_profile": "future_v1"},
                 },
             )
             created["pending_target"] = pending_target.json()["id"]
@@ -271,7 +272,7 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
                 },
             )
             assert pending_run.status_code == 422
-            assert "Adapter pending" in pending_run.text
+            assert "unsupported contract profile" in pending_run.text
 
             run = await client.post(
                 "/api/v1/eval-runs",

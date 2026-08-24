@@ -6,7 +6,7 @@ Build a runnable, testable Agent evaluation, observability, replay, and release-
 
 ## Current Phase
 
-Phase 4.3 - AG-UI AgentTargetAdapter
+Phase 4.3 - AG-UI AgentTargetAdapter (complete on feature branch)
 
 ## Status Semantics
 
@@ -102,10 +102,10 @@ Phase 4.3 - AG-UI AgentTargetAdapter
 - [x] Add DeepAgents as a constrained complex execution harness and a plain Tool Agent control.
 - [x] Add Agent Skills versioning and security regression coverage.
 - [x] Add OPA/Rego Policy-as-Code integration.
-- [ ] Add AG-UI AgentTargetAdapter.
+- [x] Add AG-UI AgentTargetAdapter.
 - [ ] Evaluate MCP Tasks as an experimental enhancement.
 - [ ] Treat Hermes only as an optional compatible target.
-- **Status:** in_progress; A2A, MCP, DeepAgents, Agent Skills, and OPA are verified, while all unchecked items remain pending/experimental
+- **Status:** complete for planned protocol and safety adapters; MCP Tasks and Hermes remain pending/experimental
 
 ### Phase 4.1: v0.2 protocol release closure
 
@@ -126,10 +126,10 @@ Phase 4.3 - AG-UI AgentTargetAdapter
 
 ### Phase 4.3: AG-UI AgentTargetAdapter
 
-- [ ] Add the stable AG-UI protocol runtime and typed HTTP/SSE adapter.
-- [ ] Map lifecycle, message, tool, state, usage, cancellation, and redacted reasoning events.
-- [ ] Add a deterministic Fake AG-UI target, Compose E2E, Trace, and Web target registration.
-- **Status:** pending
+- [x] Add the stable AG-UI protocol runtime and typed HTTP/SSE adapter.
+- [x] Map lifecycle, message, tool, state, usage, cancellation, and redacted reasoning events.
+- [x] Add a deterministic Fake AG-UI target, Compose E2E, Trace, and Web target registration.
+- **Status:** complete on `codex/ag-ui-adapter`; no release tag has been assigned
 
 ### Phase 5: Real-system targets
 

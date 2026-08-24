@@ -29,7 +29,7 @@ from agent_quality_harness.domain.models import (
 )
 from agent_quality_harness.skills import version_skill_snapshot
 
-RUNNABLE_PROTOCOLS = {"http", "sse", "a2a", "mcp"}
+RUNNABLE_PROTOCOLS = {"http", "sse", "ag_ui", "a2a", "mcp"}
 
 DEMO_TARGET_NAME = "Demo Fixture Agent"
 DEMO_DATASET_NAME = "agent-quality-harness-demo-core"
@@ -263,7 +263,7 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
         raise LookupError("candidate target not found")
     if candidate_target.protocol.value not in RUNNABLE_PROTOCOLS:
         raise ValueError(
-            f"{candidate_target.protocol.value} Adapter pending; HTTP/SSE/A2A/MCP can execute"
+            f"{candidate_target.protocol.value} Adapter pending; HTTP/SSE/AG-UI/A2A/MCP can execute"
         )
     validate_contract_profile(candidate_target.protocol, dict(candidate_target.capabilities))
     baseline: AgentVersion | None = None
@@ -285,7 +285,8 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
             raise LookupError("baseline target not found")
         if baseline_target.protocol.value not in RUNNABLE_PROTOCOLS:
             raise ValueError(
-                f"{baseline_target.protocol.value} Adapter pending; HTTP/SSE/A2A/MCP can execute"
+                f"{baseline_target.protocol.value} Adapter pending; "
+                "HTTP/SSE/AG-UI/A2A/MCP can execute"
             )
         validate_contract_profile(baseline_target.protocol, dict(baseline_target.capabilities))
         if baseline.target_id != candidate.target_id and not payload.benchmark_mode:

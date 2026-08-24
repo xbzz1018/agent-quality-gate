@@ -309,3 +309,14 @@
 - Added the real Skills Security Vue page and OPA source/decision detail in Gate views; no fixture data is generated silently.
 - Verified the real OPA sidecar as healthy and queried a policy with a returned decision ID; moved the container to non-root UID 1000.
 - Verification: Ruff passed; full PostgreSQL/Redis/OPA suite 63 passed; Alembic no drift; API/Worker `pip check` passed; Vue typecheck, 3 Vitest tests, production build, npm audit 0 vulnerabilities, and Chrome desktop/mobile QA 0 browser errors.
+
+## Session: 2026-08-24 - AG-UI Adapter
+
+- Created `codex/ag-ui-adapter` from the tagged `v0.3.0-security-gate` baseline and pinned `ag-ui-protocol==0.1.19` in development/runtime locks.
+- Implemented typed RunAgentInput construction and BaseEvent SSE parsing with strict lifecycle ordering, Tool argument fragment merging, RFC 6902 State updates, terminal TokenUsage, and UNKNOWN semantics.
+- Added active HTTP stream closure plus explicitly configured cancel endpoint support. Missing terminal events, RUN_ERROR, invalid JSON Patch, malformed events, and ordering violations fail the case.
+- Reasoning content and encrypted values are dropped. Run #96 has zero sensitive Agent event/output matches; six reasoning lifecycle events contain only `{}`.
+- Added the official-type Fake AG-UI container, a three-case frozen Demo Fixture, a repeatable run script, Web target registration, and 9 offline AG-UI contract tests.
+- Compose Run #96 completed 3/3 with one UNKNOWN usage case. Jaeger Trace `7a233a7fe8b7c339f9dc3a2b0c8e2eb3` has Worker service, 10 spans, and zero sensitive tags.
+- A front-end verification command was first invoked from the repository root and failed immediately because no root `package.json` exists; the same checks passed from `web/`.
+- Final verification: Ruff passed; full PostgreSQL/Redis/OPA suite 72 passed; Alembic no drift; API/Worker/local `pip check` passed; Web typecheck, 3 Vitest, production/Compose builds and audit passed; Chrome desktop/mobile including Run #96 reported 0 browser errors.

@@ -127,7 +127,7 @@ onMounted(() => load().catch((error) => ElMessage.error(apiError(error))))
     <ElDialog v-model="targetDialog" title="新建被测目标" width="520px">
       <ElForm label-position="top">
         <ElFormItem label="名称" required><ElInput v-model="targetForm.name" /></ElFormItem>
-        <div class="form-grid"><ElFormItem label="协议" required><ElSelect v-model="targetForm.protocol"><ElOption label="HTTP" value="http" /><ElOption label="SSE" value="sse" /><ElOption label="A2A" value="a2a" /><ElOption label="MCP" value="mcp" /><ElOption label="AG-UI (Pending)" value="ag_ui" disabled /></ElSelect></ElFormItem><ElFormItem label="超时（秒）"><ElInputNumber v-model="targetForm.timeout_seconds" :min="1" :max="600" /></ElFormItem></div>
+        <div class="form-grid"><ElFormItem label="协议" required><ElSelect v-model="targetForm.protocol"><ElOption label="HTTP" value="http" /><ElOption label="SSE" value="sse" /><ElOption label="AG-UI" value="ag_ui" /><ElOption label="A2A" value="a2a" /><ElOption label="MCP" value="mcp" /></ElSelect></ElFormItem><ElFormItem label="超时（秒）"><ElInputNumber v-model="targetForm.timeout_seconds" :min="1" :max="600" /></ElFormItem></div>
         <ElFormItem label="Endpoint" required><ElInput v-model="targetForm.endpoint" placeholder="http://127.0.0.1:8020/invoke" /></ElFormItem>
       </ElForm>
       <template #footer><ElButton @click="targetDialog = false">取消</ElButton><ElButton type="primary" :loading="saving" :disabled="!targetForm.name || !targetForm.endpoint" @click="createTarget">创建</ElButton></template>

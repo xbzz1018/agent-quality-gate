@@ -9,6 +9,7 @@ const password = process.env.AQH_QA_PASSWORD
 const displayName = process.env.AQH_QA_DISPLAY_NAME ?? username
 const runId = Number(process.env.AQH_QA_RUN_ID)
 const characterizationRunId = Number(process.env.AQH_QA_CHARACTERIZATION_RUN_ID)
+const agUiRunId = Number(process.env.AQH_QA_AG_UI_RUN_ID)
 const switchOrganization = process.env.AQH_QA_SWITCH_ORGANIZATION
 if (!username || !password || !runId) {
   throw new Error('AQH_QA_USERNAME, AQH_QA_PASSWORD and AQH_QA_RUN_ID are required')
@@ -99,6 +100,15 @@ try {
     await desktop.page.getByText('需要 Baseline 才能进行版本对比').waitFor()
     await desktop.page.goto(`${baseUrl}/runs/${characterizationRunId}/gate`, { waitUntil: 'networkidle' })
     await desktop.page.getByText('需要 Baseline 才能执行发布门禁').waitFor()
+  }
+
+  if (agUiRunId) {
+    await desktop.page.goto(`${baseUrl}/runs/${agUiRunId}`, { waitUntil: 'networkidle' })
+    await desktop.page.getByRole('heading', { name: `评测运行 #${agUiRunId}` }).waitFor()
+    await desktop.page.getByText('Candidate only', { exact: true }).waitFor()
+    await desktop.page.getByRole('tab', { name: '实际输出' }).click()
+    await assertNoHorizontalOverflow(desktop.page, 'AG-UI run desktop')
+    await desktop.page.screenshot({ path: resolve(outputDir, 'ag-ui-run-desktop.png'), fullPage: true })
   }
 
   await desktop.page.goto(`${baseUrl}/admin/members`, { waitUntil: 'networkidle' })

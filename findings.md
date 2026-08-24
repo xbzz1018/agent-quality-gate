@@ -138,6 +138,14 @@
 - Skill findings omit matched credential values. Audit records contain package/version/hash/count/status only, never Skill file contents.
 - Gate composition is monotonic: `SHIP < WARN < BLOCK`; Skill regressions and explicit OPA policies can only retain or strengthen the built-in decision.
 
+## AG-UI Findings (2026-08-24)
+
+- `ag-ui-protocol==0.1.19` provides Pydantic `RunAgentInput` and discriminated `Event` types plus an SSE encoder; the Adapter uses those types instead of maintaining a parallel event schema.
+- AG-UI terminal usage is not a standalone required event in 0.1.19, so the fixture and Adapter map aggregate `tokenUsage` from `RUN_FINISHED.result`; missing fields remain UNKNOWN/null.
+- Tool argument fragments must be accumulated and parsed only at `TOOL_CALL_END`; emitting one normalized `tool.completed` event preserves the existing deterministic Tool Scorer.
+- State deltas are RFC 6902 operations. Applying them through `jsonpatch` makes missing paths and illegal operations deterministic case failures.
+- Reasoning text and encrypted values are consumed only for lifecycle validation. Persisted Agent events contain `{}` for `reasoning.started` and `reasoning.ended`; no content or encrypted value reaches CaseResult output.
+
 ## Resources
 
 - Project book: `F:\code\homework\plan-md\03-Agent质量评测与发布门禁平台项目书.md`

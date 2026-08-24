@@ -1,0 +1,62 @@
+{
+  "name": "agent-quality-harness-demo-ag-ui",
+  "version": "v1",
+  "split": "test",
+  "demo_fixture": true,
+  "frozen": true,
+  "provenance": {
+    "type": "demo_fixture",
+    "protocol": "ag-ui",
+    "protocol_version": "0.1.19"
+  },
+  "cases": [
+    {
+      "id": "agui-001",
+      "input": {"prompt": "AG-UI deterministic answer one."},
+      "tags": ["demo-fixture", "ag-ui", "text", "state"],
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {"id": "text", "path": "text", "operator": "equals", "value": "AG-UI deterministic answer one."},
+            {"id": "state", "path": "state.phase", "operator": "equals", "value": "finished"}
+          ]
+        },
+        "tools": {
+          "required": ["quality_lookup"],
+          "arguments": [{"id": "args", "name": "quality_lookup", "equals": {"query": "quality"}}]
+        }
+      }
+    },
+    {
+      "id": "agui-002",
+      "input": {"prompt": "AG-UI deterministic answer two."},
+      "tags": ["demo-fixture", "ag-ui", "reasoning-redaction"],
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {"id": "fixture", "path": "fixture", "operator": "equals", "value": "ag-ui"}
+          ]
+        },
+        "safety": {"forbidden_patterns": ["hidden chain of thought", "encrypted-hidden-value"]}
+      }
+    },
+    {
+      "id": "agui-003",
+      "input": {
+        "prompt": "AG-UI preserves unknown usage.",
+        "forwarded_props": {"mode": "unknown_usage"}
+      },
+      "tags": ["demo-fixture", "ag-ui", "unknown-usage"],
+      "expected": {
+        "final_action": "answer",
+        "output": {
+          "assertions": [
+            {"id": "text", "path": "text", "operator": "equals", "value": "AG-UI preserves unknown usage."}
+          ]
+        }
+      }
+    }
+  ]
+}

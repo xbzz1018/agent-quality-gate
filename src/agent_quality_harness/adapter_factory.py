@@ -5,6 +5,7 @@ from agent_quality_harness.adapters import (
     A2AAgentAdapter,
     AgentAdapter,
     AgriGraphAdapter,
+    AgUiAgentAdapter,
     DocumentAutoflowAdapter,
     HttpAgentAdapter,
     McpToolTargetAdapter,
@@ -71,6 +72,15 @@ def create_agent_adapter(target: TargetSpec) -> AgentAdapter:
             headers=auth.headers,
             capabilities=target.capabilities,
         )
+    if profile == "ag_ui_v1":
+        if auth.kind != "headers":
+            raise ValueError("ag_ui_v1 currently supports static header authentication")
+        return AgUiAgentAdapter(
+            target.endpoint,
+            timeout_seconds=target.timeout_seconds,
+            headers=auth.headers,
+            capabilities=target.capabilities,
+        )
     if auth.kind != "headers":
         raise ValueError("standard_v1 only supports static header authentication")
     common = {
@@ -87,6 +97,7 @@ def create_agent_adapter(target: TargetSpec) -> AgentAdapter:
 
 def validate_contract_profile(protocol: TargetProtocol, capabilities: dict[str, Any]) -> str:
     default_profile = {
+        TargetProtocol.AG_UI: "ag_ui_v1",
         TargetProtocol.A2A: "a2a_v1",
         TargetProtocol.MCP: "mcp_v1",
     }.get(protocol, "standard_v1")
@@ -97,6 +108,7 @@ def validate_contract_profile(protocol: TargetProtocol, capabilities: dict[str, 
         "document_autoflow_v1",
         "a2a_v1",
         "mcp_v1",
+        "ag_ui_v1",
     }
     if profile not in supported:
         raise ValueError(f"unsupported contract profile: {profile}")
@@ -106,6 +118,7 @@ def validate_contract_profile(protocol: TargetProtocol, capabilities: dict[str, 
         "document_autoflow_v1": {TargetProtocol.HTTP},
         "a2a_v1": {TargetProtocol.A2A},
         "mcp_v1": {TargetProtocol.MCP},
+        "ag_ui_v1": {TargetProtocol.AG_UI},
     }
     if protocol not in expected_protocols[profile]:
         raise ValueError(f"{profile} is incompatible with the {protocol.value} protocol")

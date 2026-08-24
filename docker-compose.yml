@@ -79,6 +79,17 @@ services:
       timeout: 3s
       retries: 30
 
+  fake-ag-ui:
+    build: .
+    command: ["uvicorn", "agent_quality_harness.fake_ag_ui:app", "--host", "0.0.0.0", "--port", "8050"]
+    ports:
+      - "8050:8050"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8050/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
   web:
     build:
       context: ./web
