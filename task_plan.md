@@ -6,7 +6,7 @@ Build a runnable, testable Agent evaluation, observability, replay, and release-
 
 ## Current Phase
 
-Phase 3.75 - Trace, cancellation, and real-target verification (in progress)
+Phase 4 - Protocol and safety enhancements (A2A first)
 
 ## Status Semantics
 
@@ -44,7 +44,7 @@ Phase 3.75 - Trace, cancellation, and real-target verification (in progress)
 - [x] Implement SHIP/WARN/BLOCK with versioned policies and auditable reasons.
 - [x] Implement persistent Trace/event lookup, failed-case replay, and cancellation state transitions.
 - [x] Implement Token/Cost Engine and immutable versioned PricingSnapshot records.
-- **Status:** complete for backend MVP; Collector export and slow-target running cancellation remain integration checks
+- **Status:** complete for backend MVP; Collector export and slow-target running cancellation are verified
 
 ### Phase 3: Vue operations console
 
@@ -82,21 +82,30 @@ Phase 3.75 - Trace, cancellation, and real-target verification (in progress)
 - [x] Freeze source fingerprints and normalized real-target dataset manifests.
 - [x] Complete the 40-case AgriGraph candidate-only characterization.
 - [x] Complete a one-case Document Autoflow live Profile smoke characterization.
-- [ ] Complete the 24-case Document Autoflow characterization; Run #54 failed when the target entered a long REPROCESS activity.
+- [ ] Complete the 24-case Document Autoflow characterization; retained as a Phase 5 known limitation after Run #54 entered a long REPROCESS activity.
 - [x] Re-run backend, migration, Web, Compose, and Trace verification.
-- **Status:** in_progress; platform work is verified, while the 24-case Document Autoflow target round remains pending on target workflow behavior
+- **Status:** complete for platform engineering; the 24-case Document target limitation is tracked separately in Phase 5
+
+### Phase 3.8: Local MVP release closure
+
+- [x] Stop manual development processes without deleting PostgreSQL or Redis data.
+- [x] Build and run API, Worker, Fake Agent, Web, Collector, Jaeger, PostgreSQL, and Redis through production Compose.
+- [x] Verify same-origin Nginx API access, persistent admin login, refresh, replay, Gate CLI, cost views, and Trace links.
+- [x] Re-run backend, migration, Web, dependency, and Chrome checks against the Compose topology.
+- [x] Fast-forward the verified branch to `main` and create `v0.1.0-local-mvp`.
+- **Status:** complete
 
 ### Phase 4: Protocol and safety enhancements
 
-- [ ] Add AG-UI AgentTargetAdapter.
-- [ ] Add Agent Skills versioning and security regression coverage.
-- [ ] Add OPA/Rego Policy-as-Code integration.
-- [ ] Add DeepAgents as a constrained complex execution harness and a plain Tool Agent control.
 - [ ] Add A2A AgentTargetAdapter.
 - [ ] Add MCP ToolTargetAdapter.
+- [ ] Add DeepAgents as a constrained complex execution harness and a plain Tool Agent control.
+- [ ] Add Agent Skills versioning and security regression coverage.
+- [ ] Add OPA/Rego Policy-as-Code integration.
+- [ ] Add AG-UI AgentTargetAdapter.
 - [ ] Evaluate MCP Tasks as an experimental enhancement.
 - [ ] Treat Hermes only as an optional compatible target.
-- **Status:** pending
+- **Status:** in_progress; A2A is first and all unchecked items remain pending
 
 ### Phase 5: Real-system targets
 

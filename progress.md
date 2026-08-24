@@ -1,5 +1,23 @@
 # Progress Log
 
+## Session: 2026-08-24 - Local MVP release closure
+
+### Phase 3.8: Production Compose and release tag
+
+- **Status:** complete
+- Starting state:
+  - `codex/real-target-verification` is clean at `c79951d`.
+  - Manual API, Worker, Fake Agent, and Vite processes are running; PostgreSQL, Redis, Collector, and Jaeger Compose services are healthy.
+  - Persistent administrator `admin` and Runs #18, #53, #54, and #55 must be preserved.
+  - Document Autoflow 24-case execution is closed as a Phase 5 known limitation; no further model run is authorized in this phase.
+
+### Phase 3.8 Errors
+
+| Error | Attempt | Resolution |
+|---|---:|---|
+| Web image could not fetch uncached `node:24-alpine` through Docker Hub IPv6 | 1 | Use locally available, Vite-compatible `node:22-alpine` and `nginx:1.27-alpine`; do not repeat the failed pull. |
+| Full development dependency installation hit a remote package hash mismatch in the production API image | 1 | Split a minimal production runtime set and install the project with `--no-deps`; keep pending protocol and test SDKs out of the v0.1.0 image. |
+
 ## Session: 2026-08-24 - Trace and real-target verification
 
 ### Phase 3.75: Baseline seal
@@ -243,3 +261,16 @@
 | What's the goal? | A reproducible Agent evaluation, observability, replay, and release-gate platform. |
 | What have I learned? | See `findings.md`. |
 | What have I done? | Backend, deterministic gate loop, Demo bootstrap, and the real-API Vue operations console are verified end to end. |
+
+## Session: 2026-08-24 - v0.1.0 local MVP release closure
+
+- Stopped the manually launched API, Worker, Fake Agent, and Vite processes without deleting data volumes.
+- Built the production API/Worker/Fake Agent image from the minimal `requirements-runtime.txt` boundary and built the Nginx Web image from locally available Node 22/Nginx 1.27 bases.
+- Started PostgreSQL, Redis, API, Worker, Fake Agent, Web, Collector, and Jaeger through Compose with a random 64-byte session-only JWT secret.
+- Verified direct and Nginx same-origin readiness, persistent `admin` login, Refresh rotation, organization-scoped history, and retained Runs #18, #53, #54, and #55.
+- Verified Gate CLI against Run #18 (`BLOCK`, exit 2) with a one-time service key that was immediately revoked.
+- Replayed Run #18 as Run #68: 64 selected failed cases, 128 baseline/candidate results, 128 Trace IDs, and 387 persisted events.
+- Queried Run #68 Trace `717d06ced6c6d95339fbb5724c64d303` in Jaeger: Worker service, 385 spans, expected run/case/agent operations, and no sensitive tags.
+- Ran Chrome desktop/mobile QA through production Nginx with persistent admin and real Runs #18/#55; comparison, Gate, and `baseline_required` passed with zero browser errors.
+- Re-ran Ruff, the PostgreSQL/Redis-enabled suite (43 passed), Alembic drift, TypeScript, Vitest (3 passed), production build, and npm audit (0 vulnerabilities).
+- Confirmed the production Python image includes the implemented Inspect runtime and excludes pending A2A/MCP/DeepAgents/Kafka packages.

@@ -60,17 +60,32 @@ npm run dev
 
 Web：`http://127.0.0.1:5173`。API 文档：`http://127.0.0.1:8010/docs`。平台不内置默认密码，首次启动必须通过上面的 stdin 命令创建管理员。
 
-也可以用 Compose 启动完整容器拓扑；首次使用需要拉取 Web、Collector 和 Jaeger 镜像：
+推荐用 Compose 启动已验收的完整本地拓扑。JWT 密钥只进入当前 PowerShell 会话，不写入仓库：
 
 ```powershell
-docker compose up -d --build api worker fake-agent web postgres redis otel-collector jaeger
+$bytes = New-Object byte[] 64
+[Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+$env:AQH_JWT_SECRET = [Convert]::ToBase64String($bytes)
+
+docker compose up -d --build `
+  postgres redis jaeger otel-collector `
+  api worker fake-agent web
 ```
 
-Collector 健康端点为 `http://127.0.0.1:13133/`，Jaeger 为 `http://127.0.0.1:16686`。真实 Trace 验证：
+Web 为 `http://127.0.0.1:5173`，API 文档为 `http://127.0.0.1:8000/docs`，Jaeger 为 `http://127.0.0.1:16686`。Nginx 将同源 `/api/v1` 请求代理到 API；生产 Web 不依赖 Vite 开发代理。Collector 健康端点为 `http://127.0.0.1:13133/`。真实 Trace 验证：
 
 ```powershell
 python scripts/verify_telemetry.py --trace-id <trace-id> --expected-service agent-quality-harness-worker
 ```
+
+关闭服务但保留管理员和历史运行：
+
+```powershell
+docker compose down
+Remove-Item Env:AQH_JWT_SECRET
+```
+
+不要执行 `docker compose down -v`，该命令会删除 PostgreSQL/Redis 数据卷。生产镜像使用 `requirements-runtime.txt`，只包含 `v0.1.0` 已实现运行时；A2A、MCP、DeepAgents、Kafka 等 pending/optional 依赖不会因为存在于开发环境就被打包成已完成功能。
 
 进入 Web 后点击“初始化 Demo Fixture”会创建明确标记的 Fake Agent Target、Baseline/Candidate、80 条冻结样例、GatePolicy 和 PricingSnapshot。该操作不伪造评测结果，仍需创建运行并由 Worker 实际执行。
 

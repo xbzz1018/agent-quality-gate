@@ -6,6 +6,7 @@ import { chromium } from 'playwright'
 const baseUrl = process.env.AQH_WEB_URL ?? 'http://127.0.0.1:5173'
 const username = process.env.AQH_QA_USERNAME
 const password = process.env.AQH_QA_PASSWORD
+const displayName = process.env.AQH_QA_DISPLAY_NAME ?? username
 const runId = Number(process.env.AQH_QA_RUN_ID)
 const characterizationRunId = Number(process.env.AQH_QA_CHARACTERIZATION_RUN_ID)
 const switchOrganization = process.env.AQH_QA_SWITCH_ORGANIZATION
@@ -96,7 +97,7 @@ try {
 
   await desktop.page.goto(`${baseUrl}/admin/members`, { waitUntil: 'networkidle' })
   await desktop.page.getByRole('heading', { name: '系统管理' }).waitFor()
-  await desktop.page.getByRole('cell', { name: /QA Administrator/ }).waitFor()
+  await desktop.page.getByRole('cell', { name: displayName, exact: false }).waitFor()
   await desktop.page.screenshot({ path: resolve(outputDir, 'admin-desktop.png'), fullPage: true })
   await desktop.context.close()
 

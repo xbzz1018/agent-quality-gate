@@ -95,6 +95,14 @@
 - Document Autoflow's workflow treats `waiting_review` as a long-lived Temporal wait, so the adapter must treat it as a terminal business outcome. Its REPROCESS activity can run for 30 minutes and does not observe a cancellation signal until the activity returns.
 - Document full Run #54 is a real failed integration result, not a platform completion claim. Run #55 proves the live cookie-login/create/poll/map/Trace path for one frozen sample; the 24-case acceptance remains pending.
 
+## Local MVP Release Findings
+
+- The full production Compose topology is operational with persistent PostgreSQL data, Redis, API, Worker, Fake Agent, Nginx Web, Collector, and Jaeger.
+- Nginx serves the Vue production bundle and proxies `/api/v1` to the container API; the released UI does not depend on Vite's development proxy.
+- A production image must not install the broad development `requirements.txt`: `requirements-runtime.txt` is the release boundary and deliberately excludes A2A, MCP, DeepAgents, Kafka, pytest, and Ruff until their corresponding features are implemented and tested.
+- The container topology preserves the existing administrator and Runs #18/#53/#54/#55. `docker compose down` is safe for shutdown; `docker compose down -v` is destructive and is explicitly excluded from normal operations.
+- Run #68 proves replay, Worker Trace export, event persistence, and Jaeger queryability inside the production Compose network.
+
 ### Selected UI Design System
 
 - App shell: fixed 256px white sidebar, 64px white breadcrumb header, and a cool gray full-height work area; mobile uses a navigation drawer.
