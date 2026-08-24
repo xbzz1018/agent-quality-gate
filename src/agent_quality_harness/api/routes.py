@@ -21,6 +21,7 @@ from agent_quality_harness.domain.models import (
     EvaluationTarget,
     GatePolicy,
     GateResult,
+    PolicyBundle,
     PricingSnapshot,
     RunEvent,
     UsageMeasurement,
@@ -642,11 +643,23 @@ def get_run_gate(run_id: int, request: Request, session: SessionDependency):
     dependencies=[Depends(require_permission("gate:manage"))],
 )
 def post_gate_policy(payload: GatePolicyCreate, request: Request, session: SessionDependency):
+    organization_id = current_organization_id(request)
+    if payload.policy_bundle_id is not None:
+        bundle = session.scalar(
+            select(PolicyBundle).where(
+                PolicyBundle.id == payload.policy_bundle_id,
+                PolicyBundle.organization_id == organization_id,
+                PolicyBundle.status == "validated",
+            )
+        )
+        if bundle is None:
+            raise HTTPException(status_code=422, detail="validated policy bundle not found")
     policy = GatePolicy(
-        organization_id=current_organization_id(request),
+        organization_id=organization_id,
         name=payload.name,
         version=payload.version,
         thresholds=DEFAULT_THRESHOLDS | payload.thresholds,
+        policy_bundle_id=payload.policy_bundle_id,
         active=payload.active,
     )
     session.add(policy)

@@ -24,8 +24,10 @@ from agent_quality_harness.domain.models import (
     EvalRun,
     EvaluationTarget,
     GatePolicy,
+    PolicyBundle,
     PricingSnapshot,
 )
+from agent_quality_harness.skills import version_skill_snapshot
 
 RUNNABLE_PROTOCOLS = {"http", "sse", "a2a", "mcp"}
 
@@ -306,12 +308,12 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
             "provenance": dataset.provenance,
         },
         "versions": {
-            "baseline": _version_snapshot(baseline),
-            "candidate": _version_snapshot(candidate),
+            "baseline": _version_snapshot(session, baseline),
+            "candidate": _version_snapshot(session, candidate),
         },
         "target": _target_snapshot(candidate_target),
         "config_sha256": _sha256(config),
-        "gate_policy": _policy_snapshot(gate_policy),
+        "gate_policy": _policy_snapshot(session, gate_policy),
         "pricing_snapshot": _pricing_snapshot(pricing),
         "code_version": _code_version(),
     }
@@ -396,7 +398,7 @@ def _resolve_pricing(
     return pricing
 
 
-def _version_snapshot(version: AgentVersion | None) -> dict | None:
+def _version_snapshot(session: Session, version: AgentVersion | None) -> dict | None:
     if version is None:
         return None
     return {
@@ -407,6 +409,7 @@ def _version_snapshot(version: AgentVersion | None) -> dict | None:
         "prompt_version": version.prompt_version,
         "tool_schema_hash": version.tool_schema_hash,
         "metadata": version.metadata_json,
+        "skills": version_skill_snapshot(session, version.id),
     }
 
 
@@ -421,14 +424,30 @@ def _target_snapshot(target: EvaluationTarget) -> dict:
     }
 
 
-def _policy_snapshot(policy: GatePolicy | None) -> dict | None:
+def _policy_snapshot(session: Session, policy: GatePolicy | None) -> dict | None:
     if policy is None:
         return None
+    bundle = (
+        None
+        if policy.policy_bundle_id is None
+        else session.get(PolicyBundle, policy.policy_bundle_id)
+    )
     return {
         "id": policy.id,
         "name": policy.name,
         "version": policy.version,
         "thresholds": policy.thresholds,
+        "policy_bundle": None
+        if bundle is None
+        else {
+            "id": bundle.id,
+            "name": bundle.name,
+            "version": bundle.version,
+            "sha256": bundle.sha256,
+            "package_path": bundle.package_path,
+            "entrypoint": bundle.entrypoint,
+            "status": bundle.status,
+        },
     }
 
 

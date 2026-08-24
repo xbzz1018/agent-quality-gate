@@ -36,6 +36,11 @@ const router = createRouter({
           component: () => import('@/views/AdminView.vue'),
         },
         {
+          path: 'skills',
+          name: 'skills',
+          component: () => import('@/views/SkillsView.vue'),
+        },
+        {
           path: 'pending/:area',
           name: 'pending',
           component: () => import('@/views/PendingView.vue'),

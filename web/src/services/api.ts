@@ -20,9 +20,14 @@ import type {
   Page,
   Permission,
   PricingSnapshot,
+  PolicyBundle,
+  PolicyEvaluation,
   Role,
   RunEvent,
   ServiceAccount,
+  SkillPackage,
+  SkillScan,
+  SkillVersion,
   SystemSetting,
   Target,
   UsageSummary,
@@ -128,6 +133,28 @@ export const api = {
   gateAudits: (params: Record<string, unknown> = {}) =>
     http.get<Page<GateResult>>('/gate-audits', { params }).then(({ data }) => data),
   policies: () => http.get<GatePolicy[]>('/gate-policies').then(({ data }) => data),
+  skills: (params: Record<string, unknown> = {}) =>
+    http.get<Page<SkillPackage>>('/skills', { params }).then(({ data }) => data),
+  skillVersions: (skillId: number) =>
+    http.get<SkillVersion[]>(`/skills/${skillId}/versions`).then(({ data }) => data),
+  importSkill: (payload: Record<string, unknown>) =>
+    http.post('/skills/import', payload).then(({ data }) => data),
+  skillScans: (versionId: number) =>
+    http.get<SkillScan[]>(`/skill-versions/${versionId}/scans`).then(({ data }) => data),
+  scanSkill: (versionId: number) =>
+    http.post<SkillScan>(`/skill-versions/${versionId}/scan`).then(({ data }) => data),
+  attachSkill: (versionId: number, skillVersionId: number) =>
+    http.put(`/versions/${versionId}/skills/${skillVersionId}`).then(({ data }) => data),
+  skillRegression: (runId: number) =>
+    http.get(`/eval-runs/${runId}/skill-regression`).then(({ data }) => data),
+  policyBundles: (params: Record<string, unknown> = {}) =>
+    http.get<Page<PolicyBundle>>('/policy-bundles', { params }).then(({ data }) => data),
+  createPolicyBundle: (payload: Record<string, unknown>) =>
+    http.post<PolicyBundle>('/policy-bundles', payload).then(({ data }) => data),
+  policyEvaluation: (runId: number) =>
+    http
+      .get<PolicyEvaluation>(`/eval-runs/${runId}/policy-evaluation`)
+      .then(({ data }) => data),
   pricing: () => http.get<PricingSnapshot[]>('/pricing-snapshots').then(({ data }) => data),
   dashboard: () => http.get<DashboardSummary>('/dashboard/summary').then(({ data }) => data),
   usage: (params: Record<string, unknown> = {}) =>

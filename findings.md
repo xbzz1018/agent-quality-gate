@@ -130,6 +130,14 @@
 - Its correct positioning is multimodal document extraction, evidence verification, and exception-driven human review, not unattended automatic approval.
 - These metrics are context only and were not rerun in this task.
 
+## Skills and OPA Findings (2026-08-24)
+
+- The official OPA `1.17.0` image is distroless and contains no shell, `wget`, or `curl`; a thin image copies the pinned official binary into the already-pinned Python base so Compose can probe the real `/health` endpoint.
+- OPA Data API evaluation returns a real `decision_id` when decision logging is enabled. The accepted input is limited to run hashes, aggregate metrics, Skill scan counts, and built-in Gate reasons.
+- `PurePosixPath` normalizes `./` segments before inspection, so import validation must reject unsafe raw path segments before canonicalization.
+- Skill findings omit matched credential values. Audit records contain package/version/hash/count/status only, never Skill file contents.
+- Gate composition is monotonic: `SHIP < WARN < BLOCK`; Skill regressions and explicit OPA policies can only retain or strengthen the built-in decision.
+
 ## Resources
 
 - Project book: `F:\code\homework\plan-md\03-Agent质量评测与发布门禁平台项目书.md`

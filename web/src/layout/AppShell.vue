@@ -60,9 +60,9 @@ const navGroups = computed(() => [
     ],
   },
   {
-    label: '后置增强',
+    label: '安全与连接',
     items: [
-      { label: 'Skills 安全', path: '/pending/skills', icon: BookOpenCheck, pending: true },
+      { label: 'Skills 安全', path: '/skills', icon: BookOpenCheck },
       { label: '系统连接', path: '/pending/connections', icon: Boxes, pending: true },
     ],
   },
@@ -80,6 +80,7 @@ const routeLabels: Record<string, string> = {
   trace: 'Trace 与回放',
   'gate-audits': '门禁审计',
   admin: '系统管理',
+  skills: 'Skills 安全',
   pending: '增强能力',
 }
 const currentLabel = computed(() => routeLabels[String(route.name)] ?? 'Agent Quality Harness')

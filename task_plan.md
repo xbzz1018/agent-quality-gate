@@ -6,7 +6,7 @@ Build a runnable, testable Agent evaluation, observability, replay, and release-
 
 ## Current Phase
 
-Phase 4.1 - v0.2 protocol release closure
+Phase 4.3 - AG-UI AgentTargetAdapter
 
 ## Status Semantics
 
@@ -100,12 +100,12 @@ Phase 4.1 - v0.2 protocol release closure
 - [x] Add A2A AgentTargetAdapter.
 - [x] Add MCP ToolTargetAdapter for Tool, Resource, and Prompt operations.
 - [x] Add DeepAgents as a constrained complex execution harness and a plain Tool Agent control.
-- [ ] Add Agent Skills versioning and security regression coverage.
-- [ ] Add OPA/Rego Policy-as-Code integration.
+- [x] Add Agent Skills versioning and security regression coverage.
+- [x] Add OPA/Rego Policy-as-Code integration.
 - [ ] Add AG-UI AgentTargetAdapter.
 - [ ] Evaluate MCP Tasks as an experimental enhancement.
 - [ ] Treat Hermes only as an optional compatible target.
-- **Status:** in_progress; A2A, MCP, and DeepAgents are verified, while all unchecked items remain pending/experimental
+- **Status:** in_progress; A2A, MCP, DeepAgents, Agent Skills, and OPA are verified, while all unchecked items remain pending/experimental
 
 ### Phase 4.1: v0.2 protocol release closure
 
@@ -116,13 +116,13 @@ Phase 4.1 - v0.2 protocol release closure
 
 ### Phase 4.2: Agent Skills and OPA policy gate
 
-- [ ] Add immutable tenant-scoped Skill package/version/attachment/scan models and APIs.
-- [ ] Add deterministic security scanning and Baseline/Candidate Skill regression.
-- [ ] Add immutable Rego Policy Bundles, OPA sidecar evaluation, fail-closed composition, and audit APIs.
-- [ ] Replace the Skills Security placeholder with real Skill, regression, and Policy views.
-- [ ] Pass backend, OPA, migration, Web, E2E, Trace, and tenant-isolation acceptance.
-- [ ] Merge and create `v0.3.0-security-gate`.
-- **Status:** pending
+- [x] Add immutable tenant-scoped Skill package/version/attachment/scan models and APIs.
+- [x] Add deterministic security scanning and Baseline/Candidate Skill regression.
+- [x] Add immutable Rego Policy Bundles, OPA sidecar evaluation, fail-closed composition, and audit APIs.
+- [x] Replace the Skills Security placeholder with real Skill, regression, and Policy views.
+- [x] Pass backend, OPA, migration, Web, E2E, Trace, and tenant-isolation acceptance.
+- [x] Merge and create `v0.3.0-security-gate`.
+- **Status:** complete
 
 ### Phase 4.3: AG-UI AgentTargetAdapter
 

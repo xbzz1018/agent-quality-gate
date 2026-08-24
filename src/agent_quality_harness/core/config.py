@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     otel_worker_service_name: str = "agent-quality-harness-worker"
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
     jaeger_base_url: str = "http://localhost:16686"
+    opa_enabled: bool = False
+    opa_url: str = "http://localhost:8181"
+    opa_timeout_seconds: float = Field(default=2.0, ge=0.1, le=10.0)
     demo_agent_endpoint: str = "http://127.0.0.1:8020/invoke"
     demo_dataset_path: Path = Path("datasets/demo-fixture-core-v1.json")
     jwt_secret: str = "development-only-change-me-please-use-a-random-64-character-secret"

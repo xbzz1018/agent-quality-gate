@@ -15,7 +15,7 @@ from agent_quality_harness.adapter_factory import TargetSpec, create_target_adap
 from agent_quality_harness.adapters import TargetAdapter
 from agent_quality_harness.core.database import Database
 from agent_quality_harness.core.telemetry import get_tracer
-from agent_quality_harness.domain.enums import RunStatus, VersionRole
+from agent_quality_harness.domain.enums import GateDecision, RunStatus, VersionRole
 from agent_quality_harness.domain.models import (
     AgentVersion,
     CaseResult,
@@ -25,14 +25,18 @@ from agent_quality_harness.domain.models import (
     EvaluationTarget,
     GatePolicy,
     GateResult,
+    PolicyBundle,
+    PolicyEvaluation,
     PricingSnapshot,
     RunEvent,
     UsageMeasurement,
 )
 from agent_quality_harness.evaluation import HarnessCase, HarnessResult, InspectHarness
 from agent_quality_harness.gates import aggregate_metrics, evaluate_gate
+from agent_quality_harness.policy import OpaClient
 from agent_quality_harness.pricing import calculate_model_cost
 from agent_quality_harness.services import verify_dataset_integrity
+from agent_quality_harness.skills import skill_regression
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +46,17 @@ class VersionExecution:
     version: str
     target_name: str
     target: TargetSpec
+
+
+@dataclass(frozen=True, slots=True)
+class PolicyExecution:
+    id: int
+    organization_id: int
+    sha256: str
+    package_path: str
+    entrypoint: str
+    rego: str
+    data: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +70,7 @@ class RunExecution:
     prices: dict[str, Any] | None
     gate_policy_id: int | None
     gate_thresholds: dict[str, Any] | None
+    policy: PolicyExecution | None
 
 
 class InspectRunExecutor:
@@ -67,6 +83,7 @@ class InspectRunExecutor:
         lease_seconds: int = 60,
         heartbeat_seconds: float = 10,
         worker_id: str | None = None,
+        opa_client: OpaClient | None = None,
     ) -> None:
         self.database = database
         self.harness = harness
@@ -74,6 +91,7 @@ class InspectRunExecutor:
         self.lease_seconds = lease_seconds
         self.heartbeat_seconds = max(0.01, heartbeat_seconds)
         self.worker_id = worker_id or f"{socket.gethostname()}-{uuid4().hex[:8]}"
+        self.opa_client = opa_client or OpaClient("http://localhost:8181")
 
     async def execute(self, run_id: int) -> None:
         try:
@@ -195,6 +213,13 @@ class InspectRunExecutor:
             policy = (
                 None if run.gate_policy_id is None else session.get(GatePolicy, run.gate_policy_id)
             )
+            bundle = (
+                None
+                if policy is None or policy.policy_bundle_id is None
+                else session.get(PolicyBundle, policy.policy_bundle_id)
+            )
+            if bundle is not None and bundle.status != "validated":
+                raise ValueError("gate policy references an invalid policy bundle")
             run.status = RunStatus.RUNNING
             run.started_at = run.started_at or max(now, run.created_at)
             run.worker_id = self.worker_id
@@ -228,6 +253,17 @@ class InspectRunExecutor:
                 prices=None if pricing is None else dict(pricing.prices),
                 gate_policy_id=None if policy is None else policy.id,
                 gate_thresholds=None if policy is None else dict(policy.thresholds),
+                policy=None
+                if bundle is None
+                else PolicyExecution(
+                    id=bundle.id,
+                    organization_id=bundle.organization_id,
+                    sha256=bundle.sha256,
+                    package_path=bundle.package_path,
+                    entrypoint=bundle.entrypoint,
+                    rego=bundle.rego,
+                    data=dict(bundle.data),
+                ),
             )
 
     def _load_versions(self, session, run: EvalRun) -> list[VersionExecution]:
@@ -369,27 +405,109 @@ class InspectRunExecutor:
                 baseline = aggregate_metrics(metric_rows[VersionRole.BASELINE])
                 candidate = aggregate_metrics(metric_rows[VersionRole.CANDIDATE])
                 gate = evaluate_gate(baseline, candidate, execution.gate_thresholds)
-                session.add(
-                    GateResult(
-                        run_id=run.id,
-                        policy_id=execution.gate_policy_id,
-                        decision=gate.decision,
-                        reasons=list(gate.reasons),
-                        metric_deltas={
-                            "baseline": baseline,
-                            "candidate": candidate,
-                            "deltas": gate.metric_deltas,
-                        },
+                regression = skill_regression(session, run)
+                decision = gate.decision
+                reasons = [{**reason, "source": "builtin"} for reason in gate.reasons]
+                skill_summary = regression["summary"]
+                if skill_summary["new_block"] > 0:
+                    decision = GateDecision.BLOCK
+                    reasons.append(
+                        {
+                            "rule_id": "skill_security_regression",
+                            "severity": "block",
+                            "actual": {"new_block": skill_summary["new_block"]},
+                            "threshold": {"new_block": 0},
+                            "source": "skills",
+                        }
                     )
+                elif skill_summary["new_warn"] > 0 and decision is GateDecision.SHIP:
+                    decision = GateDecision.WARN
+                    reasons.append(
+                        {
+                            "rule_id": "skill_security_regression",
+                            "severity": "warn",
+                            "actual": {"new_warn": skill_summary["new_warn"]},
+                            "threshold": {"new_warn": 0},
+                            "source": "skills",
+                        }
+                    )
+                policy_evaluation = None
+                if execution.policy is not None:
+                    policy_input = _policy_input(
+                        run,
+                        baseline=baseline,
+                        candidate=candidate,
+                        skill_summary=skill_summary,
+                        builtin_decision=gate.decision.value,
+                        builtin_reasons=list(gate.reasons),
+                    )
+                    policy_result = self.opa_client.evaluate(
+                        policy_id=(
+                            f"org-{execution.policy.organization_id}-"
+                            f"{execution.policy.sha256[:16]}"
+                        ),
+                        rego=execution.policy.rego,
+                        data=execution.policy.data,
+                        data_path=(
+                            f"aqh_policy_data/org_{execution.policy.organization_id}/"
+                            f"bundle_{execution.policy.sha256[:16]}"
+                        ),
+                        package_path=execution.policy.package_path,
+                        entrypoint=execution.policy.entrypoint,
+                        input_data=policy_input,
+                    )
+                    policy_evaluation = PolicyEvaluation(
+                        run_id=run.id,
+                        policy_bundle_id=execution.policy.id,
+                        decision_id=policy_result.decision_id,
+                        input_sha256=policy_result.input_sha256,
+                        decision=policy_result.decision,
+                        reasons=policy_result.reasons,
+                        latency_ms=policy_result.latency_ms,
+                        error=policy_result.error,
+                    )
+                    session.add(policy_evaluation)
+                    session.flush()
+                    reasons.extend(policy_result.reasons)
+                    policy_decision = GateDecision(policy_result.decision)
+                    if _decision_rank(policy_decision) > _decision_rank(decision):
+                        decision = policy_decision
+                gate_result = GateResult(
+                    run_id=run.id,
+                    policy_id=execution.gate_policy_id,
+                    policy_evaluation_id=(
+                        None if policy_evaluation is None else policy_evaluation.id
+                    ),
+                    decision=decision,
+                    reasons=reasons,
+                    metric_deltas={
+                        "baseline": baseline,
+                        "candidate": candidate,
+                        "deltas": gate.metric_deltas,
+                        "skills": regression,
+                        "policy": None
+                        if policy_evaluation is None
+                        else {
+                            "bundle_id": execution.policy.id,
+                            "sha256": execution.policy.sha256,
+                            "decision_id": policy_evaluation.decision_id,
+                            "decision": policy_evaluation.decision,
+                            "error": policy_evaluation.error,
+                        },
+                    },
                 )
+                session.add(gate_result)
                 self._add_event(
                     session,
                     run.id,
                     "gate.evaluated",
                     "gate",
                     {
-                        "decision": gate.decision.value,
-                        "reasons": list(gate.reasons),
+                        "decision": decision.value,
+                        "reasons": reasons,
+                        "policy_decision_id": (
+                            None if policy_evaluation is None else policy_evaluation.decision_id
+                        ),
                     },
                 )
             session.commit()
@@ -472,6 +590,34 @@ class InspectRunExecutor:
                 occurred_at=occurred_at or datetime.now(UTC),
             )
         )
+
+
+def _decision_rank(decision: GateDecision) -> int:
+    return {GateDecision.SHIP: 0, GateDecision.WARN: 1, GateDecision.BLOCK: 2}[decision]
+
+
+def _policy_input(
+    run: EvalRun,
+    *,
+    baseline: dict[str, Any],
+    candidate: dict[str, Any],
+    skill_summary: dict[str, Any],
+    builtin_decision: str,
+    builtin_reasons: list[dict[str, Any]],
+) -> dict[str, Any]:
+    manifest = run.manifest
+    dataset = manifest.get("dataset") if isinstance(manifest, dict) else {}
+    return {
+        "run": {
+            "id": run.id,
+            "dataset_sha256": (dataset or {}).get("sha256"),
+            "config_sha256": manifest.get("config_sha256"),
+            "code_version": manifest.get("code_version"),
+        },
+        "metrics": {"baseline": baseline, "candidate": candidate},
+        "skills": skill_summary,
+        "builtin_gate": {"decision": builtin_decision, "reasons": builtin_reasons},
+    }
 
 
 _SENSITIVE_KEY = re.compile(

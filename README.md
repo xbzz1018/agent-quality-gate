@@ -2,7 +2,7 @@
 
 Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平台。当前状态为 `本地多租户 MVP 已完成`；下列 Pending/Optional 能力仍不得作为已实现功能宣称。
 
-当前协议发布版本为 `v0.2.0-protocols`。平台与 DeepAgents 被测镜像分别使用 `requirements-runtime.lock` 和 `requirements-deep-agent.lock` 的精确传递依赖；生产安装不解析开发依赖。
+当前安全门禁发布版本为 `v0.3.0-security-gate`。平台与 DeepAgents 被测镜像分别使用 `requirements-runtime.lock` 和 `requirements-deep-agent.lock` 的精确传递依赖；生产安装不解析开发依赖。
 
 ## 当前实施边界
 
@@ -14,7 +14,8 @@ Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平�
 - Real targets：AgriGraph 40/40 characterization 完成；Document Autoflow 1/1 Profile 烟测完成，24 条整轮因目标 REPROCESS 长任务保持 Pending。
 - Complete protocol adapters：A2A 1.1 AgentTargetAdapter，以及独立的 MCP 2.0 ToolTargetAdapter（Tool/Resource/Prompt）。
 - Complete execution target：DeepAgents 0.7.6 作为独立 HTTP 被测容器，并保留 plain control Baseline；它不进入平台 API/Worker 运行时。
-- Pending：Document Autoflow 24 条完整轮次、AG-UI、Agent Skills/OPA。
+- Complete security gate：组织隔离的 Agent Skills 不可变版本、确定性安全扫描、Baseline/Candidate 安全回归，以及 OPA/Rego Policy-as-Code fail-closed 组合门禁。
+- Pending：Document Autoflow 24 条完整轮次、AG-UI。
 - Optional：Kafka、Kubernetes、MCP Tasks、Hermes 兼容。
 
 Redis Worker 在 MVP 中领取整个 EvalRun，case 并发由 Inspect AI 控制。HTTP/SSE/A2A 属于 AgentTargetAdapter，MCP 属于 ToolTargetAdapter。
@@ -27,7 +28,7 @@ conda activate agent-quality-gate
 python -m pip check
 ```
 
-环境包含 FastAPI、Inspect AI、DeepAgents、A2A SDK、MCP SDK、Kafka Python Client 与 OpenTelemetry。PostgreSQL、Redis、Kafka、Jaeger 和 OpenTelemetry Collector 作为 Docker 服务运行，不安装进 Conda。
+环境包含 FastAPI、Inspect AI、DeepAgents、A2A SDK、MCP SDK、Kafka Python Client 与 OpenTelemetry。PostgreSQL、Redis、OPA、Jaeger 和 OpenTelemetry Collector 作为当前 Docker 服务运行；Kafka 仍是 Optional，尚未进入运行拓扑。
 
 ## 本地运行
 
@@ -72,11 +73,11 @@ $bytes = New-Object byte[] 64
 $env:AQH_JWT_SECRET = [Convert]::ToBase64String($bytes)
 
 docker compose up -d --build `
-  postgres redis jaeger otel-collector `
+  postgres redis opa jaeger otel-collector `
   api worker fake-agent fake-mcp deep-agent web
 ```
 
-Web 为 `http://127.0.0.1:5173`，API 文档为 `http://127.0.0.1:8000/docs`，Jaeger 为 `http://127.0.0.1:16686`。Nginx 将同源 `/api/v1` 请求代理到 API；生产 Web 不依赖 Vite 开发代理。Collector 健康端点为 `http://127.0.0.1:13133/`。真实 Trace 验证：
+Web 为 `http://127.0.0.1:5173`，API 文档为 `http://127.0.0.1:8000/docs`，OPA 为 `http://127.0.0.1:8181`，Jaeger 为 `http://127.0.0.1:16686`。Nginx 将同源 `/api/v1` 请求代理到 API；生产 Web 不依赖 Vite 开发代理。Collector 健康端点为 `http://127.0.0.1:13133/`。真实 Trace 验证：
 
 ```powershell
 python scripts/verify_telemetry.py --trace-id <trace-id> --expected-service agent-quality-harness-worker
@@ -107,7 +108,13 @@ npm test
 npm run build
 ```
 
-集成测试只使用项目三的 PostgreSQL/Redis，并按本次测试创建的 ID 清理数据。
+集成测试只使用项目三的 PostgreSQL、Redis 和 OPA，并按本次测试创建的组织与队列清理数据。
+
+## Skills 与 Policy-as-Code
+
+`POST /api/v1/skills/import` 只接收结构化 UTF-8 文件列表，最多 100 个文件、合计 1 MiB；绝对路径、路径穿越、重复路径和二进制内容会被拒绝。扫描器 `skills-static-v1` 的确定性 BLOCK/WARN 发现会持久化，AgentVersion 一旦被 EvalRun 引用便不能改变 Skill 绑定。
+
+Rego Bundle 必须使用 `aqh.org_<organization_id>.<policy>.v_<version>` 命名空间。只有经 OPA 编译为 `validated` 的不可变 Bundle 才能绑定 GatePolicy；显式绑定后，OPA 超时、不可用、undefined 或非法输出统一 fail-closed 为 `BLOCK / policy_engine_error`。最终 Gate 取内置指标规则、Skill 回归和 OPA 决策中最严格者。
 
 Gate CLI：
 

@@ -226,12 +226,14 @@ export interface GateReason {
   severity: 'warn' | 'block'
   threshold: unknown
   actual: unknown
+  source?: 'builtin' | 'skills' | 'opa'
 }
 
 export interface GateResult {
   id: number
   run_id: number
   policy_id: number
+  policy_evaluation_id: number | null
   decision: GateDecision
   reasons: GateReason[]
   metric_deltas: Record<string, unknown>
@@ -247,8 +249,72 @@ export interface GatePolicy {
   name: string
   version: string
   thresholds: Record<string, number>
+  policy_bundle_id: number | null
   active: boolean
   created_at: string
+}
+
+export interface SkillPackage {
+  id: number
+  organization_id: number
+  name: string
+  description: string
+  created_at: string
+}
+
+export interface SkillVersion {
+  id: number
+  package_id: number
+  version: string
+  sha256: string
+  source_ref: string | null
+  manifest: Record<string, unknown>
+  frozen_at: string
+}
+
+export interface SkillScan {
+  id: number
+  skill_version_id: number
+  scanner_version: string
+  status: 'pass' | 'warn' | 'block'
+  findings: Array<{
+    rule_id: string
+    severity: 'warn' | 'block'
+    path: string
+    line: number
+    message: string
+    confidence: string
+  }>
+  summary: Record<string, number>
+  created_at: string
+}
+
+export interface PolicyBundle {
+  id: number
+  organization_id: number
+  name: string
+  version: string
+  sha256: string
+  package_path: string
+  entrypoint: string
+  rego: string
+  data: Record<string, unknown>
+  status: 'validated' | 'invalid'
+  validation_errors: Array<Record<string, unknown>>
+  created_at: string
+}
+
+export interface PolicyEvaluation {
+  id: number
+  run_id: number
+  policy_bundle_id: number
+  decision_id: string | null
+  input_sha256: string
+  decision: GateDecision
+  reasons: GateReason[]
+  latency_ms: number | null
+  error: string | null
+  evaluated_at: string
 }
 
 export interface PricingSnapshot {

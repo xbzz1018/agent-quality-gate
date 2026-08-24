@@ -7,7 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 import StatusTag from '@/components/StatusTag.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { api, apiError } from '@/services/api'
-import type { EvalRun, GatePolicy, GateResult } from '@/types/api'
+import type { EvalRun, GatePolicy, GateResult, PolicyEvaluation } from '@/types/api'
 import { formatDate, pretty } from '@/utils/format'
 
 const route = useRoute()
@@ -17,6 +17,7 @@ const run = ref<EvalRun | null>(null)
 const gate = ref<GateResult | null>(null)
 const baselineRequired = ref(false)
 const policy = ref<GatePolicy | null>(null)
+const policyEvaluation = ref<PolicyEvaluation | null>(null)
 const loading = ref(true)
 
 const icon = computed(() => gate.value?.decision === 'ship' ? CheckCircle2 : gate.value?.decision === 'warn' ? CircleAlert : Ban)
@@ -35,6 +36,9 @@ onMounted(async () => {
     } else {
       gate.value = gateRow
       policy.value = policies.find((item) => item.id === gateRow.policy_id) ?? null
+      if (gateRow.policy_evaluation_id) {
+        policyEvaluation.value = await api.policyEvaluation(runId)
+      }
     }
   } catch (error) {
     ElMessage.error(apiError(error))
@@ -56,11 +60,11 @@ onMounted(async () => {
     <section v-if="gate" class="gate-decision" :class="`gate-decision--${gate.decision}`">
       <component :is="icon" :size="38" />
       <div><div class="gate-label">发布决策</div><div class="gate-word">{{ gate.decision.toUpperCase() }}</div><p>{{ message }}</p></div>
-      <div class="gate-meta"><span>策略版本</span><strong>{{ policy ? `${policy.name} · ${policy.version}` : `Policy #${gate.policy_id}` }}</strong><span>评估时间</span><strong>{{ formatDate(gate.evaluated_at) }}</strong></div>
+      <div class="gate-meta"><span>策略版本</span><strong>{{ policy ? `${policy.name} · ${policy.version}` : `Policy #${gate.policy_id}` }}</strong><span>决策来源</span><strong>{{ policyEvaluation ? 'Built-in + Skills + OPA' : 'Built-in + Skills' }}</strong><span>OPA Decision ID</span><strong class="mono">{{ policyEvaluation?.decision_id ?? '未绑定 OPA Policy' }}</strong><span>评估时间</span><strong>{{ formatDate(gate.evaluated_at) }}</strong></div>
     </section>
 
     <div v-if="gate" class="gate-grid">
-      <section class="panel"><div class="panel-header"><h2 class="panel-title">触发规则</h2><StatusTag :value="gate.decision" /></div><ElTable v-if="gate.reasons.length" :data="gate.reasons"><ElTableColumn prop="rule_id" label="规则 ID" min-width="170"><template #default="{ row }"><span class="mono">{{ row.rule_id }}</span></template></ElTableColumn><ElTableColumn label="级别" width="90"><template #default="{ row }"><StatusTag :value="row.severity" /></template></ElTableColumn><ElTableColumn label="阈值" min-width="100"><template #default="{ row }">{{ row.threshold }}</template></ElTableColumn><ElTableColumn label="实际值" min-width="100"><template #default="{ row }"><strong>{{ row.actual }}</strong></template></ElTableColumn></ElTable><div v-else class="ship-empty"><CheckCircle2 :size="24" /><strong>没有触发 WARN 或 BLOCK 规则</strong></div></section>
+      <section class="panel"><div class="panel-header"><h2 class="panel-title">触发规则</h2><StatusTag :value="gate.decision" /></div><ElTable v-if="gate.reasons.length" :data="gate.reasons"><ElTableColumn prop="rule_id" label="规则 ID" min-width="170"><template #default="{ row }"><span class="mono">{{ row.rule_id }}</span></template></ElTableColumn><ElTableColumn prop="source" label="来源" width="90"><template #default="{ row }"><span class="source-label">{{ row.source ?? 'builtin' }}</span></template></ElTableColumn><ElTableColumn label="级别" width="90"><template #default="{ row }"><StatusTag :value="row.severity" /></template></ElTableColumn><ElTableColumn label="阈值" min-width="120"><template #default="{ row }"><span class="mono">{{ pretty(row.threshold) }}</span></template></ElTableColumn><ElTableColumn label="实际值" min-width="120"><template #default="{ row }"><strong class="mono">{{ pretty(row.actual) }}</strong></template></ElTableColumn></ElTable><div v-else class="ship-empty"><CheckCircle2 :size="24" /><strong>没有触发 WARN 或 BLOCK 规则</strong></div></section>
       <section class="panel"><div class="panel-header"><h2 class="panel-title">策略快照</h2><span class="muted">不可变版本</span></div><div class="panel-body"><h3 class="policy-heading">Thresholds</h3><pre class="json-block">{{ pretty(policy?.thresholds ?? {}) }}</pre><h3 class="policy-heading">Metric Deltas</h3><pre class="json-block">{{ pretty(gate.metric_deltas) }}</pre></div></section>
     </div>
   </div>
@@ -81,6 +85,7 @@ onMounted(async () => {
 .ship-empty { min-height: 210px; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--success); font-size: 12px; }
 .policy-heading { margin: 2px 0 7px; font-size: 11px; }
 .policy-heading + .json-block { margin-bottom: 14px; }
+.source-label { color: #475467; font-size: 11px; font-weight: 650; text-transform: uppercase; }
 .baseline-required { min-height: 320px; display: grid; place-items: center; }
 @media (max-width: 900px) { .gate-grid { grid-template-columns: 1fr; } .gate-decision { grid-template-columns: 42px 1fr; } .gate-meta { grid-column: 1 / -1; padding: 12px 0 0; border-top: 1px solid currentColor; border-left: 0; } }
 </style>

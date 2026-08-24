@@ -8,6 +8,8 @@ services:
       AQH_OTEL_ENABLED: "true"
       AQH_OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       AQH_JAEGER_BASE_URL: http://localhost:16686
+      AQH_OPA_ENABLED: "true"
+      AQH_OPA_URL: http://opa:8181
       AQH_DEMO_AGENT_ENDPOINT: http://fake-agent:8020/invoke
       AQH_JWT_SECRET: ${AQH_JWT_SECRET:-development-only-change-me-please-use-a-random-64-character-secret}
       AQH_REFRESH_COOKIE_SECURE: "false"
@@ -17,6 +19,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      opa:
         condition: service_healthy
 
   worker:
@@ -28,6 +32,25 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      opa:
+        condition: service_healthy
+
+  opa:
+    build:
+      context: .
+      dockerfile: Dockerfile.opa
+    command:
+      - run
+      - --server
+      - --addr=0.0.0.0:8181
+      - --set=decision_logs.console=true
+    ports:
+      - "8181:8181"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8181/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   fake-agent:
     build: .

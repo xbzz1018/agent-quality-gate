@@ -78,6 +78,90 @@ class VersionRead(ApiModel):
     model: str | None
     prompt_version: str | None
     tool_schema_hash: str | None
+
+
+class SkillFileCreate(ApiModel):
+    path: str = Field(min_length=1, max_length=500)
+    content: str
+
+
+class SkillImport(ApiModel):
+    name: str = Field(min_length=1, max_length=200)
+    version: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=2000)
+    source_ref: str | None = Field(default=None, max_length=1000)
+    manifest: dict[str, Any] = Field(default_factory=dict)
+    files: list[SkillFileCreate] = Field(min_length=1, max_length=100)
+
+
+class SkillVersionRead(ApiModel):
+    id: int
+    package_id: int
+    version: str
+    sha256: str
+    source_ref: str | None
+    manifest: dict[str, Any]
+    frozen_at: datetime
+
+
+class SkillPackageRead(ApiModel):
+    id: int
+    organization_id: int
+    name: str
+    description: str
+    created_at: datetime
+
+
+class SkillImportRead(ApiModel):
+    package: SkillPackageRead
+    version: SkillVersionRead
+
+
+class SkillScanRead(ApiModel):
+    id: int
+    skill_version_id: int
+    scanner_version: str
+    status: Literal["pass", "warn", "block"]
+    findings: list[dict[str, Any]]
+    summary: dict[str, Any]
+    created_at: datetime
+
+
+class AgentVersionSkillRead(ApiModel):
+    agent_version_id: int
+    skill_version_id: int
+    attached_at: datetime
+
+
+class PolicyBundleCreate(ApiModel):
+    name: str = Field(min_length=1, max_length=200)
+    version: str = Field(min_length=1, max_length=100)
+    package_path: str = Field(min_length=1, max_length=300)
+    entrypoint: str = Field(default="decision", pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+    rego: str = Field(min_length=1, max_length=200_000)
+    data: dict[str, Any] = Field(default_factory=dict)
+
+
+class PolicyBundleRead(PolicyBundleCreate):
+    id: int
+    organization_id: int
+    sha256: str
+    status: Literal["validated", "invalid"]
+    validation_errors: list[dict[str, Any]]
+    created_at: datetime
+
+
+class PolicyEvaluationRead(ApiModel):
+    id: int
+    run_id: int
+    policy_bundle_id: int
+    decision_id: str | None
+    input_sha256: str
+    decision: Literal["ship", "warn", "block"]
+    reasons: list[dict[str, Any]]
+    latency_ms: int | None
+    error: str | None
+    evaluated_at: datetime
     metadata_json: dict[str, Any]
     created_at: datetime
 
@@ -223,6 +307,7 @@ class GatePolicyCreate(ApiModel):
     name: str = Field(min_length=1, max_length=200)
     version: str = Field(min_length=1, max_length=100)
     thresholds: dict[str, float] = Field(default_factory=dict)
+    policy_bundle_id: int | None = None
     active: bool = True
 
 
@@ -236,6 +321,7 @@ class GateResultRead(ApiModel):
     id: int
     run_id: int
     policy_id: int
+    policy_evaluation_id: int | None
     decision: GateDecision
     reasons: list[dict[str, Any]]
     metric_deltas: dict[str, Any]

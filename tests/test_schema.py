@@ -29,6 +29,12 @@ def test_postgresql_schema_compiles_with_expected_tables() -> None:
         "api_keys",
         "audit_logs",
         "system_settings",
+        "skill_packages",
+        "skill_versions",
+        "agent_version_skills",
+        "skill_scans",
+        "policy_bundles",
+        "policy_evaluations",
     }
 
     assert set(Base.metadata.tables) == expected

@@ -88,6 +88,12 @@ try {
   await desktop.page.getByRole('heading', { name: '发布门禁审计' }).waitFor()
   await desktop.page.screenshot({ path: resolve(outputDir, 'gate-audit-desktop.png'), fullPage: true })
 
+  await desktop.page.goto(`${baseUrl}/skills`, { waitUntil: 'networkidle' })
+  await desktop.page.getByRole('heading', { name: 'Skills 安全' }).waitFor()
+  await desktop.page.getByRole('tab', { name: 'Rego Policy' }).click()
+  await assertNoHorizontalOverflow(desktop.page, 'skills desktop')
+  await desktop.page.screenshot({ path: resolve(outputDir, 'skills-desktop.png'), fullPage: true })
+
   if (characterizationRunId) {
     await desktop.page.goto(`${baseUrl}/runs/${characterizationRunId}/comparison`, { waitUntil: 'networkidle' })
     await desktop.page.getByText('需要 Baseline 才能进行版本对比').waitFor()
@@ -112,6 +118,10 @@ try {
   await mobile.page.waitForTimeout(250)
   await assertNoHorizontalOverflow(mobile.page, 'run detail mobile')
   await mobile.page.screenshot({ path: resolve(outputDir, 'run-detail-mobile.png'), fullPage: true })
+  await mobile.page.goto(`${baseUrl}/skills`, { waitUntil: 'networkidle' })
+  await mobile.page.getByRole('heading', { name: 'Skills 安全' }).waitFor()
+  await assertNoHorizontalOverflow(mobile.page, 'skills mobile')
+  await mobile.page.screenshot({ path: resolve(outputDir, 'skills-mobile.png'), fullPage: true })
   await mobile.context.close()
 
   if (errors.length) throw new Error(`browser errors:\n${errors.join('\n')}`)

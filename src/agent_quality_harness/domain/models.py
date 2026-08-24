@@ -286,6 +286,75 @@ class AgentVersion(TimestampMixin, Base):
     target: Mapped[EvaluationTarget] = relationship(back_populates="versions")
 
 
+class SkillPackage(TimestampMixin, Base):
+    __tablename__ = "skill_packages"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "name", name="uq_skill_packages_org_name"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+
+class SkillVersion(Base):
+    __tablename__ = "skill_versions"
+    __table_args__ = (
+        UniqueConstraint("package_id", "version", name="uq_skill_versions_package_version"),
+        UniqueConstraint("package_id", "sha256", name="uq_skill_versions_package_sha256"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    package_id: Mapped[int] = mapped_column(
+        ForeignKey("skill_packages.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    version: Mapped[str] = mapped_column(String(100), nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_ref: Mapped[str | None] = mapped_column(Text)
+    manifest: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
+    files: Mapped[list[dict[str, Any]]] = mapped_column(JSON_VALUE, default=list, nullable=False)
+    frozen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class AgentVersionSkill(Base):
+    __tablename__ = "agent_version_skills"
+
+    agent_version_id: Mapped[int] = mapped_column(
+        ForeignKey("agent_versions.id", ondelete="CASCADE"), primary_key=True
+    )
+    skill_version_id: Mapped[int] = mapped_column(
+        ForeignKey("skill_versions.id", ondelete="RESTRICT"), primary_key=True
+    )
+    attached_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class SkillScan(Base):
+    __tablename__ = "skill_scans"
+    __table_args__ = (
+        CheckConstraint("status IN ('pass', 'warn', 'block')", name="ck_skill_scans_status"),
+        Index("ix_skill_scans_version_created", "skill_version_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    skill_version_id: Mapped[int] = mapped_column(
+        ForeignKey("skill_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    scanner_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    findings: Mapped[list[dict[str, Any]]] = mapped_column(JSON_VALUE, default=list, nullable=False)
+    summary: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class EvalDataset(TimestampMixin, Base):
     __tablename__ = "eval_datasets"
     __table_args__ = (
@@ -428,7 +497,65 @@ class GatePolicy(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     version: Mapped[str] = mapped_column(Text, nullable=False)
     thresholds: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, nullable=False)
+    policy_bundle_id: Mapped[int | None] = mapped_column(
+        ForeignKey("policy_bundles.id", ondelete="RESTRICT"), index=True
+    )
     active: Mapped[bool] = mapped_column(default=True, nullable=False)
+
+
+class PolicyBundle(TimestampMixin, Base):
+    __tablename__ = "policy_bundles"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "name", "version", name="uq_policy_bundles_org_name_version"
+        ),
+        UniqueConstraint("organization_id", "sha256", name="uq_policy_bundles_org_sha256"),
+        CheckConstraint(
+            "status IN ('validated', 'invalid')", name="ck_policy_bundles_status"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    version: Mapped[str] = mapped_column(String(100), nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    package_path: Mapped[str] = mapped_column(String(300), nullable=False)
+    entrypoint: Mapped[str] = mapped_column(String(100), default="decision", nullable=False)
+    rego: Mapped[str] = mapped_column(Text, nullable=False)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    validation_errors: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON_VALUE, default=list, nullable=False
+    )
+
+
+class PolicyEvaluation(Base):
+    __tablename__ = "policy_evaluations"
+    __table_args__ = (
+        CheckConstraint(
+            "decision IN ('ship', 'warn', 'block')", name="ck_policy_evaluations_decision"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    run_id: Mapped[int] = mapped_column(
+        ForeignKey("eval_runs.id", ondelete="CASCADE"), unique=True, nullable=False
+    )
+    policy_bundle_id: Mapped[int] = mapped_column(
+        ForeignKey("policy_bundles.id", ondelete="RESTRICT"), index=True, nullable=False
+    )
+    decision_id: Mapped[str | None] = mapped_column(String(100), index=True)
+    input_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    decision: Mapped[str] = mapped_column(String(20), nullable=False)
+    reasons: Mapped[list[dict[str, Any]]] = mapped_column(JSON_VALUE, default=list, nullable=False)
+    latency_ms: Mapped[int | None] = mapped_column(Integer)
+    error: Mapped[str | None] = mapped_column(Text)
+    evaluated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
 
 
 class GateResult(Base):
@@ -440,6 +567,9 @@ class GateResult(Base):
     )
     policy_id: Mapped[int] = mapped_column(
         ForeignKey("gate_policies.id", ondelete="RESTRICT"), index=True, nullable=False
+    )
+    policy_evaluation_id: Mapped[int | None] = mapped_column(
+        ForeignKey("policy_evaluations.id", ondelete="RESTRICT"), unique=True
     )
     decision: Mapped[GateDecision] = mapped_column(
         enum_column(GateDecision, "gate_decision"), nullable=False

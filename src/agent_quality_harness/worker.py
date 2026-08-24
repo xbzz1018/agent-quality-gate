@@ -5,6 +5,7 @@ from agent_quality_harness.core.database import Database
 from agent_quality_harness.core.telemetry import configure_tracing
 from agent_quality_harness.evaluation import InspectHarness
 from agent_quality_harness.execution import InspectRunExecutor
+from agent_quality_harness.policy import OpaClient
 from agent_quality_harness.queue import RedisRunQueue, RedisRunWorker
 
 
@@ -22,6 +23,10 @@ async def run_worker() -> None:
         harness,
         lease_seconds=settings.worker_lease_seconds,
         heartbeat_seconds=settings.worker_heartbeat_seconds,
+        opa_client=OpaClient(
+            settings.opa_url,
+            timeout_seconds=settings.opa_timeout_seconds,
+        ),
     )
     worker = RedisRunWorker(
         queue,

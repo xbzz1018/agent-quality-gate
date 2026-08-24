@@ -10,6 +10,7 @@ from agent_quality_harness.api.auth_routes import router as auth_router
 from agent_quality_harness.api.dependencies import require_organization
 from agent_quality_harness.api.public_routes import router as public_router
 from agent_quality_harness.api.routes import router
+from agent_quality_harness.api.security_routes import router as security_router
 from agent_quality_harness.core.config import Settings, get_settings
 from agent_quality_harness.core.database import Database
 from agent_quality_harness.core.telemetry import configure_telemetry
@@ -36,7 +37,7 @@ def create_app(
         if close_database is not None:
             close_database()
 
-    app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title=settings.app_name, version="0.3.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.database = database
     app.state.run_queue = run_queue
@@ -50,6 +51,11 @@ def create_app(
     )
     app.include_router(
         analytics_router,
+        prefix=settings.api_prefix,
+        dependencies=[Depends(require_organization)],
+    )
+    app.include_router(
+        security_router,
         prefix=settings.api_prefix,
         dependencies=[Depends(require_organization)],
     )

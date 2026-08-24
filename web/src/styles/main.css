@@ -96,7 +96,7 @@ a { color: inherit; text-decoration: none; }
 .scroll-panel { max-height: calc(100vh - 260px); min-height: 430px; overflow: auto; }
 .empty-state { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 28px; color: #98a2b3; text-align: center; }
 .empty-state strong { color: #475467; font-size: 14px; }
-.empty-state span { max-width: 420px; font-size: 12px; line-height: 18px; }
+.empty-state span { width: 100%; max-width: 420px; overflow-wrap: anywhere; font-size: 12px; line-height: 18px; }
 .demo-banner { margin-bottom: 14px; padding: 10px 13px; display: flex; align-items: center; gap: 9px; border: 1px solid #f0c36a; border-radius: 7px; background: #fff9e8; color: #7a4d00; font-size: 12px; }
 .mono { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; font-size: 12px; }
 .json-block { margin: 0; padding: 12px; overflow: auto; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc; color: #344054; font-size: 11px; line-height: 18px; white-space: pre-wrap; word-break: break-word; }

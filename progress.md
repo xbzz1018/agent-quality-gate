@@ -301,3 +301,11 @@
 - Recreated the complete Compose topology with a random session-only JWT secret; Runs #74/#75/#76 and all three Jaeger traces remain queryable with zero sensitive tags.
 - Docker Web rebuild after the version bump hit one npm `ECONNRESET`; the Docker install layer was changed to use a persistent npm cache and bounded fetch retries before retrying.
 - Web 0.2 Docker rebuild passed after the cache/retry change. The v0.2 release gate is complete.
+- Fast-forwarded the verified protocol branch to `main` and created `v0.2.0-protocols` at `476d256`.
+- Created `codex/skills-policy-gate`, pulled `openpolicyagent/opa:1.17.0`, and verified the real OPA v1 runtime.
+- Added six reversible tenant-scoped schema tables for Skill packages/versions/scans/attachments and Policy bundles/evaluations; Alembic upgrade, one-revision downgrade, re-upgrade, and drift checks pass.
+- Added structured Skill import limits, canonical hashes, deterministic secret/command/network/dependency/permission scanning, frozen AgentVersion bindings, and Baseline/Candidate regression APIs.
+- Added OPA Policy Bundle validation and Data API evaluation with 2-second timeout, one connection retry, strict output validation, persistent decision IDs, and fail-closed Gate composition.
+- Added the real Skills Security Vue page and OPA source/decision detail in Gate views; no fixture data is generated silently.
+- Verified the real OPA sidecar as healthy and queried a policy with a returned decision ID; moved the container to non-root UID 1000.
+- Verification: Ruff passed; full PostgreSQL/Redis/OPA suite 63 passed; Alembic no drift; API/Worker `pip check` passed; Vue typecheck, 3 Vitest tests, production build, npm audit 0 vulnerabilities, and Chrome desktop/mobile QA 0 browser errors.
