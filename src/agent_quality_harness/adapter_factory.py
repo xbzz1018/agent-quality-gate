@@ -1,9 +1,14 @@
-import json
-import os
 from dataclasses import dataclass
 from typing import Any
 
-from agent_quality_harness.adapters import AgentAdapter, HttpAgentAdapter, SseAgentAdapter
+from agent_quality_harness.adapters import (
+    AgentAdapter,
+    AgriGraphAdapter,
+    DocumentAutoflowAdapter,
+    HttpAgentAdapter,
+    SseAgentAdapter,
+)
+from agent_quality_harness.adapters.auth import resolve_auth
 from agent_quality_harness.domain.enums import TargetProtocol
 
 
@@ -18,11 +23,28 @@ class TargetSpec:
 
 
 def create_agent_adapter(target: TargetSpec) -> AgentAdapter:
-    headers = _resolve_headers(target.auth_ref)
+    profile = validate_contract_profile(target.protocol, target.capabilities)
+    auth = resolve_auth(target.auth_ref)
+    if profile == "agrigraph_v1":
+        return AgriGraphAdapter(
+            target.endpoint,
+            timeout_seconds=target.timeout_seconds,
+            auth=auth,
+            capabilities=target.capabilities,
+        )
+    if profile == "document_autoflow_v1":
+        return DocumentAutoflowAdapter(
+            target.endpoint,
+            timeout_seconds=target.timeout_seconds,
+            auth=auth,
+            capabilities=target.capabilities,
+        )
+    if auth.kind != "headers":
+        raise ValueError("standard_v1 only supports static header authentication")
     common = {
         "endpoint": target.endpoint,
         "timeout_seconds": target.timeout_seconds,
-        "headers": headers,
+        "headers": auth.headers,
     }
     if target.protocol is TargetProtocol.HTTP:
         return HttpAgentAdapter(**common)
@@ -31,15 +53,11 @@ def create_agent_adapter(target: TargetSpec) -> AgentAdapter:
     raise NotImplementedError(f"{target.protocol.value} AgentTargetAdapter is pending")
 
 
-def _resolve_headers(auth_ref: str | None) -> dict[str, str]:
-    if auth_ref is None:
-        return {}
-    raw = os.getenv(auth_ref)
-    if raw is None:
-        raise RuntimeError(f"auth reference environment variable is not set: {auth_ref}")
-    value = json.loads(raw)
-    if not isinstance(value, dict) or not all(
-        isinstance(key, str) and isinstance(item, str) for key, item in value.items()
-    ):
-        raise ValueError("auth reference must contain a JSON object of string headers")
-    return value
+def validate_contract_profile(protocol: TargetProtocol, capabilities: dict[str, Any]) -> str:
+    profile = str(capabilities.get("contract_profile", "standard_v1"))
+    supported = {"standard_v1", "agrigraph_v1", "document_autoflow_v1"}
+    if profile not in supported:
+        raise ValueError(f"unsupported contract profile: {profile}")
+    if profile != "standard_v1" and protocol is not TargetProtocol.HTTP:
+        raise ValueError(f"{profile} requires the HTTP target protocol")
+    return profile

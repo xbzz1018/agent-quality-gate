@@ -42,6 +42,7 @@ from .dependencies import (
     require_permission,
 )
 from .schemas import (
+    BaselineRequiredRead,
     CaseResultRead,
     DatasetCaseRead,
     DatasetDetail,
@@ -260,6 +261,7 @@ def post_dataset(payload: DatasetImport, request: Request, session: SessionDepen
         version=dataset.version,
         split=dataset.split,
         sha256=dataset.sha256,
+        provenance=dataset.provenance,
         frozen_at=dataset.frozen_at,
         case_count=case_count,
     )
@@ -301,6 +303,7 @@ def list_datasets(
             version=item.version,
             split=item.split,
             sha256=item.sha256,
+            provenance=item.provenance,
             frozen_at=item.frozen_at,
             case_count=int(
                 session.scalar(
@@ -336,6 +339,7 @@ def get_dataset(dataset_id: int, request: Request, session: SessionDependency):
         version=dataset.version,
         split=dataset.split,
         sha256=dataset.sha256,
+        provenance=dataset.provenance,
         frozen_at=dataset.frozen_at,
         case_count=len(cases),
         cases=[DatasetCaseRead.model_validate(case) for case in cases],
@@ -598,15 +602,26 @@ def get_run_comparison(run_id: int, request: Request, session: SessionDependency
     run = _tenant_run(session, run_id, current_organization_id(request))
     if run is None:
         raise HTTPException(status_code=404, detail="eval run not found")
+    candidate = aggregate_metrics(_metric_rows(session, run_id, VersionRole.CANDIDATE))
+    if run.baseline_version_id is None:
+        return BaselineRequiredRead(run_id=run_id, candidate=candidate)
     metrics = {
         role.value: aggregate_metrics(_metric_rows(session, run_id, role))
         for role in (VersionRole.BASELINE, VersionRole.CANDIDATE)
     }
-    return {"run_id": run_id, **metrics}
+    return {"status": "ready", "run_id": run_id, **metrics}
 
 
-@router.get("/eval-runs/{run_id}/gate", response_model=GateResultRead)
+@router.get(
+    "/eval-runs/{run_id}/gate",
+    response_model=GateResultRead | BaselineRequiredRead,
+)
 def get_run_gate(run_id: int, request: Request, session: SessionDependency):
+    run = _tenant_run(session, run_id, current_organization_id(request))
+    if run is None:
+        raise HTTPException(status_code=404, detail="eval run not found")
+    if run.baseline_version_id is None:
+        return BaselineRequiredRead(run_id=run_id)
     result = session.scalar(
         select(GateResult)
         .join(EvalRun, EvalRun.id == GateResult.run_id)

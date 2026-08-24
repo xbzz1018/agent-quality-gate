@@ -302,6 +302,7 @@ class EvalDataset(TimestampMixin, Base):
     version: Mapped[str] = mapped_column(Text, nullable=False)
     split: Mapped[str] = mapped_column(Text, default="test", nullable=False)
     sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    provenance: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
     frozen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     cases: Mapped[list["EvalCase"]] = relationship(

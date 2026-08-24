@@ -6,7 +6,7 @@ Build a runnable, testable Agent evaluation, observability, replay, and release-
 
 ## Current Phase
 
-Phase 3.5 - Multi-tenant administration and Chenguang-aligned console upgrade (complete)
+Phase 3.75 - Trace, cancellation, and real-target verification (in progress)
 
 ## Status Semantics
 
@@ -58,7 +58,7 @@ Phase 3.5 - Multi-tenant administration and Chenguang-aligned console upgrade (c
 - [x] Bind all product states to real APIs; label demo fixtures explicitly.
 - [x] Add the Web service and same-origin API proxy to Docker Compose.
 - [x] Verify TypeScript, tests, production build, real-API E2E, and Chrome desktop/mobile rendering.
-- **Status:** complete for local MVP; Compose configuration is validated, while Web image pull/runtime and Collector/Jaeger export remain pending environment checks
+- **Status:** complete for local MVP; Collector/Jaeger export is verified, while the production Web image runtime remains a separate deployment check
 
 ### Phase 3.5: Multi-tenant administration and console upgrade
 
@@ -70,7 +70,21 @@ Phase 3.5 - Multi-tenant administration and Chenguang-aligned console upgrade (c
 - [x] Add the `aqh admin bootstrap --password-stdin` path and API-key-aware Gate CLI.
 - [x] Upgrade the Vue shell to the captured Chenguang operations-console density and add login, organization switching, cost, audit, and administration workflows.
 - [x] Verify migration reversibility, auth/RBAC/tenant isolation, backend suites, Web type/test/build/audit, and Chrome desktop/mobile flows.
-- **Status:** complete for the local multi-tenant console; Collector/Jaeger export remains the separate pending integration boundary
+- **Status:** complete for the local multi-tenant console; Collector/Jaeger export was verified in Phase 3.75
+
+### Phase 3.75: Trace, cancellation, and real-target verification
+
+- [x] Seal the verified multi-tenant MVP on `codex/real-target-verification`.
+- [x] Verify API/Worker export through Collector into a queryable Jaeger Trace.
+- [x] Keep the Worker lease alive during long Inspect batches and verify cooperative cancellation.
+- [x] Add versioned `agrigraph_v1` and `document_autoflow_v1` HTTP contract profiles.
+- [x] Return `baseline_required` for candidate-only comparison and Gate requests.
+- [x] Freeze source fingerprints and normalized real-target dataset manifests.
+- [x] Complete the 40-case AgriGraph candidate-only characterization.
+- [x] Complete a one-case Document Autoflow live Profile smoke characterization.
+- [ ] Complete the 24-case Document Autoflow characterization; Run #54 failed when the target entered a long REPROCESS activity.
+- [x] Re-run backend, migration, Web, Compose, and Trace verification.
+- **Status:** in_progress; platform work is verified, while the 24-case Document Autoflow target round remains pending on target workflow behavior
 
 ### Phase 4: Protocol and safety enhancements
 
@@ -86,10 +100,12 @@ Phase 3.5 - Multi-tenant administration and Chenguang-aligned console upgrade (c
 
 ### Phase 5: Real-system targets
 
-- [ ] Register AgriGraph as a real target without modifying its repository.
-- [ ] Register Document Autoflow as a real target without modifying its repository.
-- [ ] Freeze cross-project contract fixtures and record reproducible reports.
-- **Status:** pending
+- [x] Register AgriGraph as a real target without modifying its repository.
+- [x] Register Document Autoflow as a real target without modifying its repository.
+- [x] Freeze cross-project contract fixtures and source fingerprints.
+- [x] Record an AgriGraph 40-case characterization and a Document Autoflow live smoke result.
+- [ ] Record the complete 24-case Document Autoflow characterization after its REPROCESS path has a bounded terminal outcome.
+- **Status:** partially complete; no Baseline or release Gate is fabricated for either target
 
 ### Phase 6: Distributed deployment enhancements
 

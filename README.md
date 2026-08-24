@@ -8,7 +8,9 @@ Agent 的自动化评测、调用链追踪、失败回放和 CI 发布门禁平�
 - Verified：运行前 Dataset 哈希复核、同 Target 默认约束、pending Adapter 预检、真实 Trace ID、失败 case 回放、queued 取消、版本对比和 SHIP/WARN/BLOCK 边界。
 - Complete multi-tenant management：Organization、全局 User/多组织 Membership、动态 Role/Permission、Argon2id、15 分钟 Access JWT、7 天轮换 Refresh Session、组织级 Service Account/API Key 和脱敏审计。
 - Complete Web MVP：Vue 3 + TypeScript + Element Plus + Vite 操作台；登录/组织切换、目标/版本、数据集、运行、Case/Trace 双栏、版本对比、发布门禁、成本、审计和系统管理均使用真实 API。
-- Pending：Collector/Jaeger 端到端导出、running 取消的慢目标验收、AgriGraph/Document Autoflow 真实轮次、AG-UI、Agent Skills/OPA、DeepAgents、A2A、MCP。
+- Verified hardening：Collector/Jaeger 端到端导出、长批次 lease heartbeat、running 协作取消、Candidate-only `baseline_required`。
+- Real targets：AgriGraph 40/40 characterization 完成；Document Autoflow 1/1 Profile 烟测完成，24 条整轮因目标 REPROCESS 长任务保持 Pending。
+- Pending：Document Autoflow 24 条完整轮次、AG-UI、Agent Skills/OPA、DeepAgents、A2A、MCP。
 - Optional：Kafka、Kubernetes、MCP Tasks、Hermes 兼容。
 
 Redis Worker 在 MVP 中领取整个 EvalRun，case 并发由 Inspect AI 控制。HTTP/SSE/A2A 属于 AgentTargetAdapter，MCP 属于 ToolTargetAdapter。
@@ -64,6 +66,12 @@ Web：`http://127.0.0.1:5173`。API 文档：`http://127.0.0.1:8010/docs`。平�
 docker compose up -d --build api worker fake-agent web postgres redis otel-collector jaeger
 ```
 
+Collector 健康端点为 `http://127.0.0.1:13133/`，Jaeger 为 `http://127.0.0.1:16686`。真实 Trace 验证：
+
+```powershell
+python scripts/verify_telemetry.py --trace-id <trace-id> --expected-service agent-quality-harness-worker
+```
+
 进入 Web 后点击“初始化 Demo Fixture”会创建明确标记的 Fake Agent Target、Baseline/Candidate、80 条冻结样例、GatePolicy 和 PricingSnapshot。该操作不伪造评测结果，仍需创建运行并由 Worker 实际执行。
 
 ## 验证
@@ -90,4 +98,30 @@ aqh gate --run-id 123 --api-url http://127.0.0.1:8010
 aqh gate --report tests/fixtures/gate-ship.json
 ```
 
-`SHIP/WARN` 返回 0，`BLOCK/FAILED` 返回非零。`datasets/` 中的 80 条 core 和 20 条 stability 数据均明确标记为 Demo Fixture；两个真实系统的配置模板尚未完成 live verification。
+`SHIP/WARN` 返回 0，`BLOCK/FAILED` 返回非零。`datasets/` 中的 80 条 core 和 20 条 stability 数据均明确标记为 Demo Fixture；两个真实 Profile 均已 live verification，但 Document Autoflow 24 条完整轮次仍为 Pending。
+
+## 真实目标 Characterization
+
+冻结并复核真实目标数据：
+
+```powershell
+python scripts/freeze_real_targets.py --check
+```
+
+`auth_ref` 只保存环境变量名。变量值支持旧版静态 Header JSON，以及以下登录模式；真实值不得写入 Git：
+
+```json
+{"type":"bearer_login","username":"...","password":"..."}
+{"type":"cookie_login","username":"...","password":"..."}
+```
+
+执行 Candidate-only 运行：
+
+```powershell
+$env:AQH_OTEL_ENABLED = "true"
+$env:AQH_OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:4317"
+python scripts/run_real_characterization.py agrigraph
+python scripts/run_real_characterization.py document-autoflow --capabilities .tmp/document-autoflow-capabilities.json
+```
+
+没有 Baseline 时，Comparison/Gate 返回 `baseline_required`，不会生成 SHIP/WARN/BLOCK。当前实测记录：AgriGraph Run `#53` 为 40/40 completed、32/40 规则通过、费用 UNKNOWN；Document Autoflow Run `#55` 为 1/1 completed、模型费用 `$0.00158228`。Document 完整 Run `#54` 因目标 REPROCESS 超过 600 秒而失败，仍保留为审计证据。

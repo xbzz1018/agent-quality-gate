@@ -76,9 +76,10 @@ services:
       - ./deploy/otel-collector.yaml:/etc/otelcol/config.yaml:ro
     ports:
       - "4317:4317"
+      - "13133:13133"
     depends_on:
       jaeger:
-        condition: service_started
+        condition: service_healthy
 
   jaeger:
     image: jaegertracing/all-in-one:1.73.0
@@ -87,6 +88,12 @@ services:
     ports:
       - "16686:16686"
       - "4318:4318"
+      - "14269:14269"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:14269/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
 volumes:
   postgres_data:

@@ -6,13 +6,14 @@ import type {
   AuditLog,
   AuthUser,
   CaseResult,
-  Comparison,
+  ComparisonResponse,
   DashboardSummary,
   Dataset,
   DemoBootstrapResult,
   EvalRun,
   GatePolicy,
   GateResult,
+  GateResponse,
   LoginResult,
   Member,
   Organization,
@@ -121,9 +122,9 @@ export const api = {
   replayRun: (runId: number, caseIds?: string[]) =>
     http.post<EvalRun>(`/eval-runs/${runId}/replay`, { case_ids: caseIds }).then(({ data }) => data),
   comparison: (runId: number) =>
-    http.get<Comparison>(`/eval-runs/${runId}/comparison`).then(({ data }) => data),
+    http.get<ComparisonResponse>(`/eval-runs/${runId}/comparison`).then(({ data }) => data),
   gate: (runId: number) =>
-    http.get<GateResult>(`/eval-runs/${runId}/gate`).then(({ data }) => data),
+    http.get<GateResponse>(`/eval-runs/${runId}/gate`).then(({ data }) => data),
   gateAudits: (params: Record<string, unknown> = {}) =>
     http.get<Page<GateResult>>('/gate-audits', { params }).then(({ data }) => data),
   policies: () => http.get<GatePolicy[]>('/gate-policies').then(({ data }) => data),

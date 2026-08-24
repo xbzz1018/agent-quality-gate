@@ -21,6 +21,7 @@ async def run_worker() -> None:
         database,
         harness,
         lease_seconds=settings.worker_lease_seconds,
+        heartbeat_seconds=settings.worker_heartbeat_seconds,
     )
     worker = RedisRunWorker(
         queue,

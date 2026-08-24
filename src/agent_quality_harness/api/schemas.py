@@ -108,6 +108,7 @@ class DatasetImport(ApiModel):
     name: str = Field(min_length=1, max_length=200)
     version: str = Field(min_length=1, max_length=200)
     split: str = Field(default="test", min_length=1, max_length=50)
+    provenance: dict[str, Any] = Field(default_factory=dict)
     cases: list[DatasetCaseImport] = Field(min_length=1)
 
 
@@ -118,6 +119,7 @@ class DatasetRead(ApiModel):
     version: str
     split: str
     sha256: str
+    provenance: dict[str, Any]
     frozen_at: datetime
     case_count: int
 
@@ -238,6 +240,13 @@ class GateResultRead(ApiModel):
     reasons: list[dict[str, Any]]
     metric_deltas: dict[str, Any]
     evaluated_at: datetime
+
+
+class BaselineRequiredRead(ApiModel):
+    status: Literal["baseline_required"] = "baseline_required"
+    run_id: int
+    detail: str = "A baseline version is required for comparison and release-gate evaluation"
+    candidate: dict[str, Any] | None = None
 
 
 class PricingSnapshotCreate(ApiModel):

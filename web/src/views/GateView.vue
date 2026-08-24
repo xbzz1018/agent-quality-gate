@@ -5,6 +5,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import StatusTag from '@/components/StatusTag.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import { api, apiError } from '@/services/api'
 import type { EvalRun, GatePolicy, GateResult } from '@/types/api'
 import { formatDate, pretty } from '@/utils/format'
@@ -14,6 +15,7 @@ const router = useRouter()
 const runId = Number(route.params.id)
 const run = ref<EvalRun | null>(null)
 const gate = ref<GateResult | null>(null)
+const baselineRequired = ref(false)
 const policy = ref<GatePolicy | null>(null)
 const loading = ref(true)
 
@@ -28,8 +30,12 @@ onMounted(async () => {
   try {
     const [runRow, gateRow, policies] = await Promise.all([api.run(runId), api.gate(runId), api.policies()])
     run.value = runRow
-    gate.value = gateRow
-    policy.value = policies.find((item) => item.id === gateRow.policy_id) ?? null
+    if ('status' in gateRow) {
+      baselineRequired.value = true
+    } else {
+      gate.value = gateRow
+      policy.value = policies.find((item) => item.id === gateRow.policy_id) ?? null
+    }
   } catch (error) {
     ElMessage.error(apiError(error))
   } finally {
@@ -42,8 +48,10 @@ onMounted(async () => {
   <div class="page" v-loading="loading">
     <div class="page-header">
       <div><ElButton link @click="router.push(`/runs/${runId}`)"><ArrowLeft :size="14" /> 返回运行详情</ElButton><h1 class="page-title gate-title">发布门禁</h1><p class="page-subtitle">Run #{{ runId }} · 版本化策略与实际触发值</p></div>
-      <ElButton @click="router.push(`/runs/${runId}/comparison`)">查看版本对比</ElButton>
+      <ElButton v-if="!baselineRequired" @click="router.push(`/runs/${runId}/comparison`)">查看版本对比</ElButton>
     </div>
+
+    <section v-if="baselineRequired" class="panel baseline-required"><EmptyState title="需要 Baseline 才能执行发布门禁" description="当前运行只刻画 Candidate 质量，平台不会生成 SHIP、WARN 或 BLOCK。" /></section>
 
     <section v-if="gate" class="gate-decision" :class="`gate-decision--${gate.decision}`">
       <component :is="icon" :size="38" />
@@ -73,5 +81,6 @@ onMounted(async () => {
 .ship-empty { min-height: 210px; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--success); font-size: 12px; }
 .policy-heading { margin: 2px 0 7px; font-size: 11px; }
 .policy-heading + .json-block { margin-bottom: 14px; }
+.baseline-required { min-height: 320px; display: grid; place-items: center; }
 @media (max-width: 900px) { .gate-grid { grid-template-columns: 1fr; } .gate-decision { grid-template-columns: 42px 1fr; } .gate-meta { grid-column: 1 / -1; padding: 12px 0 0; border-top: 1px solid currentColor; border-left: 0; } }
 </style>

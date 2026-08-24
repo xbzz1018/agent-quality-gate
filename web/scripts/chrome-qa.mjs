@@ -7,6 +7,7 @@ const baseUrl = process.env.AQH_WEB_URL ?? 'http://127.0.0.1:5173'
 const username = process.env.AQH_QA_USERNAME
 const password = process.env.AQH_QA_PASSWORD
 const runId = Number(process.env.AQH_QA_RUN_ID)
+const characterizationRunId = Number(process.env.AQH_QA_CHARACTERIZATION_RUN_ID)
 const switchOrganization = process.env.AQH_QA_SWITCH_ORGANIZATION
 if (!username || !password || !runId) {
   throw new Error('AQH_QA_USERNAME, AQH_QA_PASSWORD and AQH_QA_RUN_ID are required')
@@ -85,6 +86,13 @@ try {
   await desktop.page.goto(`${baseUrl}/gate-audits`, { waitUntil: 'networkidle' })
   await desktop.page.getByRole('heading', { name: '发布门禁审计' }).waitFor()
   await desktop.page.screenshot({ path: resolve(outputDir, 'gate-audit-desktop.png'), fullPage: true })
+
+  if (characterizationRunId) {
+    await desktop.page.goto(`${baseUrl}/runs/${characterizationRunId}/comparison`, { waitUntil: 'networkidle' })
+    await desktop.page.getByText('需要 Baseline 才能进行版本对比').waitFor()
+    await desktop.page.goto(`${baseUrl}/runs/${characterizationRunId}/gate`, { waitUntil: 'networkidle' })
+    await desktop.page.getByText('需要 Baseline 才能执行发布门禁').waitFor()
+  }
 
   await desktop.page.goto(`${baseUrl}/admin/members`, { waitUntil: 'networkidle' })
   await desktop.page.getByRole('heading', { name: '系统管理' }).waitFor()

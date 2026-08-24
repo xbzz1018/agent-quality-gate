@@ -122,7 +122,7 @@ onMounted(load)
       <ElTable v-if="runs.length" v-loading="loading" :data="runs" row-key="id" @row-click="openRun">
         <ElTableColumn label="Run" width="90"><template #default="{ row }"><a class="table-link">#{{ row.id }}</a></template></ElTableColumn>
         <ElTableColumn label="状态" width="110"><template #default="{ row }"><StatusTag :value="row.status" /></template></ElTableColumn>
-        <ElTableColumn label="Baseline" min-width="125"><template #default="{ row }">{{ versionLabel(row.baseline_version_id) }}</template></ElTableColumn>
+        <ElTableColumn label="Baseline" min-width="125"><template #default="{ row }"><span v-if="row.baseline_version_id">{{ versionLabel(row.baseline_version_id) }}</span><ElTag v-else size="small" type="info">特征评测</ElTag></template></ElTableColumn>
         <ElTableColumn label="Candidate" min-width="125"><template #default="{ row }"><strong>{{ versionLabel(row.candidate_version_id) }}</strong></template></ElTableColumn>
         <ElTableColumn label="Cases" width="110"><template #default="{ row }">{{ row.completed_case_count }} / {{ row.expected_case_count }}</template></ElTableColumn>
         <ElTableColumn label="来源" width="120"><template #default="{ row }"><ElTag v-if="row.manifest?.dataset?.name?.includes('demo')" type="warning" size="small">Demo Fixture</ElTag><span v-else>真实配置</span></template></ElTableColumn>
@@ -137,10 +137,10 @@ onMounted(load)
       <ElForm label-position="top">
         <ElFormItem label="被测目标" required><ElSelect v-model="form.target_id" filterable placeholder="选择目标"><ElOption v-for="target in catalog.targets" :key="target.id" :label="target.name" :value="target.id" /></ElSelect></ElFormItem>
         <ElFormItem label="冻结数据集" required><ElSelect v-model="form.dataset_id" filterable placeholder="选择数据集"><ElOption v-for="dataset in catalog.datasets" :key="dataset.id" :label="`${dataset.name} · ${dataset.version} · ${dataset.case_count} cases`" :value="dataset.id" /></ElSelect></ElFormItem>
-        <div class="form-grid"><ElFormItem label="Baseline" required><ElSelect v-model="form.baseline_version_id" placeholder="选择版本"><ElOption v-for="version in targetVersions" :key="version.id" :label="version.version" :value="version.id" :disabled="version.id === form.candidate_version_id" /></ElSelect></ElFormItem><ElFormItem label="Candidate" required><ElSelect v-model="form.candidate_version_id" placeholder="选择版本"><ElOption v-for="version in targetVersions" :key="version.id" :label="version.version" :value="version.id" :disabled="version.id === form.baseline_version_id" /></ElSelect></ElFormItem></div>
+        <div class="form-grid"><ElFormItem label="Baseline（可选）"><ElSelect v-model="form.baseline_version_id" clearable placeholder="留空为特征评测"><ElOption v-for="version in targetVersions" :key="version.id" :label="version.version" :value="version.id" :disabled="version.id === form.candidate_version_id" /></ElSelect></ElFormItem><ElFormItem label="Candidate" required><ElSelect v-model="form.candidate_version_id" placeholder="选择版本"><ElOption v-for="version in targetVersions" :key="version.id" :label="version.version" :value="version.id" :disabled="version.id === form.baseline_version_id" /></ElSelect></ElFormItem></div>
         <div class="form-grid"><ElFormItem label="Gate Policy"><ElSelect v-model="form.gate_policy_id" clearable placeholder="使用当前 active policy"><ElOption v-for="policy in catalog.policies" :key="policy.id" :label="`${policy.name} · ${policy.version}`" :value="policy.id" /></ElSelect></ElFormItem><ElFormItem label="Pricing Snapshot"><ElSelect v-model="form.pricing_snapshot_id" clearable placeholder="未知费用"><ElOption v-for="item in catalog.pricing" :key="item.id" :label="`${item.provider}/${item.model} · ${item.version}`" :value="item.id" /></ElSelect></ElFormItem></div>
       </ElForm>
-      <template #footer><ElButton @click="dialog = false">取消</ElButton><ElButton type="primary" :loading="saving" :disabled="!form.dataset_id || !form.baseline_version_id || !form.candidate_version_id" @click="createRun">进入评测队列</ElButton></template>
+      <template #footer><ElButton @click="dialog = false">取消</ElButton><ElButton type="primary" :loading="saving" :disabled="!form.dataset_id || !form.candidate_version_id" @click="createRun">进入评测队列</ElButton></template>
     </ElDialog>
   </div>
 </template>

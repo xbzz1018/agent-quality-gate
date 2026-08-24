@@ -1,5 +1,67 @@
 # Progress Log
 
+## Session: 2026-08-24 - Trace and real-target verification
+
+### Phase 3.75: Baseline seal
+
+- **Status:** complete
+- Actions taken:
+  - Created `codex/real-target-verification` without changing either real target repository.
+  - Cold-started the project PostgreSQL and Redis services.
+  - Verified Ruff, the 34-test backend suite with real PostgreSQL/Redis, Alembic drift, Web TypeScript, 3 Vitest tests, the production build, npm audit, and Compose configuration.
+  - Scanned 587 source files without printing candidate secret values; matches were limited to package cache and explicit test password fixtures.
+  - Committed the verified multi-tenant MVP as `bd916e5`.
+
+### Phase 3.75: Trace, cancellation, and target profiles
+
+- **Status:** in_progress
+- Implemented so far:
+  - Added continuous Worker lease heartbeat while an Inspect batch is running and ownership fencing before subsequent batches.
+  - Verified a slow first Case remains non-recoverable after the original lease deadline; a running cancel persists that Case once and prevents the second Case.
+  - Added candidate-only `baseline_required` responses and matching Vue states without fabricated Gate decisions.
+  - Added versioned `agrigraph_v1` and `document_autoflow_v1` adapters with environment-referenced login credentials and offline HTTP contract tests.
+  - Added Target contract profile and capabilities to the immutable EvalRun manifest.
+  - Pulled and started the pinned Collector and Jaeger images; Collector, Jaeger admin, and Jaeger UI health probes return HTTP 200.
+  - Queried API and Worker services in Jaeger. The Worker smoke Trace contains `eval.case`, `agent.invoke`, and HTTP spans with zero sensitive tags.
+  - Froze 40 AgriGraph generation cases and 24 Document Autoflow v2.1 Dev cases with commit, dirty-state, source-tree, source-dataset, and report hashes.
+  - Completed AgriGraph Run #53: 40 results, 32 passed deterministic Case rules, 198573 input and 18483 output tokens, unknown cost, no Gate, and a 161-span Jaeger Trace.
+  - Preserved failed Document full Run #54 after the target entered REPROCESS beyond the 600-second profile limit; the exact remote workflow was cancelled and its database state converged to cancelled.
+  - Completed Document Autoflow smoke Run #55: 1 result passed, 6900 input and 2201 output tokens, USD 0.00158228, no Gate, and a 13-span Jaeger Trace.
+  - Removed the first failed preparation fixture by exact ID: 10 database documents and 10 runtime files; the 24-document evidence project remains.
+- Boundaries:
+  - AgriGraph and Document Autoflow remain read-only source worktrees; no source edit, cleanup, test rerun, or commit is permitted.
+  - No interview script or presentation material will be produced.
+
+### Phase 3.75 Errors
+
+| Error | Attempt | Resolution |
+|---|---:|---|
+| Initial multi-file patch did not match the actual route import order | 1 | Split the patch into exact, smaller hunks; no partial write occurred. |
+| Structured login auth JSON was mistaken for legacy static headers | 1 | Only treat an object without a `type` field as the legacy format. |
+| Web TypeScript was first invoked from the repository root | 1 | Re-run from `web/`, where `package.json` lives. |
+| Initial Gate union narrowing retained `BaselineRequired` in the else branch | 1 | Narrow solely on the discriminating presence of `status`. |
+| AgriGraph Run #52 captured zero results because its login response uses `data.token` | 1 | Preserve failed Run #52, add the documented `token` key alongside existing aliases, and verify with the profile contract test before retrying. |
+| Document preparation exceeded the 10-document project limit after 10 uploads | 1 | Restart the API with an explicit 30-document limit and add a SHA-based reuse path instead of re-uploading. |
+| Document preparation timed out with 4 parses pending; all 24 later completed | 1 | Reuse the fully parsed project and write capabilities without repeating parsing. |
+| Document AQH Run #54 timed out while the second target Run was reprocessing | 1 | Preserve failed Run #54, hard-cancel its exact Temporal workflow, converge the target DB state to cancelled, treat `waiting_review` as a terminal business outcome, and limit the verification retry to one explicit smoke Case. |
+| The first Temporal cancel one-liner was broken by Windows/Conda quoting | 1 | Replace shell quoting with a typed Temporal SDK script and cancel the exact workflow ID. |
+| The cancelled REPROCESS changed one reused source document to failed | 1 | Do not hide the damaged 24-case state; add an explicit one-case preparation limit for the live Profile smoke. |
+
+### Phase 3.75 Final Verification
+
+| Check | Result |
+|---|---|
+| Ruff format/lint | Passed |
+| Full backend suite with PostgreSQL/Redis | 43 passed |
+| Alembic migration round-trip | Passed in isolated `agent_quality_migration_verify`; temporary database removed |
+| Alembic drift | No new upgrade operations detected |
+| Web TypeScript / Vitest | Passed / 3 passed |
+| Web production build / npm audit | Passed with existing ECharts advisory / 0 vulnerabilities |
+| Chrome desktop/mobile | Run #18 core routes plus Run #55 `baseline_required`; 0 browser errors |
+| Compose / frozen dataset reproducibility | Passed / 40 AgriGraph + 24 Document cases unchanged |
+| OTel Collector / Jaeger | API and Worker services queryable; sensitive tags 0 |
+| Real targets | AgriGraph 40-case complete; Document 1-case smoke complete; Document 24-case pending |
+
 ## Session: 2026-08-21
 
 ## Session: 2026-08-22 - Multi-tenant management upgrade

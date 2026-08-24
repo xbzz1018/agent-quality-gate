@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import re
 import socket
-from collections.abc import Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -64,12 +65,14 @@ class InspectRunExecutor:
         adapter_factory: Callable[[TargetSpec], AgentAdapter] = create_agent_adapter,
         *,
         lease_seconds: int = 60,
+        heartbeat_seconds: float = 10,
         worker_id: str | None = None,
     ) -> None:
         self.database = database
         self.harness = harness
         self.adapter_factory = adapter_factory
         self.lease_seconds = lease_seconds
+        self.heartbeat_seconds = max(0.01, heartbeat_seconds)
         self.worker_id = worker_id or f"{socket.gethostname()}-{uuid4().hex[:8]}"
 
     async def execute(self, run_id: int) -> None:
@@ -102,7 +105,7 @@ class InspectRunExecutor:
                             protocol=version.target.protocol.value,
                             capture=version_captures,
                         )
-                        logs = await self.harness.run_async(task)
+                        logs = await self._run_with_heartbeat(run_id, self.harness.run_async(task))
                         if len(logs) != 1 or logs[0].status != "success":
                             raise RuntimeError(f"Inspect AI failed for {version.role.value}")
                         expected_ids = {case.id for case in batch}
@@ -113,7 +116,8 @@ class InspectRunExecutor:
                                 f"expected {len(batch)}, got {len(version_captures)}"
                             )
                         captures.extend((version.role, item) for item in version_captures)
-                        self._heartbeat(run_id)
+                        if not self._heartbeat(run_id):
+                            raise RuntimeError("worker lease ownership lost")
                     if cancelled:
                         break
             self._persist(execution, captures, cancelled=cancelled)
@@ -395,15 +399,38 @@ class InspectRunExecutor:
             status = session.scalar(select(EvalRun.status).where(EvalRun.id == run_id))
             return status is RunStatus.CANCEL_REQUESTED
 
-    def _heartbeat(self, run_id: int) -> None:
+    async def _run_with_heartbeat(self, run_id: int, work: Awaitable[Any]) -> Any:
+        task = asyncio.ensure_future(work)
+        try:
+            while True:
+                done, _ = await asyncio.wait({task}, timeout=self.heartbeat_seconds)
+                if task in done:
+                    return task.result()
+                owned = await asyncio.to_thread(self._heartbeat, run_id)
+                if not owned:
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
+                    raise RuntimeError("worker lease ownership lost")
+        except BaseException:
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            raise
+
+    def _heartbeat(self, run_id: int) -> bool:
         now = datetime.now(UTC)
         with self.database.session() as session:
             run = session.get(EvalRun, run_id)
-            if run is None or run.worker_id != self.worker_id:
-                return
+            if (
+                run is None
+                or run.worker_id != self.worker_id
+                or run.status in {RunStatus.COMPLETED, RunStatus.CANCELLED, RunStatus.FAILED}
+            ):
+                return False
             run.heartbeat_at = now
             run.lease_expires_at = now + timedelta(seconds=self.lease_seconds)
             session.commit()
+            return True
 
     def _mark_failed(self, run_id: int, exc: Exception) -> None:
         with self.database.session() as session:

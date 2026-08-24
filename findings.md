@@ -79,6 +79,22 @@
 - Service API keys are fixed to one organization, store only SHA-256 hashes plus display prefix, are returned in plaintext once, and can be revoked independently.
 - The operations console now uses captured Chenguang proportions while its dashboard, cost chart, failure table, Gate audit, and management views are backed by live API data rather than copied mocks.
 
+## Real-target Verification Findings
+
+- The multi-tenant MVP is sealed at `bd916e5` on `codex/real-target-verification` before target-specific work begins.
+- AgriGraph exposes authenticated `/api/v1/evaluation/answer` and returns answer, citation, grounding, workflow, model-usage, cost, and run identifiers suitable for a contract profile.
+- Document Autoflow is an asynchronous authenticated workflow: create a project run, poll or follow run events, read candidates and validation, and optionally cancel the remote run.
+- Both target repositories currently contain substantial user-owned uncommitted work. Target manifests must record commit, `dirty=true`, and a deterministic source fingerprint; the Harness must not modify those repositories.
+- Candidate-only characterization is supported by the existing EvalRun model. It must not fabricate a comparison or Gate decision when no baseline exists.
+- Collector and Jaeger images are not currently present locally. A bounded pull and real Trace query are required before export can be marked complete.
+- Long Inspect batches previously refreshed the lease only after a batch completed. The executor now runs a periodic heartbeat concurrently and aborts if database lease ownership is lost.
+- Candidate-only Runs are valid characterization records. Comparison and Gate APIs now use the explicit `baseline_required` state, and the Web console does not expose publication actions for those Runs.
+- The authentication reference remains backward compatible with a plain string-to-string Header object; structured `bearer_login` and `cookie_login` values are resolved only from the named environment variable and redact credential fields from object representations.
+- Collector and Jaeger images are now locally available and verified. Jaeger returned both `agent-quality-harness-api` and `agent-quality-harness-worker`; tested Trace tags contained no authorization, password, cookie, prompt, API-key, or reasoning content.
+- AgriGraph Run #53 is a genuine 40-case candidate-only characterization: 40 results persisted, 32 passed all critical deterministic rules, token usage is known, pricing is unknown, and no Gate exists.
+- Document Autoflow's workflow treats `waiting_review` as a long-lived Temporal wait, so the adapter must treat it as a terminal business outcome. Its REPROCESS activity can run for 30 minutes and does not observe a cancellation signal until the activity returns.
+- Document full Run #54 is a real failed integration result, not a platform completion claim. Run #55 proves the live cookie-login/create/poll/map/Trace path for one frozen sample; the 24-case acceptance remains pending.
+
 ### Selected UI Design System
 
 - App shell: fixed 256px white sidebar, 64px white breadcrumb header, and a cool gray full-height work area; mobile uses a navigation drawer.

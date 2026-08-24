@@ -117,6 +117,7 @@ export interface Dataset {
   version: string
   split: string
   sha256: string
+  provenance: Record<string, unknown>
   frozen_at: string
   case_count: number
   cases?: DatasetCase[]
@@ -207,9 +208,17 @@ export interface Metrics {
 }
 
 export interface Comparison {
+  status: 'ready'
   run_id: number
   baseline: Metrics
   candidate: Metrics
+}
+
+export interface BaselineRequired {
+  status: 'baseline_required'
+  run_id: number
+  detail: string
+  candidate: Metrics | null
 }
 
 export interface GateReason {
@@ -228,6 +237,9 @@ export interface GateResult {
   metric_deltas: Record<string, unknown>
   evaluated_at: string
 }
+
+export type ComparisonResponse = Comparison | BaselineRequired
+export type GateResponse = GateResult | BaselineRequired
 
 export interface GatePolicy {
   id: number

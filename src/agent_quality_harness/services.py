@@ -8,6 +8,7 @@ from pathlib import Path
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from agent_quality_harness.adapter_factory import validate_contract_profile
 from agent_quality_harness.api.schemas import (
     DatasetImport,
     DemoBootstrapRead,
@@ -216,6 +217,7 @@ def import_dataset(
         version=payload.version,
         split=payload.split,
         sha256=_sha256(dataset_document),
+        provenance=dict(payload.provenance),
         frozen_at=datetime.now(UTC),
     )
     for ordinal, (case, case_hash) in enumerate(case_rows):
@@ -261,6 +263,7 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
         raise ValueError(
             f"{candidate_target.protocol.value} Adapter pending; only HTTP/SSE can execute"
         )
+    validate_contract_profile(candidate_target.protocol, dict(candidate_target.capabilities))
     baseline: AgentVersion | None = None
     if payload.baseline_version_id is not None:
         baseline = session.scalar(
@@ -282,6 +285,7 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
             raise ValueError(
                 f"{baseline_target.protocol.value} Adapter pending; only HTTP/SSE can execute"
             )
+        validate_contract_profile(baseline_target.protocol, dict(baseline_target.capabilities))
         if baseline.target_id != candidate.target_id and not payload.benchmark_mode:
             raise ValueError(
                 "baseline and candidate must belong to the same target; "
@@ -299,11 +303,13 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
             "name": dataset.name,
             "version": dataset.version,
             "sha256": dataset.sha256,
+            "provenance": dataset.provenance,
         },
         "versions": {
             "baseline": _version_snapshot(baseline),
             "candidate": _version_snapshot(candidate),
         },
+        "target": _target_snapshot(candidate_target),
         "config_sha256": _sha256(config),
         "gate_policy": _policy_snapshot(gate_policy),
         "pricing_snapshot": _pricing_snapshot(pricing),
@@ -401,6 +407,17 @@ def _version_snapshot(version: AgentVersion | None) -> dict | None:
         "prompt_version": version.prompt_version,
         "tool_schema_hash": version.tool_schema_hash,
         "metadata": version.metadata_json,
+    }
+
+
+def _target_snapshot(target: EvaluationTarget) -> dict:
+    capabilities = dict(target.capabilities)
+    return {
+        "id": target.id,
+        "kind": target.target_kind.value,
+        "protocol": target.protocol.value,
+        "contract_profile": capabilities.get("contract_profile", "standard_v1"),
+        "capabilities": capabilities,
     }
 
 

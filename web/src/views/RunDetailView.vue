@@ -53,6 +53,7 @@ const canCancel = computed(() =>
 const canReplay = computed(() =>
   results.value.some((item) => item.version_role === 'candidate' && item.failure_type),
 )
+const hasBaseline = computed(() => run.value?.baseline_version_id != null)
 
 async function load(silent = false) {
   if (!silent) loading.value = true
@@ -129,12 +130,13 @@ onBeforeUnmount(() => pollTimer && window.clearInterval(pollTimer))
         <ElButton @click="load()"><RefreshCw :size="15" /> 刷新</ElButton>
         <ElButton v-if="canReplay" :loading="actionLoading" @click="replay"><RotateCcw :size="15" /> 回放失败 Case</ElButton>
         <ElButton v-if="canCancel" type="danger" plain :loading="actionLoading" @click="cancel"><Square :size="14" /> 取消运行</ElButton>
-        <ElButton v-if="run?.status === 'completed'" @click="router.push(`/runs/${runId}/comparison`)">版本对比</ElButton>
-        <ElButton v-if="run?.status === 'completed'" type="primary" @click="router.push(`/runs/${runId}/gate`)">查看门禁</ElButton>
+        <ElButton v-if="run?.status === 'completed' && hasBaseline" @click="router.push(`/runs/${runId}/comparison`)">版本对比</ElButton>
+        <ElButton v-if="run?.status === 'completed' && hasBaseline" type="primary" @click="router.push(`/runs/${runId}/gate`)">查看门禁</ElButton>
       </div>
     </div>
 
     <div v-if="isDemo" class="demo-banner"><strong>Demo Fixture</strong><span>该运行使用明确标记的合成评测样例，不代表真实系统评测结论。</span></div>
+    <div v-else-if="run && !hasBaseline" class="demo-banner characterization-banner"><strong>Candidate-only</strong><span>这是特征评测；没有合法 Baseline，因此不会产生版本对比或发布门禁。</span></div>
 
     <div class="metric-strip">
       <div class="metric"><div class="metric-label">运行状态</div><div class="metric-value metric-tag"><StatusTag v-if="run" :value="run.status" /></div><div class="metric-detail">Worker 批量领取 EvalRun</div></div>
@@ -216,5 +218,6 @@ onBeforeUnmount(() => pollTimer && window.clearInterval(pollTimer))
 .timeline-title { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; }
 .timeline-title span, .timeline-meta { color: var(--muted); font-size: 10px; }
 .timeline-meta { margin-top: 4px; }
+.characterization-banner { border-color: #b8c7df; background: #f5f8fc; color: #344054; }
 @media (max-width: 760px) { .detail-summary { grid-template-columns: 1fr 1fr; } }
 </style>

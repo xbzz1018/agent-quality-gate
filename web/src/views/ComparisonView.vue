@@ -5,6 +5,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import MetricCompareChart from '@/components/MetricCompareChart.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import { api, apiError } from '@/services/api'
 import type { CaseResult, Comparison, EvalRun } from '@/types/api'
 import { formatCost, formatNumber, formatPercent } from '@/utils/format'
@@ -14,6 +15,7 @@ const router = useRouter()
 const runId = Number(route.params.id)
 const run = ref<EvalRun | null>(null)
 const comparison = ref<Comparison | null>(null)
+const baselineRequired = ref(false)
 const results = ref<CaseResult[]>([])
 const loading = ref(true)
 
@@ -45,9 +47,13 @@ function delta(current: number | null, baseline: number | null, percent = false)
 
 onMounted(async () => {
   try {
-    ;[run.value, comparison.value, results.value] = await Promise.all([
+    const [runRow, comparisonRow, resultRows] = await Promise.all([
       api.run(runId), api.comparison(runId), api.results(runId),
     ])
+    run.value = runRow
+    results.value = resultRows
+    if (comparisonRow.status === 'baseline_required') baselineRequired.value = true
+    else comparison.value = comparisonRow
   } catch (error) {
     ElMessage.error(apiError(error))
   } finally {
@@ -60,8 +66,10 @@ onMounted(async () => {
   <div class="page" v-loading="loading">
     <div class="page-header">
       <div><ElButton link @click="router.push(`/runs/${runId}`)"><ArrowLeft :size="14" /> 返回运行详情</ElButton><h1 class="page-title compare-title">Baseline / Candidate 对比</h1><p class="page-subtitle">Run #{{ runId }} · 指标全部来自持久化 CaseResult</p></div>
-      <ElButton type="primary" @click="router.push(`/runs/${runId}/gate`)"><ShieldCheck :size="15" /> 查看发布门禁</ElButton>
+      <ElButton v-if="!baselineRequired" type="primary" @click="router.push(`/runs/${runId}/gate`)"><ShieldCheck :size="15" /> 查看发布门禁</ElButton>
     </div>
+
+    <section v-if="baselineRequired" class="panel baseline-required"><EmptyState title="需要 Baseline 才能进行版本对比" description="当前运行是 Candidate-only 特征评测，平台不会构造虚假的 Baseline 或发布决策。" /></section>
 
     <div v-if="comparison" class="metric-strip">
       <div class="metric"><div class="metric-label">Candidate 成功率</div><div class="metric-value">{{ formatPercent(comparison.candidate.success_rate) }}</div><div class="metric-detail">相对 Baseline {{ delta(comparison.candidate.success_rate, comparison.baseline.success_rate, true) }}</div></div>
@@ -80,7 +88,7 @@ onMounted(async () => {
       ]"><ElTableColumn prop="metric" label="指标" min-width="130" /><ElTableColumn prop="baseline" label="Baseline" min-width="110" /><ElTableColumn prop="candidate" label="Candidate" min-width="110" /><ElTableColumn prop="change" label="变化" min-width="100" /></ElTable></section>
     </div>
 
-    <section class="panel failure-panel">
+    <section v-if="!baselineRequired" class="panel failure-panel">
       <div class="panel-header"><h2 class="panel-title">Candidate 失败分类</h2><span class="muted">{{ failures.reduce((sum, item) => sum + item.count, 0) }} 个失败结果</span></div>
       <ElTable v-if="failures.length" :data="failures"><ElTableColumn prop="type" label="失败类型" min-width="240" /><ElTableColumn prop="count" label="数量" width="100" /></ElTable>
       <div v-else class="no-failures">没有 Candidate 失败分类</div>
@@ -94,5 +102,6 @@ onMounted(async () => {
 .failure-panel { margin-top: 14px; }
 .cost-value { font-size: 17px; }
 .no-failures { padding: 38px; color: var(--muted); font-size: 12px; text-align: center; }
+.baseline-required { min-height: 320px; display: grid; place-items: center; }
 @media (max-width: 1050px) { .comparison-grid { grid-template-columns: 1fr; } }
 </style>

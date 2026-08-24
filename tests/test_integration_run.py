@@ -1,3 +1,4 @@
+import asyncio
 import os
 from collections.abc import AsyncIterator, Mapping
 from pathlib import Path
@@ -62,6 +63,18 @@ class EchoAdapter:
 
     async def cancel(self, run_id: str) -> bool:
         return True
+
+
+class SlowEchoAdapter(EchoAdapter):
+    def __init__(self, started: asyncio.Event) -> None:
+        self.started = started
+
+    async def invoke(
+        self, input_data: Mapping[str, Any], context: Mapping[str, Any]
+    ) -> AgentRunResult:
+        self.started.set()
+        await asyncio.sleep(0.15)
+        return await super().invoke(input_data, context)
 
 
 async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
@@ -345,6 +358,80 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
             base_url="http://test",
             headers=auth_headers,
         ) as client:
+            characterization = await client.post(
+                "/api/v1/eval-runs",
+                json={
+                    "dataset_id": created["dataset"],
+                    "candidate_version_id": version_ids[1],
+                    "gate_policy_id": created["policy"],
+                },
+            )
+            assert characterization.status_code == 202, characterization.text
+            created["characterization"] = characterization.json()["id"]
+            assert characterization.json()["manifest"]["target"]["contract_profile"] == (
+                "standard_v1"
+            )
+
+        started = asyncio.Event()
+        slow_executor = InspectRunExecutor(
+            database,
+            InspectHarness(max_samples=1, log_dir=tmp_path / "inspect-slow"),
+            adapter_factory=lambda _: SlowEchoAdapter(started),
+            lease_seconds=0.05,
+            heartbeat_seconds=0.01,
+        )
+        slow_worker = RedisRunWorker(queue, slow_executor.execute, claim_timeout_seconds=1)
+        slow_task = asyncio.create_task(slow_worker.process_once())
+        await asyncio.wait_for(started.wait(), timeout=2)
+        await asyncio.sleep(0.08)
+        assert slow_executor.is_recoverable(created["characterization"]) is False
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers=auth_headers,
+        ) as client:
+            cancel_response = await client.post(
+                f"/api/v1/eval-runs/{created['characterization']}/cancel"
+            )
+            assert cancel_response.json()["status"] == "cancel_requested"
+        assert await slow_task is True
+
+        with database.session() as session:
+            characterization_run = session.get(EvalRun, created["characterization"])
+            assert characterization_run is not None
+            assert characterization_run.status is RunStatus.CANCELLED
+            characterization_results = list(
+                session.scalars(
+                    select(CaseResult).where(CaseResult.run_id == created["characterization"])
+                )
+            )
+            assert len(characterization_results) == 1
+            assert (
+                session.scalar(
+                    select(GateResult).where(GateResult.run_id == created["characterization"])
+                )
+                is None
+            )
+
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers=auth_headers,
+        ) as client:
+            comparison_response = await client.get(
+                f"/api/v1/eval-runs/{created['characterization']}/comparison"
+            )
+            gate_response = await client.get(
+                f"/api/v1/eval-runs/{created['characterization']}/gate"
+            )
+            assert comparison_response.json()["status"] == "baseline_required"
+            assert gate_response.json()["status"] == "baseline_required"
+
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers=auth_headers,
+        ) as client:
             queued = await client.post(
                 "/api/v1/eval-runs",
                 json={
@@ -372,6 +459,8 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
                     run_ids.append(created["replay"])
                 if created.get("cancelled") is not None:
                     run_ids.append(created["cancelled"])
+                if created.get("characterization") is not None:
+                    run_ids.append(created["characterization"])
                 result_ids = list(
                     session.scalars(select(CaseResult.id).where(CaseResult.run_id.in_(run_ids)))
                 )

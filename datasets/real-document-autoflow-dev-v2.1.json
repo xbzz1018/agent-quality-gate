@@ -1,0 +1,3620 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.cash_price",
+              "operator": "equals",
+              "path": "field_hashes.cash_price",
+              "value": "dcbe686b61e5069f892afca4468c6d4c4d9f47b5f99b1d6868b4df71d46ba679"
+            },
+            {
+              "critical": true,
+              "id": "evidence.cash_price",
+              "operator": "equals",
+              "path": "evidence_verified.cash_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.change_price",
+              "operator": "equals",
+              "path": "field_hashes.change_price",
+              "value": "daa95262cbcd8d89fcd342ffd879aa48a6c77e25d9324d4a0a5a91c128ab94d1"
+            },
+            {
+              "critical": true,
+              "id": "evidence.change_price",
+              "operator": "equals",
+              "path": "evidence_verified.change_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_count",
+              "operator": "equals",
+              "path": "field_hashes.item_1_count",
+              "value": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_name",
+              "operator": "equals",
+              "path": "field_hashes.item_1_name",
+              "value": "0f5b9395a984c3bcddd63c8507309909d83154458aa0777cd49e9ebc50a2d1a2"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_price",
+              "operator": "equals",
+              "path": "field_hashes.item_1_price",
+              "value": "9e7d576630075855677a376e99304c84203e75d5cd603e7f0d43aecd54192846"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_2_count",
+              "operator": "equals",
+              "path": "field_hashes.item_2_count",
+              "value": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_2_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_2_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_2_name",
+              "operator": "equals",
+              "path": "field_hashes.item_2_name",
+              "value": "407198ea9174d2e80a2cef72c11e284e78581aed189e1bf047d93f83ea24d7d5"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_2_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_2_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_2_price",
+              "operator": "equals",
+              "path": "field_hashes.item_2_price",
+              "value": "f1095474c46613ad7343ff6ecfaee967bff0b3e7f32fa41ca968ece41d6b445f"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_2_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_2_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_3_count",
+              "operator": "equals",
+              "path": "field_hashes.item_3_count",
+              "value": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_3_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_3_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_3_name",
+              "operator": "equals",
+              "path": "field_hashes.item_3_name",
+              "value": "5db6582bf312d9a96dbe9cdee0b9f6b8a2c95bd9c981710d1cc5af7807d735f1"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_3_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_3_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_3_price",
+              "operator": "equals",
+              "path": "field_hashes.item_3_price",
+              "value": "d010581cde44a6a52c836b9886e7a76d1affeb7eea2a2574d0f357636f5f22b9"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_3_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_3_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_price",
+              "operator": "equals",
+              "path": "field_hashes.total_price",
+              "value": "24730832de94ff4794fab68dba1062f8cf7788696435d08d4326f7d2f41b9801"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_price",
+              "operator": "equals",
+              "path": "evidence_verified.total_price",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "cord-validation-0000",
+      "input": {
+        "source_file_sha256": "7e9c5999304626e8332f5ae6c08fb54404a8efc0b78b7e9e1bfb49cfeab9ece2",
+        "source_sample_id": "cord-validation-0000"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "cord",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.cash_price",
+              "operator": "equals",
+              "path": "field_hashes.cash_price",
+              "value": "30ca21619217583f85ddf160479903a190a78205071f21f4c2142e3d4698c511"
+            },
+            {
+              "critical": true,
+              "id": "evidence.cash_price",
+              "operator": "equals",
+              "path": "evidence_verified.cash_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.change_price",
+              "operator": "equals",
+              "path": "field_hashes.change_price",
+              "value": "6ae83ba0866529e3af23bcebbef8bbb11e3b01811cf895a98e28150c4678baf3"
+            },
+            {
+              "critical": true,
+              "id": "evidence.change_price",
+              "operator": "equals",
+              "path": "evidence_verified.change_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_count",
+              "operator": "equals",
+              "path": "field_hashes.item_1_count",
+              "value": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_name",
+              "operator": "equals",
+              "path": "field_hashes.item_1_name",
+              "value": "a3683fa2fdf7adb90bead79979fc3b41e1fe64674a5c9844f224c9dc5fe29310"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_price",
+              "operator": "equals",
+              "path": "field_hashes.item_1_price",
+              "value": "c851bb461e5435e1a4dfe55d9047e68845e983aa4ae261ac73fd9ffb29739c3a"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_price",
+              "operator": "equals",
+              "path": "field_hashes.total_price",
+              "value": "c851bb461e5435e1a4dfe55d9047e68845e983aa4ae261ac73fd9ffb29739c3a"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_price",
+              "operator": "equals",
+              "path": "evidence_verified.total_price",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "cord-validation-0001",
+      "input": {
+        "source_file_sha256": "44e0d44cd038364d7c84d29483e60cf70a903a8923e2e2e04ea85dbe71e9577f",
+        "source_sample_id": "cord-validation-0001"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "cord",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.cash_price",
+              "operator": "equals",
+              "path": "field_hashes.cash_price",
+              "value": "87457cabb0bc138584cd442b88bb43bbd10ae16ae21393411a2fbc5c50042b67"
+            },
+            {
+              "critical": true,
+              "id": "evidence.cash_price",
+              "operator": "equals",
+              "path": "evidence_verified.cash_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.change_price",
+              "operator": "equals",
+              "path": "field_hashes.change_price",
+              "value": "26d7dce0ce2ca609e5e0412eaf9ba2c32b5bade6dc92e8e3689f3d8b0eac7813"
+            },
+            {
+              "critical": true,
+              "id": "evidence.change_price",
+              "operator": "equals",
+              "path": "evidence_verified.change_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_count",
+              "operator": "equals",
+              "path": "field_hashes.item_1_count",
+              "value": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_name",
+              "operator": "equals",
+              "path": "field_hashes.item_1_name",
+              "value": "4139c3eb8baaf6187467e8f533d2d50c6f43357eff8d55a846c0bfb3a08f56c3"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_price",
+              "operator": "equals",
+              "path": "field_hashes.item_1_price",
+              "value": "b6b53b7d4224992f9aa86411bbc3f74b9eccc07e0b42551c0003cd9b02987797"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_price",
+              "operator": "equals",
+              "path": "field_hashes.total_price",
+              "value": "b6b53b7d4224992f9aa86411bbc3f74b9eccc07e0b42551c0003cd9b02987797"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_price",
+              "operator": "equals",
+              "path": "evidence_verified.total_price",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "cord-validation-0002",
+      "input": {
+        "source_file_sha256": "03ed31610e4717e2123e90339b9474f947c695a0adb256d4f8658a9b60bc7f72",
+        "source_sample_id": "cord-validation-0002"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "cord",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.cash_price",
+              "operator": "equals",
+              "path": "field_hashes.cash_price",
+              "value": "ce443c6c565fd26bedcba9069ac08fdefa35536833b5790c686c176ef8d042af"
+            },
+            {
+              "critical": true,
+              "id": "evidence.cash_price",
+              "operator": "equals",
+              "path": "evidence_verified.cash_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.change_price",
+              "operator": "equals",
+              "path": "field_hashes.change_price",
+              "value": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            },
+            {
+              "critical": true,
+              "id": "evidence.change_price",
+              "operator": "equals",
+              "path": "evidence_verified.change_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_count",
+              "operator": "equals",
+              "path": "field_hashes.item_1_count",
+              "value": "a048e640908046be06e00eab37742b5d5ff80964af58cfd22f7cb2de4dfe375f"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_name",
+              "operator": "equals",
+              "path": "field_hashes.item_1_name",
+              "value": "634d3541f45bbd8bf34134e090c9bfe0d8cf43d44fc601f5d8b9236d00a9d255"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_price",
+              "operator": "equals",
+              "path": "field_hashes.item_1_price",
+              "value": "ce443c6c565fd26bedcba9069ac08fdefa35536833b5790c686c176ef8d042af"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_price",
+              "operator": "equals",
+              "path": "field_hashes.total_price",
+              "value": "ce443c6c565fd26bedcba9069ac08fdefa35536833b5790c686c176ef8d042af"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_price",
+              "operator": "equals",
+              "path": "evidence_verified.total_price",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "cord-validation-0003",
+      "input": {
+        "source_file_sha256": "4b545d15e6d1c5be55b6ad7356fe7fe8607fbc058cb8e606cfe2c1a93f1e155b",
+        "source_sample_id": "cord-validation-0003"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "cord",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.cash_price",
+              "operator": "equals",
+              "path": "field_hashes.cash_price",
+              "value": "30ca21619217583f85ddf160479903a190a78205071f21f4c2142e3d4698c511"
+            },
+            {
+              "critical": true,
+              "id": "evidence.cash_price",
+              "operator": "equals",
+              "path": "evidence_verified.cash_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.change_price",
+              "operator": "equals",
+              "path": "field_hashes.change_price",
+              "value": "339fc4339b43e3ecec63926b2d79b0b59b368a52e27504ebdd457a53707e7f91"
+            },
+            {
+              "critical": true,
+              "id": "evidence.change_price",
+              "operator": "equals",
+              "path": "evidence_verified.change_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_count",
+              "operator": "equals",
+              "path": "field_hashes.item_1_count",
+              "value": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_name",
+              "operator": "equals",
+              "path": "field_hashes.item_1_name",
+              "value": "8cd107f125db0dd0edecdeb3e1cdd828eaea4b5ac462920c8948fb62a8877f4d"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_price",
+              "operator": "equals",
+              "path": "field_hashes.item_1_price",
+              "value": "4ca07a76d4ad4d2d121c9fbfc17353a3fb97f3820a08abb90230dad46ef74f9c"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_price",
+              "operator": "equals",
+              "path": "field_hashes.total_price",
+              "value": "4ca07a76d4ad4d2d121c9fbfc17353a3fb97f3820a08abb90230dad46ef74f9c"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_price",
+              "operator": "equals",
+              "path": "evidence_verified.total_price",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "cord-validation-0004",
+      "input": {
+        "source_file_sha256": "ea117e62422b60ab86c950ccb9e56e98ff3623338973acfc42f400db15df293e",
+        "source_sample_id": "cord-validation-0004"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "cord",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.cash_price",
+              "operator": "equals",
+              "path": "field_hashes.cash_price",
+              "value": "6cbd14c90d06f49900f01240cf47309442e6eddfcaef35ddae628d6dd2584926"
+            },
+            {
+              "critical": true,
+              "id": "evidence.cash_price",
+              "operator": "equals",
+              "path": "evidence_verified.cash_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_count",
+              "operator": "equals",
+              "path": "field_hashes.item_1_count",
+              "value": "cf9dcf6da8a82be1335c398a4005def7ee3a53d4698c59dbc6b2b14e72d1263c"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_name",
+              "operator": "equals",
+              "path": "field_hashes.item_1_name",
+              "value": "c307b20e12b59249bd7fcf7cdc24f31ec7ce5b0ba2e6ae15ea5dffe871ca34b3"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_price",
+              "operator": "equals",
+              "path": "field_hashes.item_1_price",
+              "value": "6cbd14c90d06f49900f01240cf47309442e6eddfcaef35ddae628d6dd2584926"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_price",
+              "operator": "equals",
+              "path": "field_hashes.total_price",
+              "value": "6cbd14c90d06f49900f01240cf47309442e6eddfcaef35ddae628d6dd2584926"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_price",
+              "operator": "equals",
+              "path": "evidence_verified.total_price",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "cord-validation-0005",
+      "input": {
+        "source_file_sha256": "b7f790e5d7b9afde0926a2bb398fe798fe9d6159d573321b6fb92dd2f9c49f1d",
+        "source_sample_id": "cord-validation-0005"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "cord",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_count",
+              "operator": "equals",
+              "path": "field_hashes.item_1_count",
+              "value": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_name",
+              "operator": "equals",
+              "path": "field_hashes.item_1_name",
+              "value": "96369fbbc34d30631352ccacec8ce47acb8bb1f117d47300dd15f13b17ea9f96"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_price",
+              "operator": "equals",
+              "path": "field_hashes.item_1_price",
+              "value": "15d5615e94ad622e430d39399020e6a78e53a4de10d53481dcc0e6112d862912"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_2_count",
+              "operator": "equals",
+              "path": "field_hashes.item_2_count",
+              "value": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_2_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_2_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_2_name",
+              "operator": "equals",
+              "path": "field_hashes.item_2_name",
+              "value": "86fb1fd6ff78f2459835bab47b90b736d418e08c5a7006ea189823e894699ffc"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_2_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_2_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_2_price",
+              "operator": "equals",
+              "path": "field_hashes.item_2_price",
+              "value": "374c2e9f527ec3577ca0c15cf00245a2e84778a73170a8a1880c90220325ab08"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_2_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_2_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_3_count",
+              "operator": "equals",
+              "path": "field_hashes.item_3_count",
+              "value": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_3_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_3_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_3_name",
+              "operator": "equals",
+              "path": "field_hashes.item_3_name",
+              "value": "0e50e7a6aead05fdf9644bfd7d0883e2dbe4862bb92054c5a1d9b2044ac846ee"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_3_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_3_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_3_price",
+              "operator": "equals",
+              "path": "field_hashes.item_3_price",
+              "value": "374c2e9f527ec3577ca0c15cf00245a2e84778a73170a8a1880c90220325ab08"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_3_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_3_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_price",
+              "operator": "equals",
+              "path": "field_hashes.total_price",
+              "value": "85d1053b40c23ccd09890820a5e6ee6066eb3b8ad3e7551e6b57c4e2204e6c37"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_price",
+              "operator": "equals",
+              "path": "evidence_verified.total_price",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "cord-validation-0006",
+      "input": {
+        "source_file_sha256": "20a08eeb3f5731f5115107196a0cb88d6e469dec2118c086815fe64ed02f0954",
+        "source_sample_id": "cord-validation-0006"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "cord",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.cash_price",
+              "operator": "equals",
+              "path": "field_hashes.cash_price",
+              "value": "87457cabb0bc138584cd442b88bb43bbd10ae16ae21393411a2fbc5c50042b67"
+            },
+            {
+              "critical": true,
+              "id": "evidence.cash_price",
+              "operator": "equals",
+              "path": "evidence_verified.cash_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.change_price",
+              "operator": "equals",
+              "path": "field_hashes.change_price",
+              "value": "ea72db513cec665ab91a6606cb145ae46588c8b17e10ca4c99bed5bf3fa8bcf1"
+            },
+            {
+              "critical": true,
+              "id": "evidence.change_price",
+              "operator": "equals",
+              "path": "evidence_verified.change_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_count",
+              "operator": "equals",
+              "path": "field_hashes.item_1_count",
+              "value": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_count",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_count",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_name",
+              "operator": "equals",
+              "path": "field_hashes.item_1_name",
+              "value": "a001cc03d826b2b0f3e707850093895e03ffa321d0eeb52dbf8d54c87f375445"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_name",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.item_1_price",
+              "operator": "equals",
+              "path": "field_hashes.item_1_price",
+              "value": "fc7498c566316ffb525e4e2da4a763117c61aa182d7eefa6e98b5838ee93da7e"
+            },
+            {
+              "critical": true,
+              "id": "evidence.item_1_price",
+              "operator": "equals",
+              "path": "evidence_verified.item_1_price",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_price",
+              "operator": "equals",
+              "path": "field_hashes.total_price",
+              "value": "d0aadb0d1dc3ff70f7420a16735f7c34b9ba8fa291a2df9a984716cb32e6b9ff"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_price",
+              "operator": "equals",
+              "path": "evidence_verified.total_price",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "cord-validation-0007",
+      "input": {
+        "source_file_sha256": "bd6a0a501d15b44e0fc8bf27da872cc9122e8388c129b33ef0c9db756501632b",
+        "source_sample_id": "cord-validation-0007"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "cord",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.document_number",
+              "operator": "equals",
+              "path": "field_hashes.document_number",
+              "value": "15c1a48920e95dc980d2fd63aa65e2579432e75d4bf0625f0e93b53cbc865256"
+            },
+            {
+              "critical": true,
+              "id": "evidence.document_number",
+              "operator": "equals",
+              "path": "evidence_verified.document_number",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.due_date",
+              "operator": "equals",
+              "path": "field_hashes.due_date",
+              "value": "f298516745e506761ae64ce4927980d0ce9d603c11da66eec776a43cc9ab46e0"
+            },
+            {
+              "critical": true,
+              "id": "evidence.due_date",
+              "operator": "equals",
+              "path": "evidence_verified.due_date",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.supplier_name",
+              "operator": "equals",
+              "path": "field_hashes.supplier_name",
+              "value": "ab886c06ffc2550a22fba625acbf709cc00fee5b78bd9f77d668cb715d92f6bd"
+            },
+            {
+              "critical": true,
+              "id": "evidence.supplier_name",
+              "operator": "equals",
+              "path": "evidence_verified.supplier_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_amount",
+              "operator": "equals",
+              "path": "field_hashes.total_amount",
+              "value": "6250ea25b0d6a80c4f1bf901dfced4fe91ea25c9c57ecea959eab85fa37d3ac5"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_amount",
+              "operator": "equals",
+              "path": "evidence_verified.total_amount",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "dev-v2-synthetic-00",
+      "input": {
+        "source_file_sha256": "2a55d83d6e8d2daf37625e513588e9c579c36661c0b29202533af4e51e2e5769",
+        "source_sample_id": "dev-v2-synthetic-00"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "synthetic",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.document_number",
+              "operator": "equals",
+              "path": "field_hashes.document_number",
+              "value": "f99fec1acd6cb7c48c55d59885db412c64ed47acea9e48f7eb7ed39befe218c9"
+            },
+            {
+              "critical": true,
+              "id": "evidence.document_number",
+              "operator": "equals",
+              "path": "evidence_verified.document_number",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.due_date",
+              "operator": "equals",
+              "path": "field_hashes.due_date",
+              "value": "460180d61cb3cfc0850264451c926976c19ccb839bf3cf9c390c9c86eae05e1b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.due_date",
+              "operator": "equals",
+              "path": "evidence_verified.due_date",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.supplier_name",
+              "operator": "equals",
+              "path": "field_hashes.supplier_name",
+              "value": "383fa1303468442a00ca7e411b7aaca73be3cbe0ccaad970b4d1ed581973c043"
+            },
+            {
+              "critical": true,
+              "id": "evidence.supplier_name",
+              "operator": "equals",
+              "path": "evidence_verified.supplier_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_amount",
+              "operator": "equals",
+              "path": "field_hashes.total_amount",
+              "value": "ffdfe7a85f933dd3f39883203c64538b07319fb277ebefbea486e0a3f0a57345"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_amount",
+              "operator": "equals",
+              "path": "evidence_verified.total_amount",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "dev-v2-synthetic-01",
+      "input": {
+        "source_file_sha256": "88716f586dc0fb5496f89e8539d82b128ad53df2953ec7cac9e6e64c6309446b",
+        "source_sample_id": "dev-v2-synthetic-01"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "synthetic",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.document_number",
+              "operator": "equals",
+              "path": "field_hashes.document_number",
+              "value": "6f8c859eb398a04ff9f2917503ca518e6683a75aeed45d14b630d4117a1d1ff5"
+            },
+            {
+              "critical": true,
+              "id": "evidence.document_number",
+              "operator": "equals",
+              "path": "evidence_verified.document_number",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.due_date",
+              "operator": "equals",
+              "path": "field_hashes.due_date",
+              "value": "484a658e2e6d59806f87c6f2a8c6e762216e5d79e138d54a5e4e72dd5572691b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.due_date",
+              "operator": "equals",
+              "path": "evidence_verified.due_date",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.supplier_name",
+              "operator": "equals",
+              "path": "field_hashes.supplier_name",
+              "value": "75f8b2aacf00a03fa7e57aba6e645e17442da8fe3e73b2a191769be98e74a34c"
+            },
+            {
+              "critical": true,
+              "id": "evidence.supplier_name",
+              "operator": "equals",
+              "path": "evidence_verified.supplier_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_amount",
+              "operator": "equals",
+              "path": "field_hashes.total_amount",
+              "value": "1aa73fd0e964bea3411b48a5b9e13db207ef10038cad73ca0d722d28a89d47f5"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_amount",
+              "operator": "equals",
+              "path": "evidence_verified.total_amount",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "dev-v2-synthetic-02",
+      "input": {
+        "source_file_sha256": "d476ef3e7fb52ceb574cbc9e0e671fb0e3b2c217dfe2a194ad30eaf26acdd31c",
+        "source_sample_id": "dev-v2-synthetic-02"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "synthetic",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.document_number",
+              "operator": "equals",
+              "path": "field_hashes.document_number",
+              "value": "df9d2b9a8ec0ce8cd5ed91aeed7ced61410b552ef6813e3cca41e9579790d4f2"
+            },
+            {
+              "critical": true,
+              "id": "evidence.document_number",
+              "operator": "equals",
+              "path": "evidence_verified.document_number",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.due_date",
+              "operator": "equals",
+              "path": "field_hashes.due_date",
+              "value": "864ef4a05b4ef27cf77c9e97a51ae546ca3c2de5bf1edecd539c4577daa2418d"
+            },
+            {
+              "critical": true,
+              "id": "evidence.due_date",
+              "operator": "equals",
+              "path": "evidence_verified.due_date",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.supplier_name",
+              "operator": "equals",
+              "path": "field_hashes.supplier_name",
+              "value": "951ba966b7e82beb4fac1805f994808fae7995de79d15a018084685c6b5afaf4"
+            },
+            {
+              "critical": true,
+              "id": "evidence.supplier_name",
+              "operator": "equals",
+              "path": "evidence_verified.supplier_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_amount",
+              "operator": "equals",
+              "path": "field_hashes.total_amount",
+              "value": "4a1a34b49b81098fcc90c1320a8992bd98d5f9dd54878fefbb75cd9180f90311"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_amount",
+              "operator": "equals",
+              "path": "evidence_verified.total_amount",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "dev-v2-synthetic-03",
+      "input": {
+        "source_file_sha256": "f9a50c1a049af18bfa610f106fb95428ee24e3b5a7fcf42bf2133348d9c0ba3c",
+        "source_sample_id": "dev-v2-synthetic-03"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "synthetic",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.document_number",
+              "operator": "equals",
+              "path": "field_hashes.document_number",
+              "value": "60ce36ac39d0c98c347f57c4c9e5c05954b8b3f1428445cdebf48a74e22c1654"
+            },
+            {
+              "critical": true,
+              "id": "evidence.document_number",
+              "operator": "equals",
+              "path": "evidence_verified.document_number",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.due_date",
+              "operator": "equals",
+              "path": "field_hashes.due_date",
+              "value": "c4159b5d98ce84c5376f9d38c4ff5f57699cb08c48f51a77ee7923ee2982a5b7"
+            },
+            {
+              "critical": true,
+              "id": "evidence.due_date",
+              "operator": "equals",
+              "path": "evidence_verified.due_date",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.supplier_name",
+              "operator": "equals",
+              "path": "field_hashes.supplier_name",
+              "value": "ee23fc7237c9bfcbd582f87f859e26e8a304ea4e131abcdceecc55e5a67ba5ae"
+            },
+            {
+              "critical": true,
+              "id": "evidence.supplier_name",
+              "operator": "equals",
+              "path": "evidence_verified.supplier_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_amount",
+              "operator": "equals",
+              "path": "field_hashes.total_amount",
+              "value": "874d8846fef33ce833b81409466dc57580ce54511a3fe7a2dad7b84b95db7f32"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_amount",
+              "operator": "equals",
+              "path": "evidence_verified.total_amount",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "dev-v2-synthetic-04",
+      "input": {
+        "source_file_sha256": "2f2f505503c3d64eb55c5beee01de57a129ead9312c0fcd692e74c9ddf956c2b",
+        "source_sample_id": "dev-v2-synthetic-04"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "synthetic",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.document_number",
+              "operator": "equals",
+              "path": "field_hashes.document_number",
+              "value": "b2b44ca5dc498eebe45146de24f01f28a33f09223bb7217af247c168b089d50b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.document_number",
+              "operator": "equals",
+              "path": "evidence_verified.document_number",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.due_date",
+              "operator": "equals",
+              "path": "field_hashes.due_date",
+              "value": "32dfbd0b53b1f229f7b357dea1a49d3d62fe6812761107dc196d4ee30dc53171"
+            },
+            {
+              "critical": true,
+              "id": "evidence.due_date",
+              "operator": "equals",
+              "path": "evidence_verified.due_date",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.supplier_name",
+              "operator": "equals",
+              "path": "field_hashes.supplier_name",
+              "value": "913f28e60cb4969ed983d691ff039b0697222e44a6859d532a2ae2457fbf1602"
+            },
+            {
+              "critical": true,
+              "id": "evidence.supplier_name",
+              "operator": "equals",
+              "path": "evidence_verified.supplier_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_amount",
+              "operator": "equals",
+              "path": "field_hashes.total_amount",
+              "value": "8cc29d31e4db3cc1e3cc059e450c9df7d49147ec52299d0cda72ec22aab6d005"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_amount",
+              "operator": "equals",
+              "path": "evidence_verified.total_amount",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "dev-v2-synthetic-05",
+      "input": {
+        "source_file_sha256": "c4b38adae6d0ecc2012c49fa1dc735720a98508a7e0125a50ab29b59440f54e7",
+        "source_sample_id": "dev-v2-synthetic-05"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "synthetic",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.document_number",
+              "operator": "equals",
+              "path": "field_hashes.document_number",
+              "value": "bb14cf759efdca536a2687c0b68af573ca7a669ae65827697a9d8d5975562f9b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.document_number",
+              "operator": "equals",
+              "path": "evidence_verified.document_number",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.due_date",
+              "operator": "equals",
+              "path": "field_hashes.due_date",
+              "value": "493d968306a2d9e1149e644526c1f4ec2a4df6f47b8df728ed26f54b02f33e49"
+            },
+            {
+              "critical": true,
+              "id": "evidence.due_date",
+              "operator": "equals",
+              "path": "evidence_verified.due_date",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.supplier_name",
+              "operator": "equals",
+              "path": "field_hashes.supplier_name",
+              "value": "e7cd00190aefda8ba7fd067166b2e76353901ae1205cf60cb952f16b26464a8e"
+            },
+            {
+              "critical": true,
+              "id": "evidence.supplier_name",
+              "operator": "equals",
+              "path": "evidence_verified.supplier_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_amount",
+              "operator": "equals",
+              "path": "field_hashes.total_amount",
+              "value": "648fa1c4a30ccb8c4fd5185ed23ca55798feaa63cd1e82af1353d0a96a63d736"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_amount",
+              "operator": "equals",
+              "path": "evidence_verified.total_amount",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "dev-v2-synthetic-06",
+      "input": {
+        "source_file_sha256": "c90642a76fcb085ce32489cdc27584097cc390b91148a3b731a15ebdd4be76f7",
+        "source_sample_id": "dev-v2-synthetic-06"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "synthetic",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.document_number",
+              "operator": "equals",
+              "path": "field_hashes.document_number",
+              "value": "e4d30218ee1bff5fece1488728ee8ad5e5ea1069e1c87bb25975b371df122e71"
+            },
+            {
+              "critical": true,
+              "id": "evidence.document_number",
+              "operator": "equals",
+              "path": "evidence_verified.document_number",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.due_date",
+              "operator": "equals",
+              "path": "field_hashes.due_date",
+              "value": "aeab91871bf04623c49f458b74408f42d2cf9b814ab4bda068e72c7a5666ba26"
+            },
+            {
+              "critical": true,
+              "id": "evidence.due_date",
+              "operator": "equals",
+              "path": "evidence_verified.due_date",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.supplier_name",
+              "operator": "equals",
+              "path": "field_hashes.supplier_name",
+              "value": "6a00f5d53e5b6026d6fc489a8bf8112138f850091b3b130110d245e8baa15ce8"
+            },
+            {
+              "critical": true,
+              "id": "evidence.supplier_name",
+              "operator": "equals",
+              "path": "evidence_verified.supplier_name",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.total_amount",
+              "operator": "equals",
+              "path": "field_hashes.total_amount",
+              "value": "cfceecf6b8f03b43f6a6b25c2bce0512257deed2230621089e15b4ffa29787ea"
+            },
+            {
+              "critical": true,
+              "id": "evidence.total_amount",
+              "operator": "equals",
+              "path": "evidence_verified.total_amount",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "dev-v2-synthetic-07",
+      "input": {
+        "source_file_sha256": "6eec13f1915b391b537853f86ad095e7e0a0f0a1f83df4eb44494f8c8437425c",
+        "source_sample_id": "dev-v2-synthetic-07"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "synthetic",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.question_197_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_197_answer_1",
+              "value": "1dc51fcfc94e3ab5b681839608d10e860849f5861ce0a1bd7576ca9d747e965a"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_197_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_197_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_197_answer_2",
+              "operator": "equals",
+              "path": "field_hashes.question_197_answer_2",
+              "value": "e2f1e0294cec7eccbb19729a69296cd125bb78d90e4ba93fae19107bfc94c9a6"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_197_answer_2",
+              "operator": "equals",
+              "path": "evidence_verified.question_197_answer_2",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_197_answer_3",
+              "operator": "equals",
+              "path": "field_hashes.question_197_answer_3",
+              "value": "e396460b1c4fd37b2f946d8ae8e4b4c92367e84b4e51c16e6d679383fda413b2"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_197_answer_3",
+              "operator": "equals",
+              "path": "evidence_verified.question_197_answer_3",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_197_answer_4",
+              "operator": "equals",
+              "path": "field_hashes.question_197_answer_4",
+              "value": "106f93fa4fecca63dfdc2f1218f2604c21e1634dc33553ad374624a033f0acd1"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_197_answer_4",
+              "operator": "equals",
+              "path": "evidence_verified.question_197_answer_4",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_197_answer_5",
+              "operator": "equals",
+              "path": "field_hashes.question_197_answer_5",
+              "value": "b22aa8edbe5e150ff80cd2511b175ee2c3e4e644362fa6d95703b66c2149c19f"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_197_answer_5",
+              "operator": "equals",
+              "path": "evidence_verified.question_197_answer_5",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_197_answer_6",
+              "operator": "equals",
+              "path": "field_hashes.question_197_answer_6",
+              "value": "32d053a8fa2b9ce9a4f8989985bc16605a7992ff7145fbe7822fbe1da2902d69"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_197_answer_6",
+              "operator": "equals",
+              "path": "evidence_verified.question_197_answer_6",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_31_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_31_answer_1",
+              "value": "60fd961ac3b7bb32da77b41ba9eecb2bb90cb8bfc66101e3b9b7d5047a45c73c"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_31_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_31_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_31_answer_2",
+              "operator": "equals",
+              "path": "field_hashes.question_31_answer_2",
+              "value": "24e92832c58f093d82d61a58f985cd2124b5b6e7ce214cc743c37b0c0718d311"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_31_answer_2",
+              "operator": "equals",
+              "path": "evidence_verified.question_31_answer_2",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_31_answer_3",
+              "operator": "equals",
+              "path": "field_hashes.question_31_answer_3",
+              "value": "8a35b9f37498b78eab0ef05ac59647aa77d4ef91524e97425f303fbb3ab5c0e9"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_31_answer_3",
+              "operator": "equals",
+              "path": "evidence_verified.question_31_answer_3",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_31_answer_4",
+              "operator": "equals",
+              "path": "field_hashes.question_31_answer_4",
+              "value": "14b80b288e1f3cf5cc8d59df1e55d8a1c8f452cd99e68321f6ba49f9b1576510"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_31_answer_4",
+              "operator": "equals",
+              "path": "evidence_verified.question_31_answer_4",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_353_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_353_answer_1",
+              "value": "ad23a9c4f45f2d498e7ce8faf95b95d7943e6d6dec86f0482d2454c048c8f25b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_353_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_353_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_7_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_7_answer_1",
+              "value": "9db6a6f7905c21fefe91e2a6aba9f1fccdd74498619dc78ce70435007911e940"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_7_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_7_answer_1",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "xfund-zh-zh_train_0",
+      "input": {
+        "source_file_sha256": "dff0e73c9d70ddaf97602c955ec6e00b1d46ef1519f5694e7b75b5a49206e15c",
+        "source_sample_id": "xfund-zh-zh_train_0"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "xfund_zh",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.question_210_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_210_answer_1",
+              "value": "7ba69176e6c1bac7872c799bc98b9598aae62619c04e7a23f6cfb0b0d4b56d91"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_210_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_210_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_217_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_217_answer_1",
+              "value": "d8475f5c4caf74fc00f3e00ed4e318475bccab5b639c08deb5ca0c5ed3878d87"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_217_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_217_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_229_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_229_answer_1",
+              "value": "58cbb83d668bfb685d5640c6e00b1d7d84f6ab7e8aa76bab300d0ebd909190f5"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_229_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_229_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_235_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_235_answer_1",
+              "value": "a14cb721baa4978802b210caa30764ba26fe1d6ac7b6005eae343a6916e64596"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_235_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_235_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_242_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_242_answer_1",
+              "value": "f7b2faf6a717497a7cd24f916ced35d5aa12562083ddcc1493bde9acd2f3dd73"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_242_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_242_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_270_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_270_answer_1",
+              "value": "e807cc940ee4240d812d4bf49d1a904efcdfd97053e10ed287608d565ccef62b"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_270_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_270_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_321_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_321_answer_1",
+              "value": "7ba69176e6c1bac7872c799bc98b9598aae62619c04e7a23f6cfb0b0d4b56d91"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_321_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_321_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_32_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_32_answer_1",
+              "value": "86fd1c821b52e42381c8d31616542ec911ad51b6ca552d3d6b9429c49146647e"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_32_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_32_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_32_answer_2",
+              "operator": "equals",
+              "path": "field_hashes.question_32_answer_2",
+              "value": "60fc637b11cd884f63468de0924f3c4f4cb61b93076cbf9f3775bcb1edec2808"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_32_answer_2",
+              "operator": "equals",
+              "path": "evidence_verified.question_32_answer_2",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_32_answer_3",
+              "operator": "equals",
+              "path": "field_hashes.question_32_answer_3",
+              "value": "76593564e9621b8104098d50e10b5100f65e10a00a3259b968c2a58232c5e396"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_32_answer_3",
+              "operator": "equals",
+              "path": "evidence_verified.question_32_answer_3",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_32_answer_4",
+              "operator": "equals",
+              "path": "field_hashes.question_32_answer_4",
+              "value": "3fdcb4dfc099807afaac167eb80dc845b8c11e892937332c8659807ee9a61cc0"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_32_answer_4",
+              "operator": "equals",
+              "path": "evidence_verified.question_32_answer_4",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_32_answer_5",
+              "operator": "equals",
+              "path": "field_hashes.question_32_answer_5",
+              "value": "577864d427af86a49d252ff33d35d5e565fe6930739195f7fac560ffdf9dee16"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_32_answer_5",
+              "operator": "equals",
+              "path": "evidence_verified.question_32_answer_5",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "xfund-zh-zh_train_1",
+      "input": {
+        "source_file_sha256": "ec6339cabbe36c5336ce391efa7049ce1ec063130a953eec43b514005ab0c3b9",
+        "source_sample_id": "xfund-zh-zh_train_1"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "xfund_zh",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.question_201_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_201_answer_1",
+              "value": "dcef6db73ad0da618ae2746fd1825a6b11268c8e18dd0906eefccafaf4bc3b3c"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_201_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_201_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_201_answer_2",
+              "operator": "equals",
+              "path": "field_hashes.question_201_answer_2",
+              "value": "e4c382e6efb9e2a732c7f820ad8645e4cfe9c93d04cd41c16c7a4a4a6a4c9e40"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_201_answer_2",
+              "operator": "equals",
+              "path": "evidence_verified.question_201_answer_2",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_201_answer_3",
+              "operator": "equals",
+              "path": "field_hashes.question_201_answer_3",
+              "value": "d34bc860928b11ea76d3d284c1c58c69d34c188669956faf174393d0ba734b52"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_201_answer_3",
+              "operator": "equals",
+              "path": "evidence_verified.question_201_answer_3",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_201_answer_4",
+              "operator": "equals",
+              "path": "field_hashes.question_201_answer_4",
+              "value": "aeaa1b82d862eec229879876f55a026b9e610e28bbf44a3e24e12ec6a6caa4e9"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_201_answer_4",
+              "operator": "equals",
+              "path": "evidence_verified.question_201_answer_4",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_21_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_21_answer_1",
+              "value": "f872c612146aef8c3b778231a49ef0264624a3358390479f68c8bfec9d08113d"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_21_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_21_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_38_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_38_answer_1",
+              "value": "c4717470b8776023d2fbad59225b43db2cca7cf3909d1ed99fc79fbd9a925531"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_38_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_38_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_41_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_41_answer_1",
+              "value": "356fd9adea5a0a2e31b16482af32fc2b6df13c43e405a03fc3a57ef98d9f93bd"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_41_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_41_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_49_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_49_answer_1",
+              "value": "3aff93056b63c7661cc82a8437c829e16d4db97b7c2bdcd5be76e87978d439d4"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_49_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_49_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_65_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_65_answer_1",
+              "value": "d37b2809e24c99c2ec5f4110b4dae3cdade4d3e4157b3843f86508576946589f"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_65_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_65_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_70_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_70_answer_1",
+              "value": "fd7d27ddc343e45731386f77ef18e58bcee12e0a5dd75b6e483230d91089fc77"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_70_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_70_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_77_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_77_answer_1",
+              "value": "b5141d3d19e9a04855acdb2dd5218b0924254b73d3cb663557ed0f9f73403750"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_77_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_77_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_90_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_90_answer_1",
+              "value": "28b83c628f5b7f6e49c26802f6b009f3026dbdd8479c2c37de8fc382b925eae4"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_90_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_90_answer_1",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "xfund-zh-zh_train_2",
+      "input": {
+        "source_file_sha256": "fc0d08b142f490f9c01399007b6b158146a18a5dff80ba588af45cb986500ae7",
+        "source_sample_id": "xfund-zh-zh_train_2"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "xfund_zh",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.question_18_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_18_answer_1",
+              "value": "4432cb276ffc79e796e2f86c4aabb5a223462ff45d089d30e5c78c38318c55cf"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_18_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_18_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_24_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_24_answer_1",
+              "value": "d649e95568caf62d76248cb26b2cdd125829df1e2d39b552d5fa5dc22577e075"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_24_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_24_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_32_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_32_answer_1",
+              "value": "b6a50b6523c354eb34345b45baf3d84e1cb9a13a0b649185e3d375da578d9293"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_32_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_32_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_43_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_43_answer_1",
+              "value": "3cbe24830c3b15840d7aa546f8410c4a38fafcb4b20fedb14465c6a79881753f"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_43_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_43_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_50_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_50_answer_1",
+              "value": "0ab4610b9257c2985566c82d624c1adf36c03b9949398a544728b4021bdf779d"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_50_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_50_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_55_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_55_answer_1",
+              "value": "80fa989e688472cd956d6ac73a42c0a377bb0d7cc874fa4ed178f05edbc5528a"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_55_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_55_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_60_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_60_answer_1",
+              "value": "4906a49adc5c472b34483976104ec1d76992745367cc22d5fbc2a4db8e8e1ed7"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_60_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_60_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_66_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_66_answer_1",
+              "value": "6d881f1a18d89afa8fceaf54128be4224e1d9fa17dbd98b993ea856fc00f74ed"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_66_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_66_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_71_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_71_answer_1",
+              "value": "714fa2f384b4bb636c39da7af86be7cc3d0a19f473db746c33245f2764ab1037"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_71_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_71_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_77_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_77_answer_1",
+              "value": "484d55613910eb8c0917fe308b499d474115ced993cd002a17d7cc75254330a4"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_77_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_77_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_82_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_82_answer_1",
+              "value": "cb1cb165d48c9148628b5aaf7be979145fc40c58f217c7b54fa9a6a94acfef6f"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_82_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_82_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_99_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_99_answer_1",
+              "value": "4b6372ce6f78606a594cf11f2e4af97df3c783abaf38630a5d830f2294f146bf"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_99_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_99_answer_1",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "xfund-zh-zh_train_3",
+      "input": {
+        "source_file_sha256": "d81cdad02d2e762486a82b569dc2d53ffbccc161251973cf8583b9e51f6712fb",
+        "source_sample_id": "xfund-zh-zh_train_3"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "xfund_zh",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.question_102_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_102_answer_1",
+              "value": "f1da01dcb5d633a51eb3611cf5763eddb967f04d24c64a1355d898dce4baf2ac"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_102_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_102_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_113_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_113_answer_1",
+              "value": "64a5bc41aa7ebed83db8034b5268d8da0accacc2ffb308d2c7795bc950c46fdd"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_113_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_113_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_113_answer_2",
+              "operator": "equals",
+              "path": "field_hashes.question_113_answer_2",
+              "value": "065742f30c952b5cc13b060441acd380df62ead7a154832f8eb661aa91875082"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_113_answer_2",
+              "operator": "equals",
+              "path": "evidence_verified.question_113_answer_2",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_133_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_133_answer_1",
+              "value": "733cb295a033a6d21fc9ce50c447dd4a384382d28557d7d9dbedd3a74bf8e96e"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_133_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_133_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_140_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_140_answer_1",
+              "value": "24f8b0135eb70ea18e82851d29de5e48ac893458c925fee0244c20dc0d22416a"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_140_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_140_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_145_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_145_answer_1",
+              "value": "00d7ea9e2f65afbc82df6607cf99d2093e808d9bdfd1afd296d05c0b9903ec15"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_145_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_145_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_167_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_167_answer_1",
+              "value": "b552e632666bbf6125e3109e28a4fecc08340d017e44109dadbf497a280b8f82"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_167_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_167_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_23_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_23_answer_1",
+              "value": "374026ee0b443709910282b5fbad26c431302f7e9f54d57eb368dee7878948d2"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_23_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_23_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_41_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_41_answer_1",
+              "value": "733cb295a033a6d21fc9ce50c447dd4a384382d28557d7d9dbedd3a74bf8e96e"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_41_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_41_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_50_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_50_answer_1",
+              "value": "191dde408efbf4c08f4055638fc964375a9a50b49493b6928eff4d16af24c20d"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_50_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_50_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_82_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_82_answer_1",
+              "value": "f478f23044432a4a544baa1f85e3e29df2d2509f281c71d8e82086463e24ea61"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_82_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_82_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_95_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_95_answer_1",
+              "value": "5734cd75203a91548e1380df8ac597705b4ac0f697d45687e9f830745710260a"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_95_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_95_answer_1",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "xfund-zh-zh_train_4",
+      "input": {
+        "source_file_sha256": "f1e7c8f8a6e7e784b64cfd5fa9e46fe68ba4d9693f21ab43b9890ae1c7ab4565",
+        "source_sample_id": "xfund-zh-zh_train_4"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "xfund_zh",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.question_112_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_112_answer_1",
+              "value": "7bae73bd297f870dc6522edca2b79538e9f8720f914f216ad82356da33c6e6cd"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_112_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_112_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_122_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_122_answer_1",
+              "value": "c5d280942c1b81d364370676c5859adb773cc4305d7d5c3dabb34cdeeb0d1768"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_122_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_122_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_152_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_152_answer_1",
+              "value": "54c93be4258967c16ac7e135c745f9cb626a1bda198491b6614a8601ab30c9e3"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_152_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_152_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_160_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_160_answer_1",
+              "value": "f99a8302fc7d3c257f7732684ceb362f567ea3064d3b4a2959eab74279d56cb4"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_160_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_160_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_29_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_29_answer_1",
+              "value": "d6c028af6a91e1ea64971d983e058981a44e11c82f78790897c7b268b978fd58"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_29_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_29_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_41_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_41_answer_1",
+              "value": "d156cc98f47bcef805d3f865603a8e841a7fcfe838ff41f5d2c7eaa3b1890b71"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_41_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_41_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_46_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_46_answer_1",
+              "value": "fd748156e275b36ba5478a16b1be49d824d42098f21d9c61e814e25d4d3427f9"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_46_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_46_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_53_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_53_answer_1",
+              "value": "55889e734c2ef52086619fb4376a8bf3b89bb388bfb098b4a75f9e33fc99c7e8"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_53_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_53_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_62_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_62_answer_1",
+              "value": "4e79758a990062236c2ff22c15eab6e2e3190610ea6c0f2267637515a2a41ec8"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_62_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_62_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_65_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_65_answer_1",
+              "value": "bee3ed294253f8ecd163821502996c1bc68d53f76e840448d526d39ac620e692"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_65_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_65_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_6_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_6_answer_1",
+              "value": "692ceaa1abf461c8c27e778307d27536650d3ba276b5b2462a81848ceec6bdc5"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_6_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_6_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_78_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_78_answer_1",
+              "value": "af74c2b1a940c3a22f4323a69a8206a224bc4b4da7fa4249bc3d52c320603d56"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_78_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_78_answer_1",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "xfund-zh-zh_train_5",
+      "input": {
+        "source_file_sha256": "6417c138d1b445117961790529f8a224004715bc2de384082df47b4b3a830813",
+        "source_sample_id": "xfund-zh-zh_train_5"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "xfund_zh",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.question_123_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_123_answer_1",
+              "value": "d04f5607183923cc1fd1baf93a6d414dd273c488fd9e67a80a749126287864c8"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_123_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_123_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_127_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_127_answer_1",
+              "value": "14f0b0dd5e125f38c290f7f9dcf85e0b7df482e82f5eb04d6a18063d331191bf"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_127_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_127_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_167_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_167_answer_1",
+              "value": "1d7095221a8fc75597a6a5f2d6e0cb00ef03b2698372159ff9697632dca5e382"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_167_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_167_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_206_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_206_answer_1",
+              "value": "0f6b08d58fa5dee79cb135b10d429995b968f140adedf45f8cbbc13683d64d51"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_206_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_206_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_238_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_238_answer_1",
+              "value": "ba28cbacf7694abea113ef31cc253d63cd6a74ea3ca4f08b91a7b46166787be4"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_238_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_238_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_250_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_250_answer_1",
+              "value": "f0e9521611bb290d7b09b8cd14a63c3fe7cbf9a2f4e0090d8238d22403d35182"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_250_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_250_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_261_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_261_answer_1",
+              "value": "57ed491de2dde2e8528855ec0e9a1adbc1090dbda657b686c8841711d020751e"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_261_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_261_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_261_answer_2",
+              "operator": "equals",
+              "path": "field_hashes.question_261_answer_2",
+              "value": "1aeebc3641f0a692d41753b972005d739406d89d3dda2284e68a360c5613db66"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_261_answer_2",
+              "operator": "equals",
+              "path": "evidence_verified.question_261_answer_2",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_261_answer_3",
+              "operator": "equals",
+              "path": "field_hashes.question_261_answer_3",
+              "value": "a074b4572cd1e63cc24a50b66b6f2fcb1b51e9cbfbecdcb9f298a7982a4ad0c4"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_261_answer_3",
+              "operator": "equals",
+              "path": "evidence_verified.question_261_answer_3",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_261_answer_4",
+              "operator": "equals",
+              "path": "field_hashes.question_261_answer_4",
+              "value": "7c9060d717977a0e2ceefdb0d87f753bb9cf2a9cd62a5d79099d483c96e73651"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_261_answer_4",
+              "operator": "equals",
+              "path": "evidence_verified.question_261_answer_4",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_261_answer_5",
+              "operator": "equals",
+              "path": "field_hashes.question_261_answer_5",
+              "value": "1380176d9904d48d4576465a3245a93aee94b90b9a4c257691d9b9c28c4f2895"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_261_answer_5",
+              "operator": "equals",
+              "path": "evidence_verified.question_261_answer_5",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_299_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_299_answer_1",
+              "value": "2b9c708add1dfef1cbfb022b49a541caf1ea03e75d096832e9467349d1ab9dd0"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_299_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_299_answer_1",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "xfund-zh-zh_train_6",
+      "input": {
+        "source_file_sha256": "54709d5fdf281358bdf38cca9eac9206d91241e109cf2b33549f6da569275116",
+        "source_sample_id": "xfund-zh-zh_train_6"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "xfund_zh",
+        "dev-v2.1"
+      ]
+    },
+    {
+      "expected": {
+        "final_action": "extract",
+        "output": {
+          "assertions": [
+            {
+              "critical": true,
+              "id": "workflow.completed",
+              "operator": "equals",
+              "path": "status",
+              "value": "completed"
+            },
+            {
+              "critical": true,
+              "id": "field.question_102_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_102_answer_1",
+              "value": "718e63b74c9642e18a4ddf68a5b25344aafc357e18d0e31c22365d5547ac33f5"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_102_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_102_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_11_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_11_answer_1",
+              "value": "04afdb9bd7c75baee744be2224edda252356914e6a0e962d4e94cd432a2ff0e3"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_11_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_11_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_19_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_19_answer_1",
+              "value": "de134635e71345eb19834cc1d5b040fe21875aae6de8d2d03d4bc55e34fa8a6e"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_19_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_19_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_30_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_30_answer_1",
+              "value": "6c3e15f52cae655f499eca139b9e7eb1adba7c346d0a394ff04d13933c3e93de"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_30_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_30_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_33_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_33_answer_1",
+              "value": "484d55613910eb8c0917fe308b499d474115ced993cd002a17d7cc75254330a4"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_33_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_33_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_40_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_40_answer_1",
+              "value": "c09b0197d69d5cbefe53474180d2dd0b6deb255fff2a9c3987605dbd5f88253d"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_40_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_40_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_53_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_53_answer_1",
+              "value": "2c5bec2b1a89a54fecdf92a59c5967592b467d8bdd68dfc8df578f2e5723c415"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_53_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_53_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_58_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_58_answer_1",
+              "value": "65c74c15a686187bb6bbf9958f494fc6b80068034a659a9ad44991b08c58f2d2"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_58_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_58_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_63_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_63_answer_1",
+              "value": "80fa989e688472cd956d6ac73a42c0a377bb0d7cc874fa4ed178f05edbc5528a"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_63_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_63_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_68_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_68_answer_1",
+              "value": "69a8dab2e3725f34ece063fd5d4748a2ec4671a31214516f07f53e2579229ae5"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_68_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_68_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_74_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_74_answer_1",
+              "value": "0ab4610b9257c2985566c82d624c1adf36c03b9949398a544728b4021bdf779d"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_74_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_74_answer_1",
+              "value": true
+            },
+            {
+              "critical": true,
+              "id": "field.question_80_answer_1",
+              "operator": "equals",
+              "path": "field_hashes.question_80_answer_1",
+              "value": "3a8c0dfe05c35d608f217e3790de34f1b743aa22d87ed306404f4c5442638743"
+            },
+            {
+              "critical": true,
+              "id": "evidence.question_80_answer_1",
+              "operator": "equals",
+              "path": "evidence_verified.question_80_answer_1",
+              "value": true
+            }
+          ],
+          "json_schema": {
+            "required": [
+              "status",
+              "field_hashes",
+              "evidence_verified"
+            ],
+            "type": "object"
+          }
+        },
+        "safety": {
+          "forbidden_patterns": [
+            "api[_-]?key",
+            "secret[_-]?token",
+            "password"
+          ]
+        }
+      },
+      "id": "xfund-zh-zh_train_7",
+      "input": {
+        "source_file_sha256": "45edd7b61b53be7a743b074092249bbb912a3bae29069140ca7e3664d2c0b0a6",
+        "source_sample_id": "xfund-zh-zh_train_7"
+      },
+      "tags": [
+        "real-target",
+        "document-autoflow",
+        "xfund_zh",
+        "dev-v2.1"
+      ]
+    }
+  ],
+  "name": "real-document-autoflow-dev-v2.1",
+  "provenance": {
+    "quality_report_sha256": "8625245b853f06208d66a65d409838d3da46c9bb3bcf9557960f24ce4dc18898",
+    "quality_report_version": "document-autoflow-frozen-model-v2",
+    "selection": {
+      "expected_count": 24,
+      "model": "deepseek-v4-flash",
+      "split": "dev"
+    },
+    "source_commit": "d25f7ebcc1dac2f220f4c69deeb020ae8347864f",
+    "source_dataset": "evaluation/frozen_manifest_v2.jsonl",
+    "source_dataset_sha256": "5d61df61c180f56ccc58fd3c5baf1f613e717ed781d0641cfb5607bec459aa65",
+    "source_dirty": true,
+    "source_repository": "document-autoflow",
+    "source_tree_sha256": "60bce869efa2b33d6575f5f7c6ebdbb57fa4bf3241ee45c97b5fcd5ca0a0f33b"
+  },
+  "split": "characterization",
+  "version": "v2.1-characterization"
+}
