@@ -1,5 +1,7 @@
 # Agent Quality Harness
 
+[![Quality Gate](https://github.com/xbzz1018/agent-quality-gate/actions/workflows/quality-gate.yml/badge.svg?branch=main)](https://github.com/xbzz1018/agent-quality-gate/actions/workflows/quality-gate.yml)
+
 多智能体评测、受控场景运行、调用链追踪、失败回放和发布门禁控制面。当前状态为 `存储受控的本地多租户控制面已恢复并可运行`。Inspect AI 负责 Dataset、Case 并发、Solver 和 Scorer；Scenario Executor 只负责单个 Case 内的受限多 Agent DAG。默认 Docker 拓扑只启动核心服务，协议、观测、Kafka 和 Kubernetes 必须显式启用。
 
 ## 项目定位
@@ -8,7 +10,7 @@
 
 平台与被测系统分离：Inspect AI 负责评测执行，OpenTelemetry/Jaeger 负责调用链，Gate Engine 负责发布决策；DeepAgents、A2A、AG-UI 和 MCP 只是可选的被测协议或目标适配器，不会偷偷变成平台核心依赖。
 
-现有版本化基线为 `v0.5.0-multi-skill-reliability`；当前工作树在其上增加 Scenario/Kafka/真实复验收口，但按要求没有执行分支、提交、标签或 GitHub 操作。平台与 DeepAgents 被测镜像分别使用 `requirements-runtime.lock` 和 `requirements-deep-agent.lock` 的精确传递依赖；生产安装不解析开发依赖。
+现有版本化基线为 `v0.5.0-multi-skill-reliability`；后续能力通过受保护的 `main`、Pull Request 和 `quality-gate` CI 集成。平台与 DeepAgents 被测镜像分别使用 `requirements-runtime.lock` 和 `requirements-deep-agent.lock` 的精确传递依赖；生产安装不解析开发依赖。
 
 `v0.3.0-security-gate` 保留为安全门禁基线；`v0.4.0-ag-ui` 在其后加入 AG-UI 0.1.19、运行中流取消、OPA CI/readiness、密钥导入拒绝和 Policy 绑定 UI。
 
@@ -28,7 +30,7 @@
 - Complete AG-UI branch：标准 RunAgentInput/SSE BaseEvent、文本/Tool/State/Token 映射、活动流关闭取消与隐藏推理丢弃。
 - Enhanced：MCP Tasks 2025-11-25 实验生命周期、Hermes-compatible Target、Kafka Outbox/Inbox/DLQ 已实现并有测试；不进入默认 Compose。
 - Complete scenario control plane：冻结 `aqh.scenario/v1`、最多 4 节点并发、JSON Pointer 交接、Shadow/Pilot、持久节点状态、取消、幂等和 fail-closed Pilot 授权。
-- Current-environment verification：Redis Good Run `#10` 为 `SHIP`、Fault Run `#11` 为 `BLOCK`；Kafka Run `#14` 为 `SHIP`；Pilot Scenario Run `#7` 完成；Jaeger Trace `44a6a9d5a6c614f3ab5fac821c0c877f` 包含 Run/Case/Scenario/Agent/Tool 层级且敏感匹配为 0。Document Run `#30` 有 24/24 Characterization 结果，Stability Run `#31` 有 48/48 结果并真实 `BLOCK`；AgriGraph Run `#33` 有 40/40 Characterization 结果，Stability Run `#34` 有 80/80 结果并 `SHIP`。
+- Current-environment verification：本地 Redis、Kafka、Jaeger、协议适配器和真实目标复验均有对应记录，但这些是环境快照，不代表每次提交或生产部署都自动复现。当前主线以 CI、冻结数据集和显式验收记录为准。
 - Pending：Kubernetes manifests 已生成，但旧 kind 验收被 Docker 数据盘故障中断，当前不宣称本机集群验收完成。
 
 Redis Worker 在 MVP 中领取整个 EvalRun，case 并发由 Inspect AI 控制。HTTP/SSE/A2A 属于 AgentTargetAdapter，MCP 属于 ToolTargetAdapter。
@@ -144,7 +146,7 @@ Rego Bundle 必须使用 `aqh.org_<organization_id>.<policy>.v_<version>` 命名
 Gate CLI：
 
 ```powershell
-$env:AQH_API_KEY = \"只显示一次的组织级 API Key\"
+$env:AQH_API_KEY = \"replace-with-a-local-key\"
 aqh gate --run-id 123 --api-url http://127.0.0.1:8010
 aqh gate --report tests/fixtures/gate-ship.json
 ```
@@ -159,6 +161,10 @@ aqh gate --report tests/fixtures/gate-ship.json
 - 多租户 RBAC、API Key 引用、脱敏审计和 OPA fail-closed 策略。
 
 Kubernetes、Kafka、MCP Tasks、Hermes 和公网高可用仍属于增强项或未验证边界；README 只把当前有测试证据的能力写成完成状态。
+
+## 贡献与安全
+
+请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [SECURITY.md](SECURITY.md)。不要在 Issue、PR、日志或截图中提交 API Key、Token、密码、原始数据或受限运行记录。
 
 ## 多智能体 Scenario
 
