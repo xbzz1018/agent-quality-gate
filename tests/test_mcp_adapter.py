@@ -1,5 +1,8 @@
+from contextlib import asynccontextmanager
+
 import httpx2
 import pytest
+from mcp import types as mcp_types
 from mcp.server.mcpserver import MCPServer
 
 from agent_quality_harness.adapter_factory import (
@@ -63,9 +66,7 @@ async def test_mcp_discovers_and_executes_tool_resource_and_prompt_contracts() -
 
     assert manifest["server"]["version"] == "1.2.3"
     assert [item["name"] for item in manifest["tools"]] == ["add"]
-    assert [item["uri"] for item in manifest["resources"]] == [
-        "fixture://quality-policy"
-    ]
+    assert [item["uri"] for item in manifest["resources"]] == ["fixture://quality-policy"]
     assert [item["name"] for item in manifest["prompts"]] == ["review"]
 
     assert tool_result.final_action == "tool"
@@ -89,12 +90,92 @@ async def test_mcp_discovers_and_executes_tool_resource_and_prompt_contracts() -
     assert "Review A2A" in prompt_result.output["result"]["messages"][0]["content"]["text"]
 
 
-async def test_mcp_tasks_are_explicitly_pending_and_cancel_is_not_fabricated() -> None:
-    adapter = McpToolTargetAdapter("http://mcp/mcp")
+class _TaskSession:
+    async def send_request(self, request, result_type, **kwargs):
+        del kwargs
+        if isinstance(request, mcp_types.CallToolRequest):
+            return mcp_types.CreateTaskResult(task=_task("task-1", "working", poll_interval=1))
+        if isinstance(request, mcp_types.GetTaskRequest):
+            return mcp_types.GetTaskResult(**_task_data("task-1", "completed"))
+        if isinstance(request, mcp_types.GetTaskPayloadRequest):
+            return mcp_types.CallToolResult(
+                content=[mcp_types.TextContent(type="text", text="task result")],
+                isError=False,
+            )
+        if isinstance(request, mcp_types.CancelTaskRequest):
+            return mcp_types.CancelTaskResult(**_task_data("task-1", "cancelled"))
+        if isinstance(request, mcp_types.ListTasksRequest):
+            return mcp_types.ListTasksResult(tasks=[_task("task-1", "completed")])
+        raise AssertionError(f"unexpected request: {type(request)} / {result_type}")
 
-    with pytest.raises(NotImplementedError, match="experimental pending"):
-        await adapter.execute({"operation": "task_get", "task_id": "task-1"}, {})
-    assert await adapter.cancel("not-a-portable-mcp-operation-id") is False
+
+class _TaskAdapter(McpToolTargetAdapter):
+    @asynccontextmanager
+    async def _session(self):
+        yield (
+            _TaskSession(),
+            {
+                "server": {"name": "task-fixture", "version": "1"},
+                "capabilities": {
+                    "tasks": {
+                        "list": {},
+                        "cancel": {},
+                        "requests": {"tools": {"call": {}}},
+                    }
+                },
+            },
+        )
+
+
+def _task_data(task_id: str, status: str, *, poll_interval: int | None = None) -> dict:
+    return {
+        "taskId": task_id,
+        "status": status,
+        "createdAt": "2026-08-25T00:00:00Z",
+        "lastUpdatedAt": "2026-08-25T00:00:01Z",
+        "ttl": 60000,
+        "pollInterval": poll_interval,
+    }
+
+
+def _task(task_id: str, status: str, *, poll_interval: int | None = None):
+    return mcp_types.Task(**_task_data(task_id, status, poll_interval=poll_interval))
+
+
+async def test_mcp_tasks_execute_poll_result_list_and_cancel() -> None:
+    adapter = _TaskAdapter("http://mcp/mcp", timeout_seconds=2)
+
+    result = await adapter.execute(
+        {
+            "operation": "task_call_tool",
+            "tool": "slow_echo",
+            "arguments": {"text": "quality"},
+        },
+        {},
+    )
+    listed = await adapter.execute({"operation": "task_list"}, {})
+
+    assert result.operation_id == "task-1"
+    assert result.final_action == "tool"
+    assert result.output["task_protocol"] == "mcp-core-2025-11-25-experimental"
+    assert result.output["result"]["content"][0]["text"] == "task result"
+    assert listed.final_action == "inspect_tasks"
+    assert await adapter.cancel("task-1") is True
+
+
+async def test_mcp_tasks_fail_closed_without_negotiated_capability() -> None:
+    class UnsupportedAdapter(_TaskAdapter):
+        @asynccontextmanager
+        async def _session(self):
+            yield _TaskSession(), {"server": {}, "capabilities": {}}
+
+    adapter = UnsupportedAdapter("http://mcp/mcp")
+
+    with pytest.raises(ValueError, match="did not negotiate Tasks"):
+        await adapter.execute(
+            {"operation": "task_call_tool", "tool": "slow_echo", "arguments": {}},
+            {},
+        )
 
 
 def test_mcp_factory_returns_tool_adapter_not_agent_adapter() -> None:

@@ -16,6 +16,11 @@ const router = createRouter({
         { path: 'targets', name: 'targets', component: () => import('@/views/TargetsView.vue') },
         { path: 'datasets', name: 'datasets', component: () => import('@/views/DatasetsView.vue') },
         { path: 'runs', name: 'runs', component: () => import('@/views/RunsView.vue') },
+        {
+          path: 'scenarios',
+          name: 'scenarios',
+          component: () => import('@/views/ScenariosView.vue'),
+        },
         { path: 'runs/:id', name: 'run-detail', component: () => import('@/views/RunDetailView.vue') },
         {
           path: 'runs/:id/comparison',

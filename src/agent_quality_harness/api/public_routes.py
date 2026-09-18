@@ -21,9 +21,19 @@ async def ready(request: Request) -> Readiness:
         components["postgresql"] = "unavailable"
     try:
         await request.app.state.run_queue.ping()
-        components["redis"] = "ok"
+        component = getattr(
+            request.app.state.run_queue,
+            "readiness_component",
+            request.app.state.settings.queue_backend,
+        )
+        components[component] = "ok"
     except Exception:
-        components["redis"] = "unavailable"
+        component = getattr(
+            request.app.state.run_queue,
+            "readiness_component",
+            request.app.state.settings.queue_backend,
+        )
+        components[component] = "unavailable"
     if request.app.state.settings.opa_enabled:
         try:
             async with httpx.AsyncClient(

@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any
+from uuid import uuid4
 
 from sqlalchemy import (
     BigInteger,
@@ -28,6 +29,7 @@ from .enums import (
     GateDecision,
     MeasurementStatus,
     RunStatus,
+    ScenarioMode,
     TargetKind,
     TargetProtocol,
     VersionRole,
@@ -240,7 +242,8 @@ class EvaluationTarget(TimestampMixin, Base):
         UniqueConstraint("organization_id", "name", name="uq_evaluation_targets_org_name"),
         CheckConstraint(
             "(target_kind = 'agent' AND protocol IN ('http', 'sse', 'ag_ui', 'a2a')) "
-            "OR (target_kind = 'tool' AND protocol = 'mcp')",
+            "OR (target_kind = 'tool' AND protocol = 'mcp') "
+            "OR (target_kind = 'scenario' AND protocol = 'scenario')",
             name="ck_evaluation_targets_kind_protocol",
         ),
     )
@@ -511,9 +514,7 @@ class PolicyBundle(TimestampMixin, Base):
             "organization_id", "name", "version", name="uq_policy_bundles_org_name_version"
         ),
         UniqueConstraint("organization_id", "sha256", name="uq_policy_bundles_org_sha256"),
-        CheckConstraint(
-            "status IN ('validated', 'invalid')", name="ck_policy_bundles_status"
-        ),
+        CheckConstraint("status IN ('validated', 'invalid')", name="ck_policy_bundles_status"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
@@ -661,5 +662,141 @@ class RunEvent(Base):
     payload: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
     redacted: Mapped[bool] = mapped_column(default=True, nullable=False)
     occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ScenarioRun(TimestampMixin, Base):
+    __tablename__ = "scenario_runs"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "idempotency_key", name="uq_scenario_runs_org_idempotency"
+        ),
+        Index("ix_scenario_runs_status_created", "status", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    scenario_version_id: Mapped[int] = mapped_column(
+        ForeignKey("agent_versions.id", ondelete="RESTRICT"), index=True, nullable=False
+    )
+    gate_result_id: Mapped[int | None] = mapped_column(
+        ForeignKey("gate_results.id", ondelete="RESTRICT"), index=True
+    )
+    mode: Mapped[ScenarioMode] = mapped_column(
+        enum_column(ScenarioMode, "scenario_mode"), nullable=False
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(200), nullable=False)
+    input_data: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, nullable=False)
+    input_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    output: Mapped[dict[str, Any] | None] = mapped_column(JSON_VALUE)
+    limits: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
+    usage: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
+    status: Mapped[RunStatus] = mapped_column(
+        enum_column(RunStatus, "scenario_run_status"), default=RunStatus.QUEUED, nullable=False
+    )
+    trace_id: Mapped[str | None] = mapped_column(String(32), index=True)
+    failure_reason: Mapped[str | None] = mapped_column(Text)
+    actor_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    actor_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    worker_id: Mapped[str | None] = mapped_column(String(200))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempt: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ScenarioNodeRun(TimestampMixin, Base):
+    __tablename__ = "scenario_node_runs"
+    __table_args__ = (
+        UniqueConstraint(
+            "scenario_run_id", "node_id", "attempt", name="uq_scenario_node_runs_attempt"
+        ),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'completed', 'failed', 'cancelled')",
+            name="ck_scenario_node_runs_status",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    scenario_run_id: Mapped[int] = mapped_column(
+        ForeignKey("scenario_runs.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    node_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_version_id: Mapped[int] = mapped_column(
+        ForeignKey("agent_versions.id", ondelete="RESTRICT"), index=True, nullable=False
+    )
+    attempt: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="queued", nullable=False)
+    invocation_id: Mapped[str | None] = mapped_column(String(200))
+    input_sha256: Mapped[str | None] = mapped_column(String(64))
+    output: Mapped[dict[str, Any] | None] = mapped_column(JSON_VALUE)
+    usage: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
+    latency_ms: Mapped[int | None] = mapped_column(Integer)
+    failure_reason: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class OutboxEvent(Base):
+    __tablename__ = "outbox_events"
+    __table_args__ = (
+        Index("ix_outbox_events_publish", "status", "available_at", "created_at"),
+        CheckConstraint(
+            "status IN ('pending', 'publishing', 'published', 'failed')",
+            name="ck_outbox_events_status",
+        ),
+    )
+
+    event_id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid4())
+    )
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    run_id: Mapped[int] = mapped_column(
+        ForeignKey("eval_runs.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    available_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error_type: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class KafkaInbox(Base):
+    __tablename__ = "kafka_inbox"
+    __table_args__ = (
+        UniqueConstraint("consumer_group", "event_id", name="uq_kafka_inbox_group_event"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    consumer_group: Mapped[str] = mapped_column(String(200), nullable=False)
+    event_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    run_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    processed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class KafkaDlq(Base):
+    __tablename__ = "kafka_dlq"
+
+    event_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    run_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False)
+    error_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    failed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

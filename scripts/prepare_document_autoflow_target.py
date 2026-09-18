@@ -157,7 +157,9 @@ def main() -> int:
         "template_id": template_id,
         "document_map": document_map,
         "poll_interval_seconds": 2,
-        "max_poll_seconds": 1800,
+        "max_poll_seconds": 360,
+        "case_time_limit_seconds": 390,
+        "stop_on_routes": ["REPROCESS"],
         "budget": {
             "max_requests": 240,
             "max_input_tokens": 3_000_000,

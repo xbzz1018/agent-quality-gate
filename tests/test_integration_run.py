@@ -81,7 +81,7 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
     suffix = uuid4().hex[:10]
     settings = Settings(
         database_url="postgresql+psycopg://agent_quality:agent_quality@localhost:5432/agent_quality",
-        redis_url="redis://localhost:6379/0",
+        redis_url=os.getenv("AQH_INTEGRATION_REDIS_URL", "redis://localhost:56379/0"),
         redis_queue_key=f"aqh:test:{suffix}",
         otel_enabled=False,
         jwt_secret=f"integration-secret-long-enough-{suffix}",
@@ -337,13 +337,49 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
             assert gate_response.json()["decision"] == "block"
             event_response = await client.get(f"/api/v1/eval-runs/{created['run']}/events")
             assert any(item["event_type"] == "gate.evaluated" for item in event_response.json())
+            recorded_version = await client.post(
+                f"/api/v1/targets/{created['target']}/versions",
+                json={
+                    "version": "recorded-baseline",
+                    "metadata": {
+                        "recorded_baseline": {
+                            "run_id": created["run"],
+                            "version_role": "candidate",
+                            "source_version_id": version_ids[1],
+                        }
+                    },
+                },
+            )
+            assert recorded_version.status_code == 201, recorded_version.text
+            stability = await client.post(
+                "/api/v1/eval-runs",
+                json={
+                    "dataset_id": created["dataset"],
+                    "baseline_version_id": recorded_version.json()["id"],
+                    "candidate_version_id": version_ids[1],
+                },
+            )
+            assert stability.status_code == 202, stability.text
+            created["stability"] = stability.json()["id"]
             replay = await client.post(f"/api/v1/eval-runs/{created['run']}/replay", json={})
             assert replay.status_code == 202, replay.text
             created["replay"] = replay.json()["id"]
             assert replay.json()["expected_case_count"] == 1
 
         assert await worker.process_once() is True
+        assert await worker.process_once() is True
         with database.session() as session:
+            stability_run = session.get(EvalRun, created["stability"])
+            assert stability_run is not None
+            assert stability_run.status is RunStatus.COMPLETED
+            stability_results = list(
+                session.scalars(select(CaseResult).where(CaseResult.run_id == stability_run.id))
+            )
+            assert len(stability_results) == 4
+            stability_events = list(
+                session.scalars(select(RunEvent).where(RunEvent.run_id == stability_run.id))
+            )
+            assert sum(event.event_type == "baseline.replayed" for event in stability_events) == 2
             replay_run = session.get(EvalRun, created["replay"])
             assert replay_run is not None
             assert replay_run.status is RunStatus.COMPLETED
@@ -458,6 +494,8 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
                 run_ids = [created["run"]]
                 if created.get("replay") is not None:
                     run_ids.append(created["replay"])
+                if created.get("stability") is not None:
+                    run_ids.append(created["stability"])
                 if created.get("cancelled") is not None:
                     run_ids.append(created["cancelled"])
                 if created.get("characterization") is not None:

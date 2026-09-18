@@ -27,6 +27,13 @@ class EchoAdapter:
         return True
 
 
+class FailingAdapter(EchoAdapter):
+    async def invoke(
+        self, input_data: Mapping[str, Any], context: Mapping[str, Any]
+    ) -> AgentRunResult:
+        raise TimeoutError("sensitive target details must not persist")
+
+
 def test_inspect_runs_adapter_cases_without_external_model(tmp_path: Path) -> None:
     harness = InspectHarness(max_samples=2, log_dir=tmp_path / "logs")
     task = harness.build_task(
@@ -45,3 +52,33 @@ def test_inspect_runs_adapter_cases_without_external_model(tmp_path: Path) -> No
     assert logs[0].status == "success"
     assert logs[0].results is not None
     assert logs[0].results.total_samples == 2
+
+
+def test_inspect_captures_target_failure_without_leaking_error_text(tmp_path: Path) -> None:
+    captures = []
+    harness = InspectHarness(max_samples=1, log_dir=tmp_path / "logs")
+    task = harness.build_task(
+        [
+            HarnessCase(
+                id="case-timeout",
+                input_data={"prompt": "alpha"},
+                expected={"final_action": "answer"},
+            )
+        ],
+        FailingAdapter(),
+        target_name="failing",
+        target_version="v1",
+        capture=captures,
+        time_limit_seconds=10,
+    )
+
+    logs = harness.run(task)
+
+    assert logs[0].status == "success"
+    assert len(captures) == 1
+    assert captures[0].failure_type == "target_timeout"
+    assert captures[0].result.output == {
+        "status": "failed",
+        "error_type": "target_timeout",
+    }
+    assert "sensitive target details" not in str(captures[0])

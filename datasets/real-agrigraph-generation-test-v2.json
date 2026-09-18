@@ -2060,7 +2060,7 @@
     "source_dataset_sha256": "91f372e5d139ffbd2dc679a7efe32d30a689013f9ba5a1ab0c0923c2f5c40fdd",
     "source_dirty": true,
     "source_repository": "2-AgriGraph",
-    "source_tree_sha256": "f45a4bd5d351c6769322e918bc40529db6575be6a227fd99807ed9be027296ce"
+    "source_tree_sha256": "893b88425c332827893916335dc6e64da9aa258bfb8875cbf7f64a3dd2e53647"
   },
   "split": "characterization",
   "version": "v2-characterization"

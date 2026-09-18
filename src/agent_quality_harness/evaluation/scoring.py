@@ -54,6 +54,7 @@ def score_agent_result(
     _score_evidence(expected, result, rules)
     _score_safety(expected, result, rules)
     _score_business(expected, result, rules)
+    _score_scenario(expected, result, rules)
     score = sum(rule.score for rule in rules) / len(rules) if rules else 1.0
     passed = all(rule.passed for rule in rules if rule.critical)
     return ScoreReport(passed=passed, score=round(score, 6), rules=tuple(rules))
@@ -226,6 +227,85 @@ def _score_tools(
             passed=matching is not None and observed == wanted,
             failure_reason=f"tool arguments did not match for {name}",
         )
+
+
+def _score_scenario(
+    expected: Mapping[str, Any],
+    result: TargetRunResult,
+    rules: list[RuleScore],
+) -> None:
+    spec = expected.get("scenario")
+    if not isinstance(spec, Mapping):
+        return
+    node_events = [
+        event for event in result.events if event.event_type.startswith("scenario.node.")
+    ]
+    handoffs = [event for event in result.events if event.event_type == "scenario.handoff"]
+    telemetry_required = bool(spec.get("telemetry_required", True))
+    _add(
+        rules,
+        rule_id="scenario.telemetry",
+        category="scenario_telemetry",
+        expected="known" if telemetry_required else "known_or_unknown",
+        observed="known" if node_events else "unknown",
+        passed=bool(node_events) or not telemetry_required,
+        critical=telemetry_required,
+        failure_reason="required scenario telemetry is UNKNOWN",
+    )
+    completed = [
+        str(event.data.get("node_id"))
+        for event in node_events
+        if event.event_type == "scenario.node.completed"
+    ]
+    failed = [
+        str(event.data.get("node_id"))
+        for event in node_events
+        if event.event_type == "scenario.node.failed"
+    ]
+    for node_id in spec.get("required_nodes", []):
+        _add(
+            rules,
+            rule_id=f"scenario.required.{node_id}",
+            category="scenario_node",
+            expected=node_id,
+            observed=completed,
+            passed=node_id in completed,
+            failure_reason=f"required scenario node did not complete: {node_id}",
+        )
+    forbidden = set(str(item) for item in spec.get("forbidden_nodes", []))
+    _add(
+        rules,
+        rule_id="scenario.forbidden",
+        category="scenario_node",
+        expected=[],
+        observed=sorted(forbidden.intersection(completed)),
+        passed=not forbidden.intersection(completed),
+        failure_reason="a forbidden scenario node completed",
+    )
+    _add(
+        rules,
+        rule_id="scenario.failures",
+        category="scenario_lifecycle",
+        expected=[],
+        observed=failed,
+        passed=not failed,
+        failure_reason="one or more scenario nodes failed",
+    )
+    observed_handoffs = [
+        [str(event.data.get("from_node")), str(event.data.get("to_node"))]
+        for event in handoffs
+    ]
+    required_handoffs = [list(item) for item in spec.get("required_handoffs", [])]
+    missing = [item for item in required_handoffs if item not in observed_handoffs]
+    _add(
+        rules,
+        rule_id="scenario.handoffs",
+        category="scenario_handoff",
+        expected=required_handoffs,
+        observed=observed_handoffs,
+        passed=not missing,
+        failure_reason="required scenario handoff was not observed",
+    )
 
 
 def _score_citations(

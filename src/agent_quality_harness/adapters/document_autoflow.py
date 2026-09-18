@@ -32,6 +32,9 @@ class DocumentAutoflowAdapter:
         self._client = client
         self.poll_interval = float(self.capabilities.get("poll_interval_seconds", 2))
         self.max_poll_seconds = float(self.capabilities.get("max_poll_seconds", timeout_seconds))
+        self.stop_on_routes = {
+            str(route).upper() for route in self.capabilities.get("stop_on_routes", [])
+        }
         raw_budget = self.capabilities.get("budget", {})
         self.budget = dict(raw_budget) if isinstance(raw_budget, dict) else {}
         self.calls = 0
@@ -85,8 +88,29 @@ class DocumentAutoflowAdapter:
                     seen_status = status
                 if status in self._TERMINAL:
                     break
+                route = str(current.get("route", "")).upper()
+                if route in self.stop_on_routes:
+                    cancelled = await self._cancel_with_client(client, headers, run_id)
+                    current = dict(current)
+                    current["status"] = "reprocess_required"
+                    events.append(
+                        AgentRunEvent(
+                            "workflow.route_terminal",
+                            {"route": route, "remote_cancel_requested": cancelled},
+                        )
+                    )
+                    break
                 if monotonic() >= deadline:
-                    raise TimeoutError("Document Autoflow run did not reach a terminal state")
+                    cancelled = await self._cancel_with_client(client, headers, run_id)
+                    current = dict(current)
+                    current["status"] = "target_timeout"
+                    events.append(
+                        AgentRunEvent(
+                            "workflow.timeout",
+                            {"remote_cancel_requested": cancelled},
+                        )
+                    )
+                    break
                 await asyncio.sleep(self.poll_interval)
                 response = await client.get(
                     endpoint(
@@ -127,6 +151,8 @@ class DocumentAutoflowAdapter:
             "waiting_review": "review",
             "cancelled": "cancel",
             "failed": "error",
+            "reprocess_required": "reprocess",
+            "target_timeout": "error",
         }.get(output["status"], "error")
         events.append(AgentRunEvent("workflow.run_completed", {"status": output["status"]}))
         model_cost = optional_decimal(current.get("estimated_cost"))
@@ -150,6 +176,12 @@ class DocumentAutoflowAdapter:
     async def cancel(self, run_id: str) -> bool:
         async with _ClientContext(self._client) as client:
             headers = await self._authenticate(client)
+            return await self._cancel_with_client(client, headers, run_id)
+
+    async def _cancel_with_client(
+        self, client: httpx.AsyncClient, headers: Mapping[str, str], run_id: str
+    ) -> bool:
+        try:
             response = await client.post(
                 endpoint(
                     self.base_url,
@@ -157,9 +189,11 @@ class DocumentAutoflowAdapter:
                         self.capabilities.get("cancel_run_path", "/api/v1/runs/{run_id}/cancel")
                     ).format(run_id=run_id),
                 ),
-                headers=headers,
+                headers=dict(headers),
                 timeout=self.timeout_seconds,
             )
+        except httpx.HTTPError:
+            return False
         return response.status_code in {200, 202, 204}
 
     async def _authenticate(self, client: httpx.AsyncClient) -> dict[str, str]:

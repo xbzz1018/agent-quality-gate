@@ -32,4 +32,4 @@ async def test_deepagents_target_and_plain_control_share_http_contract() -> None
     assert candidate.json()["output"]["text"] == "deterministic request"
     assert candidate.json()["output"]["harness"] == "deepagents-0.7.6"
     assert candidate.json()["output"]["state_keys"] == ["files", "messages"]
-    assert "usage" not in candidate.json()
+    assert candidate.json()["usage"] == {"input_tokens": 4, "output_tokens": 2}

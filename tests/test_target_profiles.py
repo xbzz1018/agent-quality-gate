@@ -196,6 +196,94 @@ async def test_document_waiting_review_is_a_terminal_business_outcome() -> None:
     assert result.output["status"] == "waiting_review"
 
 
+async def test_document_reprocess_route_is_a_bounded_business_outcome() -> None:
+    app = FastAPI()
+    cancelled = False
+
+    @app.post("/api/v1/projects/project-1/runs", status_code=202)
+    async def create_run() -> dict:
+        return {"id": "run-reprocess", "status": "queued"}
+
+    @app.get("/api/v1/runs/run-reprocess")
+    async def get_run() -> dict:
+        return {
+            "id": "run-reprocess",
+            "status": "reprocessing",
+            "route": "REPROCESS",
+            "input_tokens": 7,
+            "output_tokens": 3,
+        }
+
+    @app.post("/api/v1/runs/run-reprocess/cancel", status_code=202)
+    async def cancel() -> dict:
+        nonlocal cancelled
+        cancelled = True
+        return {"id": "run-reprocess", "status": "cancelled"}
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://target") as client:
+        adapter = DocumentAutoflowAdapter(
+            "http://target",
+            timeout_seconds=5,
+            auth=ResolvedAuth(),
+            capabilities={"poll_interval_seconds": 0.01, "stop_on_routes": ["REPROCESS"]},
+            client=client,
+        )
+        result = await adapter.invoke(
+            {
+                "project_id": "project-1",
+                "template_id": "template-1",
+                "document_id": "document-1",
+            },
+            {"case_id": "reprocess"},
+        )
+
+    assert cancelled is True
+    assert result.final_action == "reprocess"
+    assert result.output["status"] == "reprocess_required"
+    assert result.output["route"] == "REPROCESS"
+    assert result.events[-2].event_type == "workflow.route_terminal"
+
+
+async def test_document_timeout_is_persistable_and_requests_remote_cancel() -> None:
+    app = FastAPI()
+    cancelled = False
+
+    @app.post("/api/v1/projects/project-1/runs", status_code=202)
+    async def create_run() -> dict:
+        return {"id": "run-timeout", "status": "queued"}
+
+    @app.post("/api/v1/runs/run-timeout/cancel", status_code=202)
+    async def cancel() -> dict:
+        nonlocal cancelled
+        cancelled = True
+        return {"id": "run-timeout", "status": "cancelled"}
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://target") as client:
+        adapter = DocumentAutoflowAdapter(
+            "http://target",
+            timeout_seconds=5,
+            auth=ResolvedAuth(),
+            capabilities={"max_poll_seconds": 0},
+            client=client,
+        )
+        result = await adapter.invoke(
+            {
+                "project_id": "project-1",
+                "template_id": "template-1",
+                "document_id": "document-1",
+            },
+            {"case_id": "timeout"},
+        )
+
+    assert cancelled is True
+    assert result.final_action == "error"
+    assert result.output["status"] == "target_timeout"
+    assert result.usage.status is MeasurementStatus.UNKNOWN
+    assert result.events[-2].event_type == "workflow.timeout"
+
+
 def test_document_profile_enforces_known_cost_budget() -> None:
     adapter = DocumentAutoflowAdapter(
         "http://target",

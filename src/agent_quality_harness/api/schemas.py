@@ -8,6 +8,7 @@ from agent_quality_harness.domain.enums import (
     GateDecision,
     MeasurementStatus,
     RunStatus,
+    ScenarioMode,
     TargetKind,
     TargetProtocol,
     VersionRole,
@@ -46,6 +47,13 @@ class TargetCreate(ApiModel):
             raise ValueError("agent targets require HTTP, SSE, AG-UI, or A2A")
         if self.target_kind is TargetKind.TOOL and self.protocol is not TargetProtocol.MCP:
             raise ValueError("tool targets require MCP")
+        if (
+            self.target_kind is TargetKind.SCENARIO
+            and self.protocol is not TargetProtocol.SCENARIO
+        ):
+            raise ValueError("scenario targets require the internal scenario protocol")
+        if self.target_kind is not TargetKind.SCENARIO and self.protocol is TargetProtocol.SCENARIO:
+            raise ValueError("the scenario protocol requires a scenario target")
         return self
 
 
@@ -262,6 +270,54 @@ class EvalRunRead(ApiModel):
     finished_at: datetime | None
 
 
+class ScenarioRunLimits(ApiModel):
+    max_total_tokens: int | None = Field(default=None, ge=1)
+    max_cost_usd: Decimal | None = Field(default=None, gt=0)
+
+
+class ScenarioRunCreate(ApiModel):
+    scenario_version_id: int
+    mode: ScenarioMode = ScenarioMode.SHADOW
+    input: dict[str, Any]
+    limits: ScenarioRunLimits = Field(default_factory=ScenarioRunLimits)
+
+
+class ScenarioNodeRunRead(ApiModel):
+    node_id: str
+    target_version_id: int
+    attempt: int
+    status: str
+    invocation_id: str | None
+    input_sha256: str | None
+    output: dict[str, Any] | None
+    usage: dict[str, Any]
+    latency_ms: int | None
+    failure_reason: str | None
+    started_at: datetime | None
+    finished_at: datetime | None
+
+
+class ScenarioRunRead(ApiModel):
+    id: int
+    organization_id: int
+    scenario_version_id: int
+    gate_result_id: int | None
+    mode: ScenarioMode
+    idempotency_key: str
+    input_sha256: str
+    output: dict[str, Any] | None
+    limits: dict[str, Any]
+    usage: dict[str, Any]
+    status: RunStatus
+    trace_id: str | None
+    failure_reason: str | None
+    attempt: int
+    started_at: datetime | None
+    finished_at: datetime | None
+    created_at: datetime
+    nodes: list[ScenarioNodeRunRead] = Field(default_factory=list)
+
+
 class Readiness(ApiModel):
     status: str
     components: dict[str, str]
@@ -331,9 +387,26 @@ class EvidenceGateControls(ApiModel):
     block_unsupported_claims: bool = True
 
 
+class HallucinationGateControls(ApiModel):
+    enabled: bool = False
+    require_judge: bool = False
+    minimum_supported_rate: float = Field(default=1.0, ge=0, le=1)
+    maximum_unsupported_cases: int = Field(default=0, ge=0)
+
+
+class MultiAgentGateControls(ApiModel):
+    enabled: bool = False
+    require_telemetry: bool = True
+    minimum_node_success_rate: float = Field(default=1.0, ge=0, le=1)
+    block_lifecycle_errors: bool = True
+    block_handoff_errors: bool = True
+
+
 class GateControls(ApiModel):
     skill: SkillGateControls = Field(default_factory=SkillGateControls)
     evidence: EvidenceGateControls = Field(default_factory=EvidenceGateControls)
+    hallucination: HallucinationGateControls = Field(default_factory=HallucinationGateControls)
+    multi_agent: MultiAgentGateControls = Field(default_factory=MultiAgentGateControls)
 
 
 class GatePolicyCreate(ApiModel):
@@ -437,6 +510,14 @@ class EvidenceRules(ApiModel):
     minimum_coverage: float = Field(default=1.0, ge=0, le=1)
 
 
+class JudgeRules(ApiModel):
+    required: bool = False
+    claims_path: str = Field(default="claims", max_length=200)
+    evidence_path: str = Field(default="evidence", max_length=200)
+    required_claim_ids: list[str] = Field(default_factory=list)
+    minimum_confidence: float = Field(default=0.7, ge=0, le=1)
+
+
 class CitationRules(ApiModel):
     required: bool = False
     min_count: int = Field(default=0, ge=0)
@@ -454,5 +535,14 @@ class ExpectedRules(ApiModel):
     skills: SkillRules | None = None
     citations: CitationRules | None = None
     evidence: EvidenceRules | None = None
+    judge: JudgeRules | None = None
     safety: SafetyRules | None = None
     business: list[AssertionRule] = Field(default_factory=list)
+    scenario: "ScenarioRules | None" = None
+
+
+class ScenarioRules(ApiModel):
+    telemetry_required: bool = True
+    required_nodes: list[str] = Field(default_factory=list)
+    forbidden_nodes: list[str] = Field(default_factory=list)
+    required_handoffs: list[tuple[str, str]] = Field(default_factory=list)

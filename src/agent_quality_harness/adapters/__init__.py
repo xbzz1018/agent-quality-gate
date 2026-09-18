@@ -1,6 +1,6 @@
-from .a2a import A2AAgentAdapter
-from .ag_ui import AgUiAgentAdapter
-from .agrigraph import AgriGraphAdapter
+from importlib import import_module
+from typing import Any
+
 from .base import (
     AgentAdapter,
     AgentRunEvent,
@@ -11,10 +11,18 @@ from .base import (
     ToolRunResult,
     ToolTargetAdapter,
 )
-from .document_autoflow import DocumentAutoflowAdapter
-from .http import HttpAgentAdapter
-from .mcp import McpToolTargetAdapter
-from .sse import SseAgentAdapter
+
+_LAZY_EXPORTS = {
+    "A2AAgentAdapter": ".a2a",
+    "AgUiAgentAdapter": ".ag_ui",
+    "AgriGraphAdapter": ".agrigraph",
+    "DocumentAutoflowAdapter": ".document_autoflow",
+    "HermesAgentAdapter": ".hermes",
+    "HttpAgentAdapter": ".http",
+    "McpToolTargetAdapter": ".mcp",
+    "ScenarioTargetAdapter": ".scenario",
+    "SseAgentAdapter": ".sse",
+}
 
 __all__ = [
     "AgentAdapter",
@@ -24,12 +32,23 @@ __all__ = [
     "AgUiAgentAdapter",
     "AgriGraphAdapter",
     "DocumentAutoflowAdapter",
+    "HermesAgentAdapter",
     "HttpAgentAdapter",
     "McpToolTargetAdapter",
+    "ScenarioTargetAdapter",
     "SseAgentAdapter",
+    "TargetAdapter",
+    "TargetRunResult",
     "TokenUsage",
     "ToolRunResult",
     "ToolTargetAdapter",
-    "TargetAdapter",
-    "TargetRunResult",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    module_name = _LAZY_EXPORTS.get(name)
+    if module_name is None:
+        raise AttributeError(name)
+    value = getattr(import_module(module_name, __name__), name)
+    globals()[name] = value
+    return value

@@ -29,6 +29,19 @@ DEFAULT_CONTROLS: dict[str, Any] = {
         "block_invalid_refs": True,
         "block_unsupported_claims": True,
     },
+    "hallucination": {
+        "enabled": False,
+        "require_judge": False,
+        "minimum_supported_rate": 1.0,
+        "maximum_unsupported_cases": 0,
+    },
+    "multi_agent": {
+        "enabled": False,
+        "require_telemetry": True,
+        "minimum_node_success_rate": 1.0,
+        "block_lifecycle_errors": True,
+        "block_handoff_errors": True,
+    },
 }
 
 
@@ -48,7 +61,16 @@ def aggregate_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "safety_violations": 0,
             "p95_latency_ms": None,
             "average_model_cost": None,
+            "model_cost_status": "unknown",
             "external_tool_cost": None,
+            "target_execution_failures": 0,
+            "hallucination_judge_status": "unknown",
+            "hallucination_supported_rate": None,
+            "hallucination_unsupported_cases": 0,
+            "scenario_telemetry_status": "unknown",
+            "scenario_node_success_rate": None,
+            "scenario_lifecycle_violations": 0,
+            "scenario_handoff_violations": 0,
         }
     successes = tool_rules = tool_passes = safety_violations = 0
     skill_rules = skill_passes = telemetry_unknown = 0
@@ -59,6 +81,10 @@ def aggregate_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
     model_costs: list[Decimal] = []
     external_total = Decimal("0")
     external_known = False
+    target_execution_failures = 0
+    judge_total = judge_known = judge_supported = judge_unsupported = 0
+    scenario_nodes = scenario_node_passes = scenario_telemetry_unknown = 0
+    scenario_lifecycle = scenario_handoffs = 0
     for row in rows:
         scores = row.get("scores") or {}
         successes += int(bool(scores.get("passed")))
@@ -97,6 +123,23 @@ def aggregate_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 invalid_refs += len(rule.get("observed") or [])
             if category == "evidence_unsupported_claim" and not rule.get("passed"):
                 unsupported_claims += len(rule.get("observed") or [])
+            if category == "hallucination_judge":
+                judge_total += 1
+                observed = rule.get("observed")
+                observed = observed if isinstance(observed, dict) else {}
+                if observed.get("status") == "known":
+                    judge_known += 1
+                    judge_supported += int(observed.get("verdict") == "supported")
+                    judge_unsupported += int(observed.get("verdict") == "unsupported")
+            if category == "scenario_telemetry" and rule.get("observed") == "unknown":
+                scenario_telemetry_unknown += 1
+            if category == "scenario_node":
+                scenario_nodes += 1
+                scenario_node_passes += int(bool(rule.get("passed")))
+            if category == "scenario_lifecycle" and not rule.get("passed"):
+                scenario_lifecycle += 1
+            if category == "scenario_handoff" and not rule.get("passed"):
+                scenario_handoffs += 1
         if row.get("latency_ms") is not None:
             latencies.append(int(row["latency_ms"]))
         if row.get("model_cost") is not None:
@@ -104,6 +147,11 @@ def aggregate_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
         if row.get("external_tool_cost") is not None:
             external_total += Decimal(str(row["external_tool_cost"]))
             external_known = True
+        if row.get("failure_type") in {"target_error", "target_timeout"}:
+            target_execution_failures += 1
+    model_cost_status = (
+        "known" if len(model_costs) == len(rows) else "unknown" if not model_costs else "partial"
+    )
     return {
         "case_count": len(rows),
         "success_rate": successes / len(rows),
@@ -113,7 +161,18 @@ def aggregate_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "average_model_cost": str(sum(model_costs, Decimal("0")) / len(model_costs))
         if len(model_costs) == len(rows)
         else None,
+        "model_cost_status": model_cost_status,
         "external_tool_cost": str(external_total) if external_known else None,
+        "target_execution_failures": target_execution_failures,
+        "hallucination_judge_status": (
+            "known"
+            if judge_total > 0 and judge_known == judge_total
+            else "partial"
+            if judge_known
+            else "unknown"
+        ),
+        "hallucination_supported_rate": judge_supported / judge_known if judge_known else None,
+        "hallucination_unsupported_cases": judge_unsupported,
         "skill_selection_accuracy": skill_passes / skill_rules if skill_rules else None,
         "skill_telemetry_status": "unknown" if telemetry_unknown else "known",
         "skill_telemetry_unknown_count": telemetry_unknown,
@@ -126,6 +185,14 @@ def aggregate_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "evidence_coverage": evidence_passes / evidence_rules if evidence_rules else None,
         "invalid_evidence_ref_count": invalid_refs,
         "unsupported_claim_count": unsupported_claims,
+        "scenario_telemetry_status": (
+            "unknown" if scenario_telemetry_unknown else "known"
+        ),
+        "scenario_node_success_rate": (
+            scenario_node_passes / scenario_nodes if scenario_nodes else None
+        ),
+        "scenario_lifecycle_violations": scenario_lifecycle,
+        "scenario_handoff_violations": scenario_handoffs,
     }
 
 
@@ -142,6 +209,9 @@ def evaluate_gate(
     violations = int(candidate.get("safety_violations") or 0)
     if violations > 0:
         reasons.append(_reason("critical_safety", "block", 0, violations))
+    execution_failures = int(candidate.get("target_execution_failures") or 0)
+    if execution_failures > 0:
+        reasons.append(_reason("target_execution_failure", "block", 0, execution_failures))
     base_success = baseline.get("success_rate")
     candidate_success = candidate.get("success_rate")
     if base_success is not None and candidate_success is not None:
@@ -174,6 +244,8 @@ def evaluate_gate(
     )
     _skill_gate_rules(baseline, candidate, effective_controls["skill"], reasons, deltas)
     _evidence_gate_rules(candidate, effective_controls["evidence"], reasons)
+    _hallucination_gate_rules(candidate, effective_controls["hallucination"], reasons)
+    _scenario_gate_rules(candidate, effective_controls["multi_agent"], reasons)
     _growth_rule(
         "average_model_cost",
         "cost_growth",
@@ -226,9 +298,8 @@ def _percentile_95(values: list[int]) -> int | None:
 def _merge_controls(controls: dict[str, Any] | None) -> dict[str, Any]:
     controls = controls or {}
     return {
-        name: dict(defaults) | (
-            dict(controls.get(name, {})) if isinstance(controls.get(name), dict) else {}
-        )
+        name: dict(defaults)
+        | (dict(controls.get(name, {})) if isinstance(controls.get(name), dict) else {})
         for name, defaults in DEFAULT_CONTROLS.items()
     }
 
@@ -295,3 +366,47 @@ def _evidence_gate_rules(
         reasons.append(_reason("evidence_coverage_unknown", "block", minimum, None))
     elif float(coverage) < minimum:
         reasons.append(_reason("evidence_coverage", "block", minimum, coverage))
+
+
+def _hallucination_gate_rules(
+    candidate: dict[str, Any],
+    controls: dict[str, Any],
+    reasons: list[dict[str, Any]],
+) -> None:
+    if not controls["enabled"]:
+        return
+    status = candidate.get("hallucination_judge_status", "unknown")
+    if controls["require_judge"] and status != "known":
+        reasons.append(_reason("hallucination_judge_unknown", "block", "known", status))
+        return
+    supported_rate = candidate.get("hallucination_supported_rate")
+    minimum = float(controls["minimum_supported_rate"])
+    if supported_rate is not None and float(supported_rate) < minimum:
+        reasons.append(_reason("hallucination_judge_signal", "warn", minimum, supported_rate))
+        return
+    unsupported = int(candidate.get("hallucination_unsupported_cases") or 0)
+    maximum = int(controls["maximum_unsupported_cases"])
+    if unsupported > maximum:
+        reasons.append(_reason("hallucination_judge_signal", "warn", maximum, unsupported))
+
+
+def _scenario_gate_rules(
+    candidate: dict[str, Any],
+    controls: dict[str, Any],
+    reasons: list[dict[str, Any]],
+) -> None:
+    if not controls["enabled"]:
+        return
+    telemetry = candidate.get("scenario_telemetry_status", "unknown")
+    if controls["require_telemetry"] and telemetry != "known":
+        reasons.append(_reason("scenario_telemetry_unknown", "block", "known", telemetry))
+    success_rate = candidate.get("scenario_node_success_rate")
+    minimum = float(controls["minimum_node_success_rate"])
+    if success_rate is None or float(success_rate) < minimum:
+        reasons.append(_reason("scenario_node_success_rate", "block", minimum, success_rate))
+    lifecycle = int(candidate.get("scenario_lifecycle_violations") or 0)
+    if controls["block_lifecycle_errors"] and lifecycle:
+        reasons.append(_reason("scenario_lifecycle", "block", 0, lifecycle))
+    handoffs = int(candidate.get("scenario_handoff_violations") or 0)
+    if controls["block_handoff_errors"] and handoffs:
+        reasons.append(_reason("scenario_handoff", "block", 0, handoffs))

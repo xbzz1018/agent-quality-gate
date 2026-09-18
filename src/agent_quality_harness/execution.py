@@ -11,8 +11,13 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
-from agent_quality_harness.adapter_factory import TargetSpec, create_target_adapter
-from agent_quality_harness.adapters import TargetAdapter
+from agent_quality_harness.adapter_factory import create_target_adapter
+from agent_quality_harness.adapters.base import (
+    AgentRunEvent,
+    AgentRunResult,
+    TargetAdapter,
+    TokenUsage,
+)
 from agent_quality_harness.core.database import Database
 from agent_quality_harness.core.telemetry import get_tracer
 from agent_quality_harness.domain.enums import GateDecision, RunStatus, VersionRole
@@ -32,11 +37,14 @@ from agent_quality_harness.domain.models import (
     UsageMeasurement,
 )
 from agent_quality_harness.evaluation import HarnessCase, HarnessResult, InspectHarness
+from agent_quality_harness.evaluation.scoring import RuleScore, ScoreReport
 from agent_quality_harness.gates import aggregate_metrics, evaluate_gate
 from agent_quality_harness.policy import OpaClient
 from agent_quality_harness.pricing import calculate_model_cost
+from agent_quality_harness.scenarios import resolve_scenario_version
 from agent_quality_harness.services import verify_dataset_integrity
 from agent_quality_harness.skills import skill_regression, version_skill_snapshot
+from agent_quality_harness.target_spec import TargetSpec
 
 
 class RunCancelled(RuntimeError):
@@ -51,6 +59,8 @@ class VersionExecution:
     target_name: str
     target: TargetSpec
     skills: tuple[dict[str, Any], ...]
+    recorded_run_id: int | None = None
+    recorded_version_role: VersionRole = VersionRole.CANDIDATE
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,6 +77,7 @@ class PolicyExecution:
 @dataclass(frozen=True, slots=True)
 class RunExecution:
     run_id: int
+    organization_id: int
     dataset_id: int
     cases: tuple[HarnessCase, ...]
     case_ids: dict[str, int]
@@ -112,6 +123,12 @@ class InspectRunExecutor:
                 attributes={"aqh.run.id": run_id, "aqh.dataset.id": execution.dataset_id},
             ):
                 for version in execution.versions:
+                    if version.recorded_run_id is not None:
+                        captures.extend(
+                            (version.role, item)
+                            for item in self._recorded_captures(execution, version)
+                        )
+                        continue
                     adapter = self.adapter_factory(version.target)
                     for start in range(0, len(execution.cases), self.harness.max_samples):
                         if self._cancel_requested(run_id):
@@ -129,6 +146,7 @@ class InspectRunExecutor:
                             protocol=version.target.protocol.value,
                             bound_skills=version.skills,
                             capture=version_captures,
+                            time_limit_seconds=_case_time_limit(version.target),
                         )
                         try:
                             logs = await self._run_with_heartbeat(
@@ -261,6 +279,7 @@ class InspectRunExecutor:
             )
             return RunExecution(
                 run_id=run.id,
+                organization_id=run.organization_id,
                 dataset_id=run.dataset_id,
                 cases=cases,
                 case_ids={row.external_id: row.id for row in rows},
@@ -297,6 +316,19 @@ class InspectRunExecutor:
             target = session.get(EvaluationTarget, version.target_id)
             if target is None:
                 raise LookupError(f"target not found: {version.target_id}")
+            recorded = version.metadata_json.get("recorded_baseline")
+            if recorded is not None and role is not VersionRole.BASELINE:
+                raise ValueError("recorded run sources are only valid for Baseline versions")
+            recorded_run_id = None
+            recorded_role = VersionRole.CANDIDATE
+            if isinstance(recorded, Mapping):
+                recorded_run_id = int(recorded["run_id"])
+                recorded_role = VersionRole(str(recorded.get("version_role", "candidate")))
+            participants: dict[int, TargetSpec] = {}
+            if target.protocol.value == "scenario":
+                _, participants = resolve_scenario_version(
+                    session, version, run.organization_id
+                )
             versions.append(
                 VersionExecution(
                     role=role,
@@ -310,11 +342,104 @@ class InspectRunExecutor:
                         auth_ref=target.auth_ref,
                         timeout_seconds=target.timeout_seconds,
                         capabilities=dict(target.capabilities),
+                        version_id=version.id,
+                        version_metadata=dict(version.metadata_json),
+                        participants=participants,
+                        target_kind=target.target_kind,
                     ),
                     skills=tuple(version_skill_snapshot(session, version.id)),
+                    recorded_run_id=recorded_run_id,
+                    recorded_version_role=recorded_role,
                 )
             )
         return versions
+
+    def _recorded_captures(
+        self, execution: RunExecution, version: VersionExecution
+    ) -> list[HarnessResult]:
+        assert version.recorded_run_id is not None
+        with self.database.session() as session:
+            source = session.get(EvalRun, version.recorded_run_id)
+            if (
+                source is None
+                or source.organization_id != execution.organization_id
+                or source.dataset_id != execution.dataset_id
+                or source.status is not RunStatus.COMPLETED
+            ):
+                raise ValueError("recorded Baseline source is not a completed matching Run")
+            rows = session.execute(
+                select(CaseResult, EvalCase, UsageMeasurement)
+                .join(EvalCase, EvalCase.id == CaseResult.case_id)
+                .join(UsageMeasurement, UsageMeasurement.case_result_id == CaseResult.id)
+                .where(
+                    CaseResult.run_id == source.id,
+                    CaseResult.version_role == version.recorded_version_role,
+                )
+                .order_by(EvalCase.ordinal)
+            ).all()
+            expected_ids = {case.id for case in execution.cases}
+            recorded_ids = {row[1].external_id for row in rows}
+            if len(rows) != len(execution.cases) or recorded_ids != expected_ids:
+                raise ValueError("recorded Baseline source CaseResults are incomplete")
+            captures: list[HarnessResult] = []
+            for case_result, case, usage in rows:
+                score_data = dict(case_result.scores)
+                rules = tuple(
+                    RuleScore(
+                        rule_id=str(item["rule_id"]),
+                        category=str(item["category"]),
+                        expected=item.get("expected"),
+                        observed=item.get("observed"),
+                        score=float(item["score"]),
+                        critical=bool(item["critical"]),
+                        failure_reason=item.get("failure_reason"),
+                    )
+                    for item in score_data.get("rules", [])
+                )
+                report = ScoreReport(
+                    passed=bool(score_data["passed"]),
+                    score=float(score_data["score"]),
+                    rules=rules,
+                )
+                result = AgentRunResult(
+                    run_id=f"recorded:{source.id}:{case.external_id}",
+                    final_action=case_result.final_action or "error",
+                    output=dict(case_result.output or {}),
+                    events=(
+                        AgentRunEvent(
+                            "baseline.replayed",
+                            {
+                                "source_run_id": source.id,
+                                "source_case_result_id": case_result.id,
+                                "source_version_role": version.recorded_version_role.value,
+                            },
+                        ),
+                    ),
+                    usage=TokenUsage(
+                        input_tokens=usage.input_tokens,
+                        output_tokens=usage.output_tokens,
+                        cache_read_tokens=usage.cache_read_tokens,
+                        cache_write_tokens=usage.cache_write_tokens,
+                        reasoning_tokens=usage.reasoning_tokens,
+                        embedding_tokens=usage.embedding_tokens,
+                        vision_tokens=usage.vision_tokens,
+                        judge_tokens=usage.judge_tokens,
+                        raw=dict(usage.raw_usage),
+                    ),
+                    model_cost=usage.model_cost,
+                    external_tool_cost=usage.external_tool_cost,
+                )
+                captures.append(
+                    HarnessResult(
+                        case_id=case.external_id,
+                        result=result,
+                        trace_id=case_result.trace_id,
+                        latency_ms=case_result.latency_ms or 0,
+                        scores=report,
+                        failure_type=case_result.failure_type,
+                    )
+                )
+            return captures
 
     def _persist(
         self,
@@ -348,7 +473,10 @@ class InspectRunExecutor:
                     final_action=result.final_action,
                     trace_id=captured.trace_id,
                     scores=score_data,
-                    failure_type=None if score_data["passed"] else "assertion_failure",
+                    failure_type=(
+                        captured.failure_type
+                        or (None if score_data["passed"] else "assertion_failure")
+                    ),
                     latency_ms=captured.latency_ms,
                 )
                 session.add(case_result)
@@ -404,6 +532,7 @@ class InspectRunExecutor:
                         "latency_ms": captured.latency_ms,
                         "model_cost": model_cost,
                         "external_tool_cost": result.external_tool_cost,
+                        "failure_type": captured.failure_type,
                     }
                 )
                 if role is VersionRole.CANDIDATE:
@@ -477,8 +606,7 @@ class InspectRunExecutor:
                     )
                     policy_result = self.opa_client.evaluate(
                         policy_id=(
-                            f"org-{execution.policy.organization_id}-"
-                            f"{execution.policy.sha256[:16]}"
+                            f"org-{execution.policy.organization_id}-{execution.policy.sha256[:16]}"
                         ),
                         rego=execution.policy.rego,
                         data=execution.policy.data,
@@ -645,6 +773,18 @@ class InspectRunExecutor:
 
 def _decision_rank(decision: GateDecision) -> int:
     return {GateDecision.SHIP: 0, GateDecision.WARN: 1, GateDecision.BLOCK: 2}[decision]
+
+
+def _case_time_limit(target: TargetSpec) -> int:
+    configured = target.capabilities.get(
+        "case_time_limit_seconds",
+        target.capabilities.get("max_poll_seconds", target.timeout_seconds),
+    )
+    try:
+        seconds = int(float(configured))
+    except (TypeError, ValueError):
+        seconds = target.timeout_seconds
+    return max(1, min(seconds + 30, 7200))
 
 
 def _policy_input(

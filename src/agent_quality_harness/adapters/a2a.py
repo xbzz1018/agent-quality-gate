@@ -252,7 +252,10 @@ def _result_from_task(
         final_action=_final_action(task.status.state),
         output=output,
         events=tuple(events),
-        usage=_unknown_usage(),
+        usage=_usage_from_parts(
+            [part for artifact in artifacts for part in artifact["parts"]]
+            + ([] if message is None else message["parts"])
+        ),
     )
 
 
@@ -277,7 +280,7 @@ def _result_from_message(
         final_action="answer",
         output=output,
         events=tuple(events),
-        usage=_unknown_usage(),
+        usage=_usage_from_parts(payload["parts"]),
     )
 
 
@@ -349,3 +352,26 @@ def _final_action(state: int) -> str:
 
 def _unknown_usage() -> TokenUsage:
     return TokenUsage(raw={"protocol": "a2a", "status": "not_provided"})
+
+
+def _usage_from_parts(parts: list[dict[str, Any]]) -> TokenUsage:
+    for part in parts:
+        data = part.get("data")
+        usage = data.get("aqh_token_usage") if isinstance(data, dict) else None
+        if not isinstance(usage, dict):
+            continue
+        return TokenUsage(
+            input_tokens=_optional_usage(usage.get("input_tokens")),
+            output_tokens=_optional_usage(usage.get("output_tokens")),
+            raw={"protocol": "a2a", "source": "data_part"},
+        )
+    return _unknown_usage()
+
+
+def _optional_usage(value: Any) -> int | None:
+    if value is None:
+        return None
+    parsed = int(value)
+    if parsed < 0:
+        raise ValueError("A2A TokenUsage cannot be negative")
+    return parsed

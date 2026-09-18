@@ -35,6 +35,11 @@ def test_postgresql_schema_compiles_with_expected_tables() -> None:
         "skill_scans",
         "policy_bundles",
         "policy_evaluations",
+        "outbox_events",
+        "kafka_inbox",
+        "kafka_dlq",
+        "scenario_runs",
+        "scenario_node_runs",
     }
 
     assert set(Base.metadata.tables) == expected

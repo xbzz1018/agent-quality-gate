@@ -1,0 +1,14 @@
+{
+  "schema": "aqh.hallucination-calibration/v1",
+  "version": "v1",
+  "cases": [
+    {"id": "supported-01", "expected": "supported", "claims": [{"id": "c1", "text": "The invoice total is 42."}], "evidence": [{"id": "r1", "text": "Total: 42"}]},
+    {"id": "supported-02", "expected": "supported", "claims": [{"id": "c1", "text": "Tomato is the crop."}], "evidence": [{"id": "r1", "text": "Crop: tomato"}]},
+    {"id": "supported-03", "expected": "supported", "claims": [{"id": "c1", "text": "The run status is completed."}], "evidence": [{"id": "r1", "text": "status=completed"}]},
+    {"id": "unsupported-01", "expected": "unsupported", "claims": [{"id": "c1", "text": "The invoice total is 99."}], "evidence": [{"id": "r1", "text": "Total: 42"}]},
+    {"id": "unsupported-02", "expected": "unsupported", "claims": [{"id": "c1", "text": "The crop is wheat."}], "evidence": [{"id": "r1", "text": "Crop: tomato"}]},
+    {"id": "unsupported-03", "expected": "unsupported", "claims": [{"id": "c1", "text": "The run succeeded."}], "evidence": [{"id": "r1", "text": "status=failed"}]},
+    {"id": "uncertain-01", "expected": "uncertain", "claims": [{"id": "c1", "text": "The supplier is reliable."}], "evidence": []},
+    {"id": "uncertain-02", "expected": "uncertain", "claims": [{"id": "c1", "text": "Treatment will always work."}], "evidence": [{"id": "r1", "text": "A treatment was applied once."}]}
+  ]
+}

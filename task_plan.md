@@ -6,7 +6,7 @@ Build a runnable, testable Agent evaluation, observability, replay, and release-
 
 ## Current Phase
 
-Phase 4.5 - Multi-Skill reliability (complete)
+Phase 7 - multi-agent scenario control plane and current-environment revalidation (complete)
 
 ## Status Semantics
 
@@ -82,9 +82,9 @@ Phase 4.5 - Multi-Skill reliability (complete)
 - [x] Freeze source fingerprints and normalized real-target dataset manifests.
 - [x] Complete the 40-case AgriGraph candidate-only characterization.
 - [x] Complete a one-case Document Autoflow live Profile smoke characterization.
-- [ ] Complete the 24-case Document Autoflow characterization; retained as a Phase 5 known limitation after Run #54 entered a long REPROCESS activity.
+- [x] Complete a current-database 24-case Document Autoflow characterization and Stability Gate; Runs #30/#31 preserve REVIEW/REPROCESS and target-conflict outcomes.
 - [x] Re-run backend, migration, Web, Compose, and Trace verification.
-- **Status:** complete for platform engineering; the 24-case Document target limitation is tracked separately in Phase 5
+- **Status:** complete for platform engineering and current Document target revalidation
 
 ### Phase 3.8: Local MVP release closure
 
@@ -103,9 +103,9 @@ Phase 4.5 - Multi-Skill reliability (complete)
 - [x] Add Agent Skills versioning and security regression coverage.
 - [x] Add OPA/Rego Policy-as-Code integration.
 - [x] Add AG-UI AgentTargetAdapter.
-- [ ] Evaluate MCP Tasks as an experimental enhancement.
-- [ ] Treat Hermes only as an optional compatible target.
-- **Status:** complete for planned protocol and safety adapters; MCP Tasks and Hermes remain pending/experimental
+- [x] Evaluate MCP Tasks as an experimental 2025-11-25 lifecycle fixture with explicit SDK compatibility limits.
+- [x] Treat Hermes only as an optional compatible target with contract coverage.
+- **Status:** complete for planned protocol and safety adapters; MCP Tasks remains experimental and Hermes remains optional
 
 ### Phase 4.1: v0.2 protocol release closure
 
@@ -157,16 +157,38 @@ Phase 4.5 - Multi-Skill reliability (complete)
 - [x] Register Document Autoflow as a real target without modifying its repository.
 - [x] Freeze cross-project contract fixtures and source fingerprints.
 - [x] Record an AgriGraph 40-case characterization and a Document Autoflow live smoke result.
-- [ ] Record the complete 24-case Document Autoflow characterization after its REPROCESS path has a bounded terminal outcome.
-- **Status:** partially complete; no Baseline or release Gate is fabricated for either target
+- [x] Record current Document Run #30 with 24/24 Characterization results and Run #31 with a real Stability BLOCK.
+- [x] Revalidate AgriGraph after a rotated Embedding key and atomic 1024-dimensional index rebuild; Runs #32/#33/#34 complete with a real Stability SHIP.
+- **Status:** complete for both current real targets; comparisons are explicitly current-snapshot Stability Gates
 
 ### Phase 6: Distributed deployment enhancements
 
-- [ ] Add PostgreSQL Outbox and Kafka only after the Redis MVP passes.
-- [ ] Add Kafka consumer groups, idempotency, aggregation, and DLQ tests.
-- [ ] Move Redis back to cache, rate-limit, and short-lived-state duties after Kafka takes the queue.
-- [ ] Add Kubernetes manifests and kind/HPA verification only after the event path passes.
-- **Status:** optional
+- [x] Add PostgreSQL Outbox and Kafka as an optional distributed profile after the verified Redis MVP.
+- [x] Add Kafka consumer, Inbox idempotency, recovery and DLQ tests; Run #14 verifies the distributed path.
+- [x] Keep Redis as the default queue; Kafka does not silently replace the core topology.
+- [x] Add Kubernetes manifests and statically render/validate 20 objects.
+- [ ] Run kind/HPA acceptance; intentionally excluded from the storage-bounded local closeout.
+- **Status:** optional Kafka path and static manifests complete; local cluster and remote deployment unverified
+
+### Project closeout A-D
+
+- [x] **A - Document target:** diagnose Run #54 from persisted AQH, Document Autoflow, and Temporal state; complete the frozen 24-case characterization with bounded per-case terminal behavior and the existing USD 1 budget fuse.
+- [x] **B - Real release gates:** create legitimate Baseline/Candidate versions from real, separately identified target snapshots; rerun only the minimum frozen evaluation needed and produce non-fabricated Gate decisions.
+- [x] **C - Hallucination evaluation:** retain deterministic EvidenceRef/claim checks, add a bounded optional model-judge path with provenance, calibration fixtures, UNKNOWN handling, and a policy control; never claim universal open-domain hallucination detection.
+- [x] **D - Remaining enhancements:** verify experimental MCP Tasks, optional Hermes compatibility, Kafka Outbox/Inbox/DLQ, and static Kubernetes manifests.
+- [x] Re-run backend, migration, Web, Compose, protocol/event paths and static manifest validation; keep kind/HPA explicitly unverified.
+- **Status:** complete within the storage-bounded scope; local cluster acceptance remains optional/unverified
+- **Explicit exclusions:** remote GitHub Actions execution and public/production deployment hardening are not part of this closeout.
+
+### Docker recovery and storage budget
+
+- [x] Make the default Compose topology core-only; protocol, observability, distributed, and kind services require explicit profiles.
+- [x] Split the API and HTTP Fake Agent from the full Worker dependency image.
+- [x] Use conflict-free configurable host ports without changing container service discovery.
+- [x] Rebuild only the core topology and keep Docker total usage below 20 GB with at least 20 GB free on E:.
+- [x] Bootstrap a fresh local administrator and execute a real Fake Agent EvalRun through the rebuilt stack.
+- [x] Record image, volume, cache, and free-space measurements after acceptance.
+- **Status:** complete
 
 ## Product Boundaries
 
@@ -185,6 +207,19 @@ Phase 4.5 - Multi-Skill reliability (complete)
 - First product screens: Eval Run detail, Version Compare, Release Gate.
 - No marketing landing page, placeholder charts, silent mocks, knowledge-base CRUD, prompt CRUD, model/tool marketplaces, general chat, star ratings, or broad RBAC CRUD.
 
+### Phase 7: Multi-agent scenario control plane and current-environment revalidation
+
+- [x] Add frozen `aqh.scenario/v1` targets, validation, deterministic DAG execution, and persistent ScenarioRun/ScenarioNodeRun state.
+- [x] Add Shadow and Gate-authorized local Pilot execution with idempotency, limits, cancellation, and fail-closed budget handling.
+- [x] Connect AG-UI Researcher, MCP Tasks Evidence Tool, A2A Reviewer, and DeepAgents Coordinator through Inspect AI.
+- [x] Verify Good/Bad through Redis and the Good path through PostgreSQL Outbox/Kafka; preserve failed Kafka recovery attempts as evidence.
+- [x] Split Kafka client dependencies from default API/Core Worker images and enforce storage-aware Compose limits.
+- [x] Revalidate AgriGraph after 1024-dimensional preflight and atomic ES rebuild: Run #32 smoke, Run #33 40-case Characterization, and Run #34 Stability SHIP.
+- [x] Revalidate Document Autoflow in the rebuilt database: Run #29 smoke, Run #30 24-case Characterization, and Run #31 Stability BLOCK.
+- [x] Reconcile README, task plan, traceability, progress, and findings; remove interview/demo material.
+- **Status:** complete within the storage-bounded local scope
+- **Security resolution:** the exposed key was not used; a locally supplied rotated key completed the preflight and vector rebuild without entering logs or the repository.
+
 ## Key Technical Decisions
 
 | Decision | Rationale |
@@ -201,7 +236,6 @@ Phase 4.5 - Multi-Skill reliability (complete)
 | Error | Attempt | Resolution |
 |---|---:|---|
 | `rg.exe` access denied on the F: drive during initial read-only inspection | 1 | Use PowerShell file enumeration and `Select-String` on this machine. |
-| Project directory is not a Git repository | 1 | Record as a baseline fact; do not imply versioned code until Git is explicitly initialized. |
 | Inspect AI `TaskState.model_fields` introspection failed | 1 | Treat `TaskState` as Inspect's state class and inspect its source/signature instead of assuming Pydantic. |
 | First Ruff pass reported 9 findings | 1 | Use `Annotated` FastAPI dependencies, remove the unused import, and format the long import. |
 | Package import failed before editable install | 1 | Install this project with `pip install -e .` after the first lint fixes. |
@@ -219,4 +253,3 @@ Phase 4.5 - Multi-Skill reliability (complete)
 | Worker retry test could starve cancellation with an immediate queue stub | 1 | Yield to the event loop after every worker iteration; terminate only the stuck test process. |
 | Planning catch-up example pointed to a missing `.codex` installation path | 1 | Use the installed script under `C:\Users\xzheng\.agents\skills\planning-with-files\scripts`. |
 | PricingSnapshot API passed `Decimal` objects directly to JSONB | 1 | Normalize prices through Pydantic JSON mode at the API boundary. |
-| Built-in Image Gen capability is unavailable in this task | 1 | Keep Vue scaffolding pending and request explicit approval before any CLI/API fallback. |

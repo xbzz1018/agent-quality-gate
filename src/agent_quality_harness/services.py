@@ -8,7 +8,6 @@ from pathlib import Path
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from agent_quality_harness.adapter_factory import validate_contract_profile
 from agent_quality_harness.api.schemas import (
     DatasetImport,
     DemoBootstrapRead,
@@ -16,20 +15,24 @@ from agent_quality_harness.api.schemas import (
     TargetCreate,
     VersionCreate,
 )
-from agent_quality_harness.domain.enums import RunStatus, TargetKind, TargetProtocol
+from agent_quality_harness.contract_profiles import validate_contract_profile
+from agent_quality_harness.domain.enums import RunStatus, TargetKind, TargetProtocol, VersionRole
 from agent_quality_harness.domain.models import (
     AgentVersion,
+    CaseResult,
     EvalCase,
     EvalDataset,
     EvalRun,
     EvaluationTarget,
     GatePolicy,
+    OutboxEvent,
     PolicyBundle,
     PricingSnapshot,
 )
+from agent_quality_harness.scenarios import freeze_scenario_metadata, scenario_snapshot
 from agent_quality_harness.skills import skill_coverage, version_skill_snapshot
 
-RUNNABLE_PROTOCOLS = {"http", "sse", "ag_ui", "a2a", "mcp"}
+RUNNABLE_PROTOCOLS = {"http", "sse", "ag_ui", "a2a", "mcp", "scenario"}
 
 DEMO_TARGET_NAME = "Demo Fixture Agent"
 DEMO_DATASET_NAME = "agent-quality-harness-demo-core"
@@ -64,6 +67,8 @@ def create_version(
         raise LookupError("target not found")
     data = payload.model_dump()
     metadata = data.pop("metadata")
+    if target.target_kind is TargetKind.SCENARIO:
+        metadata, _, _ = freeze_scenario_metadata(session, metadata, organization_id)
     version = AgentVersion(target_id=target_id, metadata_json=metadata, **data)
     session.add(version)
     session.commit()
@@ -266,6 +271,12 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
             f"{candidate_target.protocol.value} Adapter pending; HTTP/SSE/AG-UI/A2A/MCP can execute"
         )
     validate_contract_profile(candidate_target.protocol, dict(candidate_target.capabilities))
+    candidate_scenario = None
+    if candidate_target.target_kind is TargetKind.SCENARIO:
+        _, plan, _ = freeze_scenario_metadata(
+            session, candidate.metadata_json, organization_id
+        )
+        candidate_scenario = scenario_snapshot(plan)
     baseline: AgentVersion | None = None
     if payload.baseline_version_id is not None:
         baseline = session.scalar(
@@ -297,6 +308,14 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
     case_count = session.scalar(
         select(func.count(EvalCase.id)).where(EvalCase.dataset_id == dataset.id)
     )
+    if baseline is not None:
+        _validate_recorded_baseline(
+            session,
+            baseline,
+            dataset_id=dataset.id,
+            organization_id=organization_id,
+            expected_case_count=int(case_count or 0),
+        )
     gate_policy = _resolve_policy(session, payload.gate_policy_id, organization_id)
     pricing = _resolve_pricing(session, payload.pricing_snapshot_id, organization_id)
     config = dict(payload.config)
@@ -329,6 +348,7 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
             ),
         },
         "target": _target_snapshot(candidate_target),
+        "scenario": candidate_scenario,
         "config_sha256": _sha256(config),
         "gate_policy": _policy_snapshot(session, gate_policy),
         "pricing_snapshot": _pricing_snapshot(pricing),
@@ -348,6 +368,19 @@ def create_eval_run(session: Session, payload: EvalRunCreate, organization_id: i
         expected_case_count=int(case_count or 0),
     )
     session.add(run)
+    session.flush()
+    if config.get("queue_backend") == "kafka":
+        session.add(
+            OutboxEvent(
+                organization_id=organization_id,
+                run_id=run.id,
+                event_type="eval_run.queued",
+                payload={"run_id": run.id},
+                status="pending",
+                attempts=0,
+                available_at=datetime.now(UTC),
+            )
+        )
     session.commit()
     session.refresh(run)
     return run
@@ -374,6 +407,51 @@ def verify_dataset_integrity(dataset: EvalDataset, cases: list[EvalCase]) -> Non
     }
     if _sha256(document) != dataset.sha256:
         raise ValueError("dataset integrity mismatch")
+
+
+def _validate_recorded_baseline(
+    session: Session,
+    version: AgentVersion,
+    *,
+    dataset_id: int,
+    organization_id: int,
+    expected_case_count: int,
+) -> None:
+    recorded = version.metadata_json.get("recorded_baseline")
+    if recorded is None:
+        return
+    if not isinstance(recorded, dict) or not isinstance(recorded.get("run_id"), int):
+        raise ValueError("recorded Baseline requires an integer run_id")
+    try:
+        source_role = VersionRole(str(recorded.get("version_role", "candidate")))
+    except ValueError as exc:
+        raise ValueError("recorded Baseline version_role is invalid") from exc
+    source = session.scalar(
+        select(EvalRun).where(
+            EvalRun.id == recorded["run_id"],
+            EvalRun.organization_id == organization_id,
+        )
+    )
+    if source is None or source.status is not RunStatus.COMPLETED:
+        raise ValueError("recorded Baseline source must be a completed Run in this organization")
+    if source.dataset_id != dataset_id:
+        raise ValueError("recorded Baseline source must use the same frozen Dataset")
+    source_version_id = (
+        source.baseline_version_id
+        if source_role is VersionRole.BASELINE
+        else source.candidate_version_id
+    )
+    expected_source_version_id = recorded.get("source_version_id")
+    if expected_source_version_id is not None and expected_source_version_id != source_version_id:
+        raise ValueError("recorded Baseline source version does not match the manifest")
+    result_count = session.scalar(
+        select(func.count(CaseResult.id)).where(
+            CaseResult.run_id == source.id,
+            CaseResult.version_role == source_role,
+        )
+    )
+    if int(result_count or 0) != expected_case_count:
+        raise ValueError("recorded Baseline source CaseResults are incomplete")
 
 
 def _resolve_policy(

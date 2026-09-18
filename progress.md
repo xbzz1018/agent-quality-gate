@@ -1,5 +1,81 @@
 # Progress Log
 
+## Session: 2026-08-25 - Docker recovery
+
+### Storage-bounded rebuild
+
+- **Status:** complete
+- Previous Docker data is absent after disk exhaustion/read-only filesystem recovery; no destructive Docker cleanup is authorized.
+- New Docker baseline: E: free 37.59 GB; 8.77 GB images, 711 MB volumes, 1.33 GB build cache. Existing non-AQH containers are preserved.
+- Recovery boundary: default core Compose only; optional protocol, observability, Kafka, and kind services require explicit profiles.
+- Added a lightweight API dependency lock, a lightweight HTTP Fake Agent image, and split lightweight contract-profile validation from the Adapter factory.
+- Final core topology: 7/7 healthy; Web 5174, API 8000, Redis host 56379. API readiness reports PostgreSQL/Redis/OPA `ok`.
+- Fresh local administrator created; Docker recovery Run #1 completed 80 Baseline + 80 Candidate results and produced an auditable BLOCK Gate.
+- Verification: Ruff passed; full backend 95 collected / 91 passed / 4 integration skipped; Alembic drift clean; API and Worker `pip check` clean; Web typecheck, 3 Vitest, production build, audit, and Chrome desktop/mobile QA passed with 0 browser errors.
+- Final storage: AQH images approximately 1.77 GB; all Docker images 11.10 GB, volumes 0.76 GB, build cache 2.76 GB; E: free 37.59 GB.
+- Core Compose reached 7/7 healthy and Docker recovery Run #1 completed 80 Baseline + 80 Candidate results with an auditable BLOCK Gate.
+- First bounded core build wrote no image layers because Docker Hub auth resolved to unreachable IPv6 for all missing base images; switch to sequential Engine pulls before retrying BuildKit.
+- Lightweight Fake Agent image built successfully. The first API image attempt reached the local wheel step but lacked the build-system `setuptools` package; add it as a separate exact build layer and reuse the cached runtime dependency layer.
+
+## Session: 2026-08-25 - Final project closeout
+
+### Closeout A: Document Autoflow diagnosis
+
+- **Status:** complete
+- User scope: finish items 1-4; defer remote CI execution and public/production deployment.
+- Docker Engine is available, but all AQH Compose containers exited together with code 255; this is not a port conflict and not an isolated API failure.
+- Historical evidence shows AQH Run #54 entered a long Document Autoflow REPROCESS Activity, while Run #55 later completed the same Profile smoke path.
+- Persisted database verification: Run #54 expected 24 Cases and failed with zero results on an Inspect capture mismatch after the first remote operation timed out; Run #55 completed one Case on the same Candidate Profile. The AQH API contract is not the root cause.
+- Implemented explicit per-target Inspect time limits, sanitized target-failure CaseResults with UNKNOWN usage, and a configurable Document `stop_on_routes` boundary that records REPROCESS then requests remote cancellation.
+- Target Profile and Inspect tests: 10 passed; integration selection: 10 passed/1 skipped. Focused Ruff passed after deterministic formatting.
+- Restored the one damaged frozen document to `parsed` revision 2 and verified a 24-entry SHA-based capability map with 360-second polling, REPROCESS early-stop, and the existing USD 1 fuse.
+- Run #130 failed before target invocation because Compose did not forward the referenced auth environment variable; it is retained as a configuration-failure record.
+- Run #131 completed the full frozen Document Dev v2.1 characterization: 24/24 results, 10 AUTO_PASS, 11 REVIEW, 3 REPROCESS, 15 assertion failures, 190,146 input and 46,529 output tokens, and USD 0.03964856 known cost.
+
+### Closeout B: Real stability Baselines and Gates
+
+- **Status:** complete
+- Baselines must be separately identified immutable evidence. A same-endpoint version label alone is not accepted as a source-code regression baseline; recorded-run stability baselines will be explicitly distinguished from deployable source baselines.
+- Document stability Run #137 completed 24 Baseline + 24 Candidate results with equal 37.5% success and 6.52% P95 growth. One Candidate Case had a sanitized `target_error`, making cost partial (23/24 known); the initial Gate exposed a missing target-execution-failure rule and is retained as evidence of that defect.
+- Document Run #138 re-evaluated with the corrected Gate and BLOCKed on two target execution failures; AgriGraph Run #139 completed 40+40 results and SHIPped with equal 80% success and zero target failures.
+
+### Closeout C: Bounded hallucination evaluation
+
+- **Status:** complete
+- Scope remains explicit: deterministic frozen evidence/claim constraints are authoritative; a model Judge may add calibrated probabilistic findings but cannot claim universal open-domain fact verification.
+- Added an OpenAI-compatible bounded Judge, structured/redacted observations, response provenance hashes, Judge Token accounting, explicit UNKNOWN, 8 frozen calibration fixtures, and Gate controls where unsupported verdicts WARN but cannot alone BLOCK.
+- Judge/Gate/Inspect reliability selection: 19 passed; focused Ruff passed. No external Judge credential was configured or inferred.
+
+### Closeout D: MCP Tasks, Hermes, Kafka, and Kubernetes
+
+- **Status:** in_progress
+- The target repository is dirty with user-owned work and will be preserved.
+
+### Closeout Errors
+
+| Error | Attempt | Resolution |
+|---|---:|---|
+| Planning skill example resolved a missing `C:\Users\xzheng\.codex` path | 1 | Use the installed skill under `C:\Users\xzheng\.agents\skills\planning-with-files`. |
+| Broad recursive project enumeration exceeded the 30-second shell yield | 1 | Use direct project paths and depth-bounded reads; no process or file was changed. |
+| Assumed `compose.yaml` and a package at the repository root | 1 | Use the actual `docker-compose.yml` and `src/agent_quality_harness` layout. |
+| First PostgreSQL probe used a nonexistent `aqh` role | 1 | Read Compose and use the declared `agent_quality` role/database; no database content changed. |
+| Combined secret/startup one-liner was rejected by the local execution policy | 1 | Replace it with reviewed repository scripts that keep plaintext only in process memory and persist only DPAPI ciphertext. |
+| Windows PowerShell 5.1 lacks static `RandomNumberGenerator.Fill` | 1 | Use the compatible `RandomNumberGenerator.Create().GetBytes()` API; failure occurred before identity or service creation. |
+| Dedicated evaluator received 404 for the preserved project | 1 | Project isolation was working; change the local-only evaluator role from operator to admin so it can access the orphaned preserved fixture without reassigning project ownership. |
+| DPAPI read-only probe included the ciphertext file's trailing newline | 1 | Trim the ignored ciphertext before `ConvertTo-SecureString`; no plaintext or stored secret was damaged. |
+| Compose Worker omitted `AQH_DOCUMENT_AUTOFLOW_AUTH` despite the host process setting it | 1 | Add explicit optional AgriGraph and Document auth mappings to the shared API/Worker environment, then recreate the services from the DPAPI-backed launcher. |
+| Focused test command referenced nonexistent `tests/test_services.py` | 1 | Add Recorded Baseline coverage to the existing real PostgreSQL/Redis integration test and invoke its actual path. |
+| AgriGraph evaluator CLI was first launched from the repository root | 1 | Run `app.cli.reset_password` from `backend-python`; ES, Neo4j, and MinIO had already become healthy and were preserved. |
+| Initial Outbox migration used the security-artifact branchpoint as its parent | 1 | No DDL was applied; inspect Alembic history and reparent it to the existing `a71d9e5c20b4` Gate-controls Head. |
+| Host Kafka client received the container-only advertised hostname `kafka` | 1 | No event was published; configure separate INTERNAL `kafka:9092` and EXTERNAL `localhost:29092` listeners. |
+| Linux aiokafka wheel does not export `AIOKafkaAdminClient` at package top level | 1 | Import it from the portable `aiokafka.admin` module; Broker and database remained healthy. |
+| `kubectl --dry-run=client` still requested OpenAPI with no current cluster | 1 | It applied nothing; validate strictly against the real kind API Server after cluster creation. |
+| Core BuildKit could not fetch missing base-image auth tokens over Docker Hub IPv6 | 1 | No image layers were created; use bounded sequential `docker pull` attempts and measure storage after each stage. |
+| Lightweight API lock omitted the project's `setuptools` build backend | 1 | Add a separate exact `setuptools==82.0.1` build layer; the failed attempt produced no final API image and its runtime dependency layer is reusable. |
+| API wheel metadata still declared Worker-only protocols | 1 | Keep the lightweight lock and give the API wheel its own direct dependency manifest so `pip check` remains truthful without installing A2A/MCP/Inspect. |
+| Schema table-set test omitted the new Kafka reliability tables | 1 | Add Outbox, Inbox, and DLQ to the exact expected set; Alembic drift already reported no changes. |
+| Web command used nonexistent `test:unit` script | 1 | Typecheck/build/audit passed; rerun Vitest using the repository's actual `npm test` script. |
+
 ## Session: 2026-08-24 - Local MVP release closure
 
 ### Phase 3.8: Production Compose and release tag
@@ -337,3 +413,36 @@
 - Final v0.5 verification: Ruff passed; full PostgreSQL/Redis/OPA suite 81 passed; Alembic upgrade/downgrade/drift passed; 32-Skill/200-Case scale test passed; Web typecheck/3 Vitest/build/audit passed; 0.5.0 API/Worker/Web/Fake AG-UI images passed health and `pip check`; Chrome desktop/mobile including Run #119 reported 0 browser errors.
 - Run #119 completed Baseline/Candidate 4/4 with Skill selection, Evidence coverage, and dataset coverage all 1.0; all fabricated/identity/lifecycle/evidence error counts are zero; Gate SHIP. Jaeger Trace `9cdfe9bc9b5df63a0638e3e15ca74c6a` has 13 spans and zero sensitive tags.
 - Live Gate CLI against Run #119 returned SHIP with exit code 0 using a one-time organization API Key that was revoked immediately after verification.
+
+## Session: 2026-08-26 - Multi-agent scenario control plane
+
+- **Status:** in_progress
+- Scope is a multi-agent quality control plane with frozen evaluation scenarios plus a Gate-authorized local Pilot runtime, not an unrestricted production workflow platform.
+- Inspect AI remains the outer Evaluation Harness; the Scenario Executor runs a bounded DAG inside each case.
+- Planned deterministic chain: AG-UI Researcher -> MCP Tasks Evidence Tool -> A2A Reviewer -> DeepAgents Coordinator.
+- Current Docker core remains 7/7 healthy. AgriGraph dependency containers and the Document Autoflow API/Worker/Temporal stack are healthy; the AgriGraph business API is not currently running.
+- The user selected complete current-environment revalidation: AgriGraph 40 cases and Document Autoflow 24 cases, with a shared USD 1 Document budget fuse.
+- Security incident recorded: an Embedding API key was pasted into chat. It will not be called, persisted, logged, or copied; revalidation requires a rotated replacement key in local environment/DPAPI.
+- Planning-file patch attempt 1 failed because a truncated findings line was used as context; no file changed. Subsequent edits use stable section anchors.
+- Scenario migration upgrade/downgrade/re-upgrade succeeded, but the first drift check detected that the expanded enum columns remained `VARCHAR(5)` while `scenario` requires `VARCHAR(8)`. The migration is being corrected with explicit reversible column widening before any Scenario rows exist.
+- The first full integration run connected old hard-coded host port 6379, which is now an unrelated authenticated Redis. Project Redis is 56379 after storage recovery; integration tests now use explicit `AQH_INTEGRATION_REDIS_URL` with 56379 as the local default.
+- Protocol startup preflight found Document Autoflow already owns host port 8030. Fake MCP keeps container port 8030 but uses configurable host port 8031, preserving both projects.
+- Kafka E2E Run #12 persisted/published its Outbox and wrote one Inbox row with zero DLQ rows, then failed before Inspect execution because the non-root Kafka Worker could not create `.tmp`. Worker images now provision `/app/.tmp/inspect-logs` for UID 1000; Run #12 remains preserved as failure evidence.
+- Kafka E2E Run #13 reached the fixed Inspect log directory but exposed a second non-root path assumption at `/.local`. Worker images now set HOME/XDG cache under the owned `/app/.tmp`; Run #13 remains preserved.
+- The first dedicated Kafka integration test hit an Auto Create race for its random topic. The production fixed topic had already completed Run #14; the test now creates its isolated main/DLQ topics explicitly through Kafka Admin before producing.
+- Implemented frozen `aqh.scenario/v1`, persistent Scenario/Node runs, Shadow/Pilot authorization, JSON Pointer handoffs, cancellation and bounded DAG execution. Standalone Runs #5/#6 and Pilot #7 completed.
+- Redis EvalRun #10 completed with SHIP; deterministic Fault Run #11 completed with BLOCK. Kafka Run #14 completed with SHIP after preserving Runs #12/#13 as non-root recovery failures.
+- Jaeger Trace `44a6a9d5a6c614f3ab5fac821c0c877f` contains 77 Run/Case/Scenario/Agent/Tool spans with no sensitive match.
+- Split `aiokafka` and protocol SDKs out of default API/Core Worker images; default Compose remains seven services with memory limits and log rotation.
+- Added the Vue Scenario operations page and Run Detail timeline. Chrome desktop and 390px passed with no console errors or page overflow; the mobile table now omits secondary columns instead of clipping them.
+- Recreated the current Document evaluator via DPAPI, rebuilt all 24 frozen Dev parse artifacts with the existing host MinerU runtime, and restored the container worker afterward.
+- Run #29 is a verified 1/1 Document smoke. Run #30 has 24/24 results, 10 AUTO_PASS, 11 REVIEW and 3 REPROCESS, with zero target execution errors and USD 0.04003916 known model cost.
+- Run #31 has 48/48 Stability results and a real BLOCK: three Candidate create-run calls hit target 409 conflicts left by prior REPROCESS activities and success rate fell 4.17 pp. Candidate known cost is USD 0.03550708 with three UNKNOWN error-case costs.
+- Added fail-closed AgriGraph Embedding migration tooling for a rotated local key, 1024-dimensional preflight, API stop, dry-run, batch-10 rebuild and `documents == updated` enforcement. Execution remains blocked because no rotated key is present.
+- Final checks: non-integration backend suite 100% passed; integration 4 passed/1 Kafka-profile skipped; Alembic no drift; Web typecheck, 3 Vitest, production build and audit passed; Docker core 7/7 healthy.
+- Kubernetes static acceptance rendered 20 objects through kubectl kustomize and parsed every object for apiVersion/kind/metadata.name. Client dry-run still required an API Server, so kind was not started and cluster/HPA behavior remains unverified.
+- AgriGraph rotated-key preflight verified `qwen3.7-text-embedding` at 1024 dimensions; the batch-10 ES migration completed with 163/163 vectors updated before API startup.
+- Run #32 completed the 3-case AgriGraph smoke with no failures. Run #33 completed 40/40 Characterization with 32 passing Cases, 8 assertion failures and zero target execution errors.
+- Run #34 completed 80/80 Stability results with equal 80% Baseline/Candidate success, zero target execution errors and a real SHIP. Token usage is known while all model costs remain UNKNOWN.
+- Updated both frozen real-target provenance records to the current dirty source-tree SHA values. `freeze_real_targets.py --check` now passes with 40 AgriGraph and 24 Document Cases unchanged.
+- Stopped only the temporary AgriGraph Uvicorn process after evidence capture. Pre-existing AgriGraph dependency containers were left untouched; the seven AQH core services remain healthy.

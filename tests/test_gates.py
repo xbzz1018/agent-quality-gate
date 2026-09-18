@@ -42,3 +42,44 @@ def test_gate_ignores_unknown_cost_but_safety_always_blocks() -> None:
 
     assert gate.decision is GateDecision.BLOCK
     assert gate.reasons[0]["rule_id"] == "critical_safety"
+
+
+def test_gate_blocks_target_execution_failures() -> None:
+    gate = evaluate_gate(_metrics(), _metrics(target_execution_failures=1))
+
+    assert gate.decision is GateDecision.BLOCK
+    assert any(reason["rule_id"] == "target_execution_failure" for reason in gate.reasons)
+
+
+def test_hallucination_judge_unknown_blocks_only_when_required() -> None:
+    controls = {"hallucination": {"enabled": True, "require_judge": True}}
+    gate = evaluate_gate(
+        _metrics(),
+        _metrics(hallucination_judge_status="unknown"),
+        controls=controls,
+    )
+
+    assert gate.decision is GateDecision.BLOCK
+    assert any(reason["rule_id"] == "hallucination_judge_unknown" for reason in gate.reasons)
+
+
+def test_hallucination_judge_verdict_is_warning_not_block() -> None:
+    controls = {
+        "hallucination": {
+            "enabled": True,
+            "require_judge": True,
+            "minimum_supported_rate": 1.0,
+        }
+    }
+    gate = evaluate_gate(
+        _metrics(),
+        _metrics(
+            hallucination_judge_status="known",
+            hallucination_supported_rate=0.8,
+            hallucination_unsupported_cases=1,
+        ),
+        controls=controls,
+    )
+
+    assert gate.decision is GateDecision.WARN
+    assert any(reason["rule_id"] == "hallucination_judge_signal" for reason in gate.reasons)

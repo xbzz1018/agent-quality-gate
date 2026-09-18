@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class RedisRunQueue:
+    readiness_component = "redis"
+
     def __init__(self, redis_url: str, queue_key: str) -> None:
         self.queue_key = f"{queue_key}:ready"
         self.processing_key = f"{queue_key}:processing"

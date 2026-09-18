@@ -1,0 +1,160 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: api, namespace: agent-quality-harness}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: api}}
+  template:
+    metadata: {labels: {app: api}}
+    spec:
+      initContainers:
+        - name: migrate
+          image: agent-quality-gate-api:local
+          imagePullPolicy: IfNotPresent
+          command: [alembic, upgrade, head]
+          envFrom: [{configMapRef: {name: aqh-config}}]
+          env:
+            - name: AQH_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: aqh-secrets, key: database-url}}
+      containers:
+        - name: api
+          image: agent-quality-gate-api:local
+          imagePullPolicy: IfNotPresent
+          command: [uvicorn, agent_quality_harness.main:app, --host, 0.0.0.0, --port, "8000"]
+          envFrom: [{configMapRef: {name: aqh-config}}]
+          env:
+            - name: AQH_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: aqh-secrets, key: database-url}}
+            - name: AQH_JWT_SECRET
+              valueFrom: {secretKeyRef: {name: aqh-secrets, key: jwt-secret}}
+          ports: [{containerPort: 8000}]
+          readinessProbe:
+            httpGet: {path: /api/v1/health/ready, port: 8000}
+            initialDelaySeconds: 8
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /api/v1/health/live, port: 8000}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: 750m, memory: 768Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: api, namespace: agent-quality-harness}
+spec:
+  selector: {app: api}
+  ports: [{port: 8000, targetPort: 8000}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: kafka-publisher, namespace: agent-quality-harness}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: kafka-publisher}}
+  template:
+    metadata: {labels: {app: kafka-publisher}}
+    spec:
+      containers:
+        - name: publisher
+          image: agent-quality-gate-api:local
+          imagePullPolicy: IfNotPresent
+          command: [python, -m, agent_quality_harness.outbox_publisher]
+          envFrom: [{configMapRef: {name: aqh-config}}]
+          env:
+            - name: AQH_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: aqh-secrets, key: database-url}}
+          readinessProbe:
+            exec: {command: [python, -m, agent_quality_harness.kafka_health]}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 300m, memory: 384Mi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: kafka-worker, namespace: agent-quality-harness}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: kafka-worker}}
+  template:
+    metadata: {labels: {app: kafka-worker}}
+    spec:
+      containers:
+        - name: worker
+          image: agent-quality-gate-api:local
+          imagePullPolicy: IfNotPresent
+          command: [python, -m, agent_quality_harness.kafka_worker]
+          envFrom: [{configMapRef: {name: aqh-config}}]
+          env:
+            - name: AQH_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: aqh-secrets, key: database-url}}
+          readinessProbe:
+            exec: {command: [python, -m, agent_quality_harness.kafka_health]}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: fake-agent, namespace: agent-quality-harness}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: fake-agent}}
+  template:
+    metadata: {labels: {app: fake-agent}}
+    spec:
+      containers:
+        - name: fake-agent
+          image: agent-quality-gate-api:local
+          imagePullPolicy: IfNotPresent
+          command: [uvicorn, agent_quality_harness.fake_agent:app, --host, 0.0.0.0, --port, "8020"]
+          ports: [{containerPort: 8020}]
+          readinessProbe:
+            httpGet: {path: /health, port: 8020}
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 300m, memory: 384Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: fake-agent, namespace: agent-quality-harness}
+spec:
+  selector: {app: fake-agent}
+  ports: [{port: 8020, targetPort: 8020}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: web, namespace: agent-quality-harness}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: web}}
+  template:
+    metadata: {labels: {app: web}}
+    spec:
+      containers:
+        - name: web
+          image: agent-quality-gate-web:local
+          imagePullPolicy: IfNotPresent
+          ports: [{containerPort: 80}]
+          readinessProbe:
+            httpGet: {path: /healthz, port: 80}
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 250m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: web, namespace: agent-quality-harness}
+spec:
+  type: NodePort
+  selector: {app: web}
+  ports: [{port: 80, targetPort: 80, nodePort: 30080}]

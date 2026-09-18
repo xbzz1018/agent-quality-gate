@@ -14,7 +14,8 @@ from a2a.server.routes import (
 )
 from a2a.server.tasks import InMemoryTaskStore, TaskUpdater
 from fastapi import FastAPI
-from google.protobuf.json_format import MessageToDict
+from google.protobuf.json_format import MessageToDict, ParseDict
+from google.protobuf.struct_pb2 import Value
 from pydantic import BaseModel, Field
 from starlette.responses import StreamingResponse
 
@@ -26,6 +27,10 @@ class FakeRequest(BaseModel):
 
 def create_fake_agent_app() -> FastAPI:
     app = FastAPI(title="Agent Quality Harness Fake Agent")
+
+    @app.get("/health")
+    async def health() -> dict[str, str]:
+        return {"status": "ok"}
 
     @app.post("/invoke")
     async def invoke(payload: FakeRequest) -> dict:
@@ -89,10 +94,12 @@ class _FakeA2AExecutor(AgentExecutor):
             )
         )
         input_data = MessageToDict(context.message.parts[0].data)
+        usage = Value()
+        ParseDict({"aqh_token_usage": {"input_tokens": 4, "output_tokens": 2}}, usage)
         updater = TaskUpdater(event_queue, context.task_id, context.context_id)
         await updater.start_work()
         await updater.add_artifact(
-            [types.Part(text=_answer(input_data))],
+            [types.Part(text=_answer(input_data)), types.Part(data=usage)],
             name="answer",
         )
         await updater.complete()

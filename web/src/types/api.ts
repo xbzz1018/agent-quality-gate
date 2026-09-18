@@ -1,5 +1,5 @@
-export type TargetProtocol = 'http' | 'sse' | 'ag_ui' | 'a2a' | 'mcp'
-export type TargetKind = 'agent' | 'tool'
+export type TargetProtocol = 'http' | 'sse' | 'ag_ui' | 'a2a' | 'mcp' | 'scenario'
+export type TargetKind = 'agent' | 'tool' | 'scenario'
 export type RunStatus =
   | 'queued'
   | 'running'
@@ -140,6 +140,53 @@ export interface EvalRun {
   created_at: string
   started_at: string | null
   finished_at: string | null
+}
+
+export type ScenarioMode = 'shadow' | 'pilot'
+
+export interface ScenarioNodeRun {
+  node_id: string
+  target_version_id: number
+  attempt: number
+  status: string
+  invocation_id: string | null
+  input_sha256: string | null
+  output: Record<string, unknown> | null
+  usage: Record<string, unknown>
+  latency_ms: number | null
+  failure_reason: string | null
+  started_at: string | null
+  finished_at: string | null
+}
+
+export interface ScenarioRun {
+  id: number
+  organization_id: number
+  scenario_version_id: number
+  gate_result_id: number | null
+  mode: ScenarioMode
+  idempotency_key: string
+  input_sha256: string
+  output: Record<string, unknown> | null
+  limits: Record<string, unknown>
+  usage: Record<string, unknown>
+  status: RunStatus
+  trace_id: string | null
+  failure_reason: string | null
+  attempt: number
+  started_at: string | null
+  finished_at: string | null
+  created_at: string
+  nodes: ScenarioNodeRun[]
+}
+
+export interface ScenarioValidation {
+  valid: true
+  schema: 'aqh.scenario/v1'
+  sha256: string
+  node_count: number
+  participant_version_ids: number[]
+  limits: { max_parallel_nodes: number; timeout_seconds: number }
 }
 
 export interface Usage {

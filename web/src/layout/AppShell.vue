@@ -14,6 +14,7 @@ import {
   LogOut,
   Menu,
   PlaySquare,
+  Workflow,
   ScrollText,
   Settings,
   ShieldCheck,
@@ -39,6 +40,7 @@ const navGroups = computed(() => [
       { label: '被测目标', path: '/targets', icon: Target },
       { label: '评测数据集', path: '/datasets', icon: Database },
       { label: '评测运行', path: '/runs', icon: PlaySquare },
+      { label: '场景运行', path: '/scenarios', icon: Workflow },
     ],
   },
   {
@@ -73,6 +75,7 @@ const routeLabels: Record<string, string> = {
   targets: '被测目标',
   datasets: '评测数据集',
   runs: '评测运行',
+  scenarios: '场景运行',
   'run-detail': '运行详情',
   comparison: '版本对比',
   gate: '发布门禁',

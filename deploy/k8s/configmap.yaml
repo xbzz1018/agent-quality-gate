@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aqh-config
+  namespace: agent-quality-harness
+data:
+  AQH_QUEUE_BACKEND: kafka
+  AQH_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  AQH_KAFKA_RUN_TOPIC: aqh.eval-runs.v1
+  AQH_KAFKA_DLQ_TOPIC: aqh.eval-runs.dlq.v1
+  AQH_KAFKA_CONSUMER_GROUP: agent-quality-harness-workers-v1
+  AQH_REDIS_URL: redis://redis:6379/0
+  AQH_OPA_ENABLED: "true"
+  AQH_OPA_URL: http://opa:8181
+  AQH_OTEL_ENABLED: "false"
+  AQH_DEMO_AGENT_ENDPOINT: http://fake-agent:8020/invoke
+  AQH_REFRESH_COOKIE_SECURE: "false"

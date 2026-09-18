@@ -1,3 +1,4 @@
+import asyncio
 import os
 from collections.abc import AsyncIterator, Mapping
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -5,8 +6,10 @@ from typing import Any
 
 import httpx2
 from mcp import ClientSession, StdioServerParameters
+from mcp import types as mcp_types
 from mcp.client.stdio import get_default_environment, stdio_client
 from mcp.client.streamable_http import streamable_http_client
+from mcp.shared.inbound import MCP_NAME_HEADER, encode_header_value
 
 from .base import AgentRunEvent, TokenUsage, ToolRunResult
 
@@ -46,11 +49,10 @@ class McpToolTargetAdapter:
     ) -> ToolRunResult:
         del context
         operation = str(input_data.get("operation") or "call_tool")
-        if operation.startswith("task"):
-            raise NotImplementedError("MCP Tasks are an experimental pending enhancement")
-
         async with self._session() as (session, manifest):
-            result, final_action = await self._execute_operation(session, operation, input_data)
+            result, final_action, operation_id = await self._execute_operation(
+                session, manifest, operation, input_data
+            )
 
         output = {
             "protocol": "mcp",
@@ -58,6 +60,8 @@ class McpToolTargetAdapter:
             "server": manifest["server"],
             "result": result,
         }
+        if operation.startswith("task_"):
+            output["task_protocol"] = "mcp-core-2025-11-25-experimental"
         events = [
             AgentRunEvent("mcp.initialized", manifest),
             AgentRunEvent(
@@ -77,7 +81,7 @@ class McpToolTargetAdapter:
                 )
             )
         return ToolRunResult(
-            operation_id=None,
+            operation_id=operation_id,
             final_action=final_action,
             output=output,
             events=tuple(events),
@@ -85,20 +89,32 @@ class McpToolTargetAdapter:
         )
 
     async def cancel(self, operation_id: str) -> bool:
-        del operation_id
-        # MCP requests are cancelled while their ClientSession is live. There is no
-        # portable server-side operation id outside the optional MCP Tasks extension.
-        return False
+        if not operation_id:
+            return False
+        try:
+            async with self._session() as (session, manifest):
+                self._require_task_capability(manifest, "cancel")
+                result = await session.send_request(
+                    mcp_types.CancelTaskRequest(
+                        params=mcp_types.CancelTaskRequestParams(taskId=operation_id)
+                    ),
+                    mcp_types.CancelTaskResult,
+                    request_read_timeout_seconds=self.timeout_seconds,
+                )
+            return result.status == "cancelled"
+        except Exception:
+            return False
 
     async def _execute_operation(
         self,
         session: ClientSession,
+        manifest: Mapping[str, Any],
         operation: str,
         input_data: Mapping[str, Any],
-    ) -> tuple[dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str, str | None]:
         if operation == "list_tools":
             result = await session.list_tools()
-            return _dump(result), "inspect_tools"
+            return _dump(result), "inspect_tools", None
         if operation == "call_tool":
             name = _required_string(input_data, "tool", fallback="name")
             arguments = input_data.get("arguments", {})
@@ -110,16 +126,16 @@ class McpToolTargetAdapter:
                 read_timeout_seconds=self.timeout_seconds,
             )
             payload = _dump(result)
-            return payload, "tool_error" if payload.get("is_error") else "tool"
+            return payload, "tool_error" if payload.get("is_error") else "tool", None
         if operation == "list_resources":
             result = await session.list_resources()
-            return _dump(result), "inspect_resources"
+            return _dump(result), "inspect_resources", None
         if operation == "read_resource":
             result = await session.read_resource(_required_string(input_data, "uri"))
-            return _dump(result), "resource"
+            return _dump(result), "resource", None
         if operation == "list_prompts":
             result = await session.list_prompts()
-            return _dump(result), "inspect_prompts"
+            return _dump(result), "inspect_prompts", None
         if operation == "get_prompt":
             name = _required_string(input_data, "prompt", fallback="name")
             arguments = input_data.get("arguments", {})
@@ -129,8 +145,143 @@ class McpToolTargetAdapter:
                 name,
                 {str(key): str(value) for key, value in arguments.items()},
             )
-            return _dump(result), "prompt"
+            return _dump(result), "prompt", None
+        if operation == "task_call_tool":
+            return await self._task_call_tool(session, manifest, input_data)
+        if operation == "task_get":
+            result = await self._task_get(
+                session, manifest, _required_string(input_data, "task_id")
+            )
+            return _dump(result), f"task_{result.status}", result.task_id
+        if operation == "task_result":
+            task_id = _required_string(input_data, "task_id")
+            result = await self._task_result(session, manifest, task_id)
+            payload = _dump(result)
+            return payload, "tool_error" if payload.get("is_error") else "tool", task_id
+        if operation == "task_list":
+            self._require_task_capability(manifest, "list")
+            result = await self._send_task_request(
+                session,
+                mcp_types.ListTasksRequest(),
+                mcp_types.ListTasksResult,
+            )
+            return _dump(result), "inspect_tasks", None
+        if operation == "task_cancel":
+            task_id = _required_string(input_data, "task_id")
+            self._require_task_capability(manifest, "cancel")
+            result = await self._send_task_request(
+                session,
+                mcp_types.CancelTaskRequest(
+                    params=mcp_types.CancelTaskRequestParams(taskId=task_id)
+                ),
+                mcp_types.CancelTaskResult,
+            )
+            return _dump(result), f"task_{result.status}", task_id
         raise ValueError(f"unsupported MCP operation: {operation}")
+
+    async def _task_call_tool(
+        self,
+        session: ClientSession,
+        manifest: Mapping[str, Any],
+        input_data: Mapping[str, Any],
+    ) -> tuple[dict[str, Any], str, str]:
+        self._require_task_capability(manifest, "tools_call")
+        name = _required_string(input_data, "tool", fallback="name")
+        arguments = input_data.get("arguments", {})
+        if not isinstance(arguments, Mapping):
+            raise ValueError("MCP tool arguments must be an object")
+        ttl = int(input_data.get("ttl_ms", self.capabilities.get("task_ttl_ms", 60_000)))
+        created = await self._send_task_request(
+            session,
+            mcp_types.CallToolRequest(
+                params=mcp_types.CallToolRequestParams(
+                    name=name,
+                    arguments=dict(arguments),
+                    task=mcp_types.TaskMetadata(ttl=ttl),
+                )
+            ),
+            mcp_types.CreateTaskResult,
+        )
+        task_id = created.task.task_id
+        if not bool(input_data.get("wait", True)):
+            return _dump(created), "task_created", task_id
+        deadline = asyncio.get_running_loop().time() + float(
+            self.capabilities.get("task_timeout_seconds", self.timeout_seconds)
+        )
+        current = created.task
+        while current.status == "working":
+            if asyncio.get_running_loop().time() >= deadline:
+                return _dump(current), "task_timeout", task_id
+            interval = max(0.05, min(float(current.poll_interval or 250) / 1000, 5.0))
+            await asyncio.sleep(interval)
+            current = await self._task_get(session, manifest, task_id)
+        if current.status == "completed":
+            result = await self._task_result(session, manifest, task_id)
+            payload = _dump(result)
+            return payload, "tool_error" if payload.get("is_error") else "tool", task_id
+        return _dump(current), f"task_{current.status}", task_id
+
+    async def _task_get(
+        self, session: ClientSession, manifest: Mapping[str, Any], task_id: str
+    ) -> mcp_types.GetTaskResult:
+        self._require_tasks(manifest)
+        return await self._send_task_request(
+            session,
+            mcp_types.GetTaskRequest(params=mcp_types.GetTaskRequestParams(taskId=task_id)),
+            mcp_types.GetTaskResult,
+        )
+
+    async def _task_result(
+        self, session: ClientSession, manifest: Mapping[str, Any], task_id: str
+    ) -> mcp_types.CallToolResult:
+        self._require_tasks(manifest)
+        return await self._send_task_request(
+            session,
+            mcp_types.GetTaskPayloadRequest(
+                params=mcp_types.GetTaskPayloadRequestParams(taskId=task_id)
+            ),
+            mcp_types.CallToolResult,
+        )
+
+    async def _send_task_request(self, session, request, result_type):
+        dispatcher = getattr(session, "_dispatcher", None)
+        if dispatcher is None:
+            return await session.send_request(
+                request,
+                result_type,
+                request_read_timeout_seconds=self.timeout_seconds,
+            )
+        data = request.model_dump(by_alias=True, mode="json", exclude_none=True)
+        method = data["method"]
+        params = data.get("params")
+        options: dict[str, Any] = {"timeout": self.timeout_seconds}
+        if method == "tools/call" and isinstance(params, Mapping):
+            name = params.get("name")
+            if isinstance(name, str):
+                options["headers"] = {MCP_NAME_HEADER: encode_header_value(name)}
+        # MCP 2.0.0 validates 2025-11-25 tools/call as CallToolResult before
+        # applying the requested CreateTaskResult type. Tasks stay experimental.
+        raw = await dispatcher.send_raw_request(method, params, options)
+        return result_type.model_validate(raw, by_name=False)
+
+    @staticmethod
+    def _require_tasks(manifest: Mapping[str, Any]) -> Mapping[str, Any]:
+        capabilities = manifest.get("capabilities", {})
+        tasks = capabilities.get("tasks") if isinstance(capabilities, Mapping) else None
+        if not isinstance(tasks, Mapping):
+            raise ValueError("MCP server did not negotiate Tasks capability")
+        return tasks
+
+    def _require_task_capability(self, manifest: Mapping[str, Any], capability: str) -> None:
+        tasks = self._require_tasks(manifest)
+        if capability in {"list", "cancel"}:
+            supported = isinstance(tasks.get(capability), Mapping)
+        else:
+            requests = tasks.get("requests", {})
+            tools = requests.get("tools", {}) if isinstance(requests, Mapping) else {}
+            supported = isinstance(tools, Mapping) and isinstance(tools.get("call"), Mapping)
+        if not supported:
+            raise ValueError(f"MCP server did not negotiate Tasks {capability} capability")
 
     @asynccontextmanager
     async def _session(self) -> AsyncIterator[tuple[ClientSession, dict[str, Any]]]:
@@ -200,9 +351,7 @@ class McpToolTargetAdapter:
         )
 
 
-def _required_string(
-    value: Mapping[str, Any], key: str, *, fallback: str | None = None
-) -> str:
+def _required_string(value: Mapping[str, Any], key: str, *, fallback: str | None = None) -> str:
     raw = value.get(key)
     if raw is None and fallback:
         raw = value.get(fallback)

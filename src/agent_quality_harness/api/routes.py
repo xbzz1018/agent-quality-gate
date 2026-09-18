@@ -354,6 +354,12 @@ def get_dataset(dataset_id: int, request: Request, session: SessionDependency):
     dependencies=[Depends(require_permission("run:execute"))],
 )
 async def post_eval_run(payload: EvalRunCreate, request: Request, session: SessionDependency):
+    payload = payload.model_copy(
+        update={
+            "config": dict(payload.config)
+            | {"queue_backend": request.app.state.settings.queue_backend}
+        }
+    )
     try:
         run = create_eval_run(session, payload, current_organization_id(request))
     except LookupError as exc:

@@ -72,7 +72,7 @@ def main() -> int:
     args = parser.parse_args()
     result = asyncio.run(run(args))
     print(json.dumps(result, sort_keys=True))
-    return 0 if result["status"] == "completed" else 1
+    return 0 if result["verified"] else 1
 
 
 async def run(args: argparse.Namespace) -> dict[str, Any]:
@@ -174,7 +174,21 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
             if dataset is None:
                 dataset, _ = import_dataset(session, dataset_payload, organization.id)
             elif dataset.provenance != dataset_payload.provenance:
-                raise RuntimeError("existing Dataset provenance differs from the frozen file")
+                snapshot = dataset_payload.model_dump(mode="json", by_alias=True)
+                tree_sha = str(dataset_payload.provenance["source_tree_sha256"])
+                snapshot["version"] = f"{dataset_payload.version}-{tree_sha[:12]}"
+                dataset_payload = DatasetImport.model_validate(snapshot)
+                dataset = session.scalar(
+                    select(EvalDataset).where(
+                        EvalDataset.organization_id == organization.id,
+                        EvalDataset.name == dataset_payload.name,
+                        EvalDataset.version == dataset_payload.version,
+                    )
+                )
+                if dataset is None:
+                    dataset, _ = import_dataset(session, dataset_payload, organization.id)
+                elif dataset.provenance != dataset_payload.provenance:
+                    raise RuntimeError("snapshot Dataset provenance differs from the frozen file")
             run = create_eval_run(
                 session,
                 EvalRunCreate(
@@ -207,6 +221,25 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
                 session.scalar(select(func.count(CaseResult.id)).where(CaseResult.run_id == run_id))
                 or 0
             )
+            target_error_count = int(
+                session.scalar(
+                    select(func.count(CaseResult.id)).where(
+                        CaseResult.run_id == run_id,
+                        CaseResult.failure_type.in_(("target_error", "target_timeout")),
+                    )
+                )
+                or 0
+            )
+            assertion_failure_count = int(
+                session.scalar(
+                    select(func.count(CaseResult.id)).where(
+                        CaseResult.run_id == run_id,
+                        CaseResult.failure_type == "assertion_failure",
+                    )
+                )
+                or 0
+            )
+            expected_result_count = run.expected_case_count
             first_trace = session.scalar(
                 select(CaseResult.trace_id)
                 .where(CaseResult.run_id == run_id, CaseResult.trace_id.is_not(None))
@@ -218,6 +251,13 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
                 "status": run.status.value,
                 "case_count": run.completed_case_count,
                 "result_count": result_count,
+                "assertion_failure_count": assertion_failure_count,
+                "target_error_count": target_error_count,
+                "verified": (
+                    run.status.value == "completed"
+                    and result_count == expected_result_count
+                    and target_error_count == 0
+                ),
                 "trace_id": first_trace,
                 "failure_reason": run.failure_reason,
             }

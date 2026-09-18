@@ -89,6 +89,7 @@ def create_deep_agent_target_app() -> FastAPI:
                     "data": {"run_id": run_id, "harness": harness},
                 },
             ],
+            "usage": {"input_tokens": 4, "output_tokens": 2},
         }
 
     @app.post("/invoke/{run_id}/cancel", status_code=202)

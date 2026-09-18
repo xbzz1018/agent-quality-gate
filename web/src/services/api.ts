@@ -24,6 +24,8 @@ import type {
   PolicyEvaluation,
   Role,
   RunEvent,
+  ScenarioRun,
+  ScenarioValidation,
   ServiceAccount,
   SkillPackage,
   SkillBindingValidation,
@@ -117,6 +119,27 @@ export const api = {
   run: (id: number) => http.get<EvalRun>(`/eval-runs/${id}`).then(({ data }) => data),
   createRun: (payload: Record<string, unknown>) =>
     http.post<EvalRun>('/eval-runs', payload).then(({ data }) => data),
+  scenarioRuns: (params: Record<string, unknown> = {}) =>
+    http.get<Page<ScenarioRun>>('/scenario-runs', { params }).then(({ data }) => data),
+  scenarioRun: (id: number) =>
+    http.get<ScenarioRun>(`/scenario-runs/${id}`).then(({ data }) => data),
+  createScenarioRun: (
+    payload: Record<string, unknown>,
+    idempotencyKey = crypto.randomUUID(),
+  ) =>
+    http
+      .post<ScenarioRun>('/scenario-runs', payload, {
+        headers: { 'Idempotency-Key': idempotencyKey },
+      })
+      .then(({ data }) => data),
+  cancelScenarioRun: (id: number) =>
+    http.post<ScenarioRun>(`/scenario-runs/${id}/cancel`).then(({ data }) => data),
+  validateScenarioVersion: (id: number) =>
+    http
+      .post<ScenarioValidation>(`/scenario-versions/${id}/validate`)
+      .then(({ data }) => data),
+  evalScenario: (runId: number) =>
+    http.get(`/eval-runs/${runId}/scenario`).then(({ data }) => data),
   results: (runId: number) =>
     http.get<CaseResult[]>(`/eval-runs/${runId}/results`).then(({ data }) => data),
   searchResults: (params: Record<string, unknown> = {}) =>

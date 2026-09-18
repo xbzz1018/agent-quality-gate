@@ -1,0 +1,21 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+COPY requirements-runtime.lock requirements-distributed.lock ./
+RUN pip install --no-cache-dir --no-deps -r requirements-runtime.lock \
+    && pip install --no-cache-dir --no-deps -r requirements-distributed.lock
+COPY requirements.txt requirements-runtime.txt pyproject.toml README.md ./
+COPY src ./src
+COPY alembic ./alembic
+COPY alembic.ini ./
+COPY datasets ./datasets
+RUN pip install --no-cache-dir --no-deps --no-build-isolation .
+ENV HOME=/app/.tmp
+ENV XDG_CACHE_HOME=/app/.tmp/cache
+RUN mkdir -p /app/.tmp/inspect-logs /app/.tmp/cache && chown -R 1000:1000 /app/.tmp
+
+USER 1000:1000
+CMD ["python", "-m", "agent_quality_harness.kafka_worker"]

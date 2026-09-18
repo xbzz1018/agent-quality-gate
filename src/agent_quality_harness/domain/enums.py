@@ -4,6 +4,7 @@ from enum import StrEnum
 class TargetKind(StrEnum):
     AGENT = "agent"
     TOOL = "tool"
+    SCENARIO = "scenario"
 
 
 class TargetProtocol(StrEnum):
@@ -12,6 +13,12 @@ class TargetProtocol(StrEnum):
     AG_UI = "ag_ui"
     A2A = "a2a"
     MCP = "mcp"
+    SCENARIO = "scenario"
+
+
+class ScenarioMode(StrEnum):
+    SHADOW = "shadow"
+    PILOT = "pilot"
 
 
 class RunStatus(StrEnum):

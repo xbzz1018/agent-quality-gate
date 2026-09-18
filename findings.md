@@ -81,6 +81,21 @@
 
 ## Real-target Verification Findings
 
+- Docker Desktop's previous data disk was replaced after the E: disk filled and its overlay filesystem remounted read-only; the new Docker inventory did not contain the old AQH volume. The project source and Git history remained intact, but persistent AQH database history must be treated as lost unless an external VHDX backup is recovered.
+- The rebuilt Docker inventory on 2026-08-25 already contains Document Autoflow, AgriGraph acceptance dependencies, and unrelated services. Before rebuilding AQH it uses 8.77 GB of images, 711 MB of volumes, and 1.33 GB of build cache; E: has 37.59 GB free.
+- Host ports 5173 and 6379 are occupied. The storage-bounded AQH defaults are Web 5174 and Redis 56379; API 8000 and PostgreSQL 5432 remain available.
+
+- On 2026-08-25 Docker Engine 29.4.2 was reachable, but every Agent Quality Harness container had exited with code 255 at the same timestamp. Prior API logs showed successful readiness responses, so the current outage is a Docker Desktop/WSL stack stop rather than evidence that the AQH API contract failed.
+- Run #54 is not evidence of an unusable AQH or Document Profile API: Run #55 subsequently completed the same cookie-login/create/poll/map path. The known failure is the target's second-document REPROCESS Activity exceeding the profile timeout and observing cancellation only after the long Activity returns.
+- Persisted AQH state confirms Run #54 expected 24 Cases but failed before the first one could be captured (`expected 1, got 0`), leaving zero CaseResults. Run #55 used the same Candidate Profile and completed one Case in about 22 seconds. The closeout must isolate per-Case target timeouts and retain completed/failed Case evidence instead of losing the whole characterization.
+- The Document Profile declares `max_poll_seconds=1800`, while Run #54 terminated after about 629 seconds and the current Inspect Task does not override its sample time limit. The Solver also lets Adapter exceptions escape without creating a HarnessResult. These two platform behaviors explain the 600-second cutoff and zero persisted CaseResults; both require regression tests.
+- The Document Autoflow repository has extensive user-owned uncommitted changes. Closeout work must preserve them and prefer AQH-side orchestration/adapter changes unless a target defect is proven and a narrowly scoped target edit is unavoidable.
+- The preserved Document project contains all 24 frozen documents: 23 remain parsed and the second sample is failed with `unexpected_parser_error` after the prior cancellation. The target user table is currently empty, so a new random-password local evaluator identity is required before reparse or evaluation; the old auth environment cannot be reused.
+- Run #131 closes the Document 24-case limitation with bounded behavior: 24/24 results persisted, consisting of 10 AUTO_PASS, 11 REVIEW, and 3 REPROCESS outcomes. Fifteen Cases failed deterministic expectations; usage was 190,146 input and 46,529 output tokens with USD 0.03964856 known model cost. This is a characterization completion, not a claim that all Cases passed.
+- AgriGraph's API and credentials were not present in the current process. Its acceptance Redis port conflicts with the already-running AQH Redis on 6379, while ES/Neo4j/MinIO can be started independently and the application can reuse the healthy loopback Redis.
+- Recorded Run Stability Baselines are now validated twice: API creation requires the same organization, frozen Dataset, completed source Run, exact source version role, and complete CaseResults; Worker execution repeats the checks before rebuilding historical score/usage evidence.
+- Document Gate Run #138 correctly BLOCKed on two target execution failures and partial cost. AgriGraph Gate Run #139 SHIPped with 40+40 results, equal 80% success, zero target failures, and improved P95; both are stability gates, not source-code regression claims.
+
 - The multi-tenant MVP is sealed at `bd916e5` on `codex/real-target-verification` before target-specific work begins.
 - AgriGraph exposes authenticated `/api/v1/evaluation/answer` and returns answer, citation, grounding, workflow, model-usage, cost, and run identifiers suitable for a contract profile.
 - Document Autoflow is an asynchronous authenticated workflow: create a project run, poll or follow run events, read candidates and validation, and optionally cancel the remote run.
@@ -145,6 +160,22 @@
 - Tool argument fragments must be accumulated and parsed only at `TOOL_CALL_END`; emitting one normalized `tool.completed` event preserves the existing deterministic Tool Scorer.
 - State deltas are RFC 6902 operations. Applying them through `jsonpatch` makes missing paths and illegal operations deterministic case failures.
 - Reasoning text and encrypted values are consumed only for lifecycle validation. Persisted Agent events contain `{}` for `reasoning.started` and `reasoning.ended`; no content or encrypted value reaches CaseResult output.
+
+## 2026-08-26 scenario and real-target decisions
+
+- `InspectHarness` is active production code: Worker -> InspectRunExecutor -> InspectHarness builds Inspect Tasks, runs bounded batches, captures results, and invokes deterministic scorers.
+- Kafka distributes whole EvalRuns; it is not an Agent router. A2A/AG-UI invoke Agents, MCP Tasks handles asynchronous Tools, and the new Scenario Executor composes those adapters inside a bounded evaluation case.
+- AgriGraph is the only one of the three projects that calls a remote Embedding API. Document Autoflow uses its existing model Provider; AQH only records target-reported embedding usage.
+- AgriGraph expects `EMBEDDING_API_BASE`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL`, and `EMBEDDING_DIMENSIONS`. A model change requires rebuilding every Elasticsearch vector before setting matching index metadata.
+- `qwen3.7-text-embedding` supports 1024-dimensional OpenAI-compatible output, matching the existing AgriGraph index dimension. A replacement credential is mandatory because the credential pasted in chat is compromised.
+- MCP 2.0.0 negotiates Tasks capability types on the client, but its 2025-11-25 high-level server and result sieve do not natively accept `tools/call -> CreateTaskResult`. The deterministic Fake MCP uses a narrowly scoped serialization compatibility seam; MCP Tasks remains experimental, not a claim of native SDK server maturity.
+- A completed EvalRun can still contain deterministic `assertion_failure` results. Real-target acceptance must distinguish those from execution failures (`target_error`/`target_timeout`); otherwise legitimate REVIEW/REPROCESS outcomes are misreported as transport failures.
+- The rebuilt Document database invalidated both the old evaluator credential and project/template identifiers. Correct recovery required a new DPAPI-backed evaluator plus a dedicated 24-document project; preserving old Run failures was more truthful than overwriting them.
+- The Linux Document Worker intentionally lacks the Windows MinerU runtime and DPAPI model secret. A bounded host Worker rebuilt parse artifacts without building a large OCR image; its temporary source paths were SHA-verified and restored after each document.
+- Document Stability Run #31 demonstrates a target recovery limitation: cancelling REPROCESS does not guarantee immediate release of the document. A subsequent create-run can return 409, which the Gate correctly treats as a target execution failure and BLOCK.
+- Frozen Case content remained unchanged while dirty source-tree fingerprints moved. Frozen provenance is now refreshed to the current trees; all comparisons still prove same-snapshot stability rather than different-commit regression.
+- AgriGraph vector migration must complete before API startup: the verified sequence was preflight -> API stopped -> dry-run -> batch-10 rebuild -> `163 discovered == 163 updated` -> API start.
+- AgriGraph Run #34 shows stable deterministic quality across identical dirty snapshots: both Baseline and Candidate pass 32/40, target execution failures remain zero, and the Gate returns SHIP. Cost remains UNKNOWN because no PricingSnapshot covers the reported usage.
 
 ## Resources
 

@@ -54,6 +54,13 @@ const canReplay = computed(() =>
   results.value.some((item) => item.version_role === 'candidate' && item.failure_type),
 )
 const hasBaseline = computed(() => run.value?.baseline_version_id != null)
+const scenarioManifest = computed(() => {
+  const value = run.value?.manifest.scenario
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null
+})
+const scenarioEvents = computed(() =>
+  events.value.filter((event) => event.event_type.startsWith('scenario.')),
+)
 
 async function load(silent = false) {
   if (!silent) loading.value = true
@@ -190,6 +197,17 @@ onBeforeUnmount(() => pollTimer && window.clearInterval(pollTimer))
               </div>
               <EmptyState v-else title="暂无持久事件" />
             </ElTabPane>
+            <ElTabPane v-if="scenarioManifest" label="多 Agent 场景">
+              <div class="scenario-manifest">
+                <div><span>Scenario SHA</span><strong class="mono">{{ String(scenarioManifest.sha256 ?? 'UNKNOWN') }}</strong></div>
+                <div><span>节点数</span><strong>{{ scenarioManifest.node_count ?? 0 }}</strong></div>
+                <div><span>参与 Version</span><strong>{{ Array.isArray(scenarioManifest.participant_version_ids) ? scenarioManifest.participant_version_ids.join(', ') : 'UNKNOWN' }}</strong></div>
+              </div>
+              <div v-if="scenarioEvents.length" class="timeline scenario-timeline">
+                <div v-for="event in scenarioEvents" :key="event.id" class="timeline-item"><span class="timeline-dot" /><div><div class="timeline-title"><strong>{{ event.event_type }}</strong><span>{{ formatDate(event.occurred_at) }}</span></div><div class="timeline-meta">{{ event.payload.node_id ?? event.payload.from_node ?? 'scenario' }}<template v-if="event.payload.to_node"> → {{ event.payload.to_node }}</template></div></div></div>
+              </div>
+              <EmptyState v-else title="场景事件尚未写入" />
+            </ElTabPane>
           </ElTabs>
         </div>
         <EmptyState v-else title="选择一个 Case 结果" description="右侧将显示输入、期望、实际输出、规则评分和 Trace。" />
@@ -219,5 +237,10 @@ onBeforeUnmount(() => pollTimer && window.clearInterval(pollTimer))
 .timeline-title span, .timeline-meta { color: var(--muted); font-size: 10px; }
 .timeline-meta { margin-top: 4px; }
 .characterization-banner { border-color: #b8c7df; background: #f5f8fc; color: #344054; }
+.scenario-manifest { display: grid; grid-template-columns: minmax(0, 1.6fr) .5fr 1fr; gap: 1px; margin-bottom: 14px; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); }
+.scenario-manifest > div { min-width: 0; padding: 9px 10px; background: white; }
+.scenario-manifest span { display: block; color: var(--muted); font-size: 10px; }
+.scenario-manifest strong { display: block; margin-top: 4px; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.scenario-timeline { padding: 4px 8px; }
 @media (max-width: 760px) { .detail-summary { grid-template-columns: 1fr 1fr; } }
 </style>

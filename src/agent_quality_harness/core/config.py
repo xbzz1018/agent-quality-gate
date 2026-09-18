@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     )
     redis_url: str = "redis://localhost:6379/0"
     redis_queue_key: str = "aqh:eval-runs"
+    redis_scenario_queue_key: str = "aqh:scenario-runs"
+    queue_backend: str = Field(default="redis", pattern=r"^(redis|kafka)$")
+    kafka_bootstrap_servers: str = "localhost:9092"
+    kafka_run_topic: str = "aqh.eval-runs.v1"
+    kafka_dlq_topic: str = "aqh.eval-runs.dlq.v1"
+    kafka_consumer_group: str = "agent-quality-harness-workers-v1"
+    kafka_max_attempts: int = Field(default=3, ge=1, le=20)
     redis_claim_timeout_seconds: int = Field(default=5, ge=1, le=60)
     worker_lease_seconds: int = Field(default=60, ge=10, le=3600)
     worker_heartbeat_seconds: int = Field(default=10, ge=1, le=300)
@@ -34,6 +41,11 @@ class Settings(BaseSettings):
     opa_enabled: bool = False
     opa_url: str = "http://localhost:8181"
     opa_timeout_seconds: float = Field(default=2.0, ge=0.1, le=10.0)
+    judge_enabled: bool = False
+    judge_base_url: str = "http://127.0.0.1:8060/v1"
+    judge_model: str = "hallucination-judge"
+    judge_api_key: SecretStr | None = None
+    judge_timeout_seconds: float = Field(default=30.0, ge=1.0, le=120.0)
     demo_agent_endpoint: str = "http://127.0.0.1:8020/invoke"
     demo_dataset_path: Path = Path("datasets/demo-fixture-core-v1.json")
     jwt_secret: str = "development-only-change-me-please-use-a-random-64-character-secret"
