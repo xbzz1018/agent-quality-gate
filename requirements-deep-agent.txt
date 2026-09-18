@@ -1,4 +1,4 @@
 fastapi==0.141.1
-uvicorn[standard]==0.52.1
-pydantic==2.13.4
-deepagents==0.7.6
+uvicorn[standard]==0.53.0
+pydantic==2.13.5
+deepagents==0.7.14
