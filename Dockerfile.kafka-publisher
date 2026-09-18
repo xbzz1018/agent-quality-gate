@@ -7,7 +7,7 @@ WORKDIR /app
 COPY requirements-api.lock requirements-distributed.lock ./
 RUN pip install --no-cache-dir --no-deps -r requirements-api.lock \
     && pip install --no-cache-dir --no-deps -r requirements-distributed.lock \
-    && pip install --no-cache-dir setuptools==82.0.1
+    && pip install --no-cache-dir setuptools==84.0.0
 COPY pyproject.toml README.md ./
 COPY requirements-api.txt ./requirements-runtime.txt
 COPY src ./src

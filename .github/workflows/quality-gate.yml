@@ -2,11 +2,22 @@ name: quality-gate
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:17-alpine
@@ -33,6 +44,7 @@ jobs:
     env:
       AQH_DATABASE_URL: postgresql+psycopg://agent_quality:agent_quality@localhost:5432/agent_quality
       AQH_REDIS_URL: redis://localhost:6379/0
+      AQH_INTEGRATION_REDIS_URL: redis://localhost:6379/0
       AQH_RUN_INTEGRATION: "1"
       AQH_CODE_VERSION: ${{ github.sha }}
     steps:
