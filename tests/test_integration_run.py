@@ -414,8 +414,10 @@ async def test_real_postgres_redis_and_inspect_worker(tmp_path: Path) -> None:
             database,
             InspectHarness(max_samples=1, log_dir=tmp_path / "inspect-slow"),
             adapter_factory=lambda _: SlowEchoAdapter(started),
-            lease_seconds=0.05,
-            heartbeat_seconds=0.01,
+            # Keep enough lease headroom for the real database heartbeat thread;
+            # the test checks cancellation while running, not lease expiry.
+            lease_seconds=1,
+            heartbeat_seconds=0.05,
         )
         slow_worker = RedisRunWorker(queue, slow_executor.execute, claim_timeout_seconds=1)
         slow_task = asyncio.create_task(slow_worker.process_once())
