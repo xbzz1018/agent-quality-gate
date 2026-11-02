@@ -1,2 +1,2 @@
-aiokafka==0.14.0
+aiokafka==0.15.0
 async-timeout==5.0.1
