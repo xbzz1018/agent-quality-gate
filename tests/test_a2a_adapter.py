@@ -60,6 +60,16 @@ class _DeterministicExecutor(AgentExecutor):
         await updater.cancel()
 
 
+class _ObservedTaskStore(InMemoryTaskStore):
+    def __init__(self) -> None:
+        super().__init__()
+        self.persisted = asyncio.Event()
+
+    async def save(self, task, context) -> None:
+        await super().save(task, context)
+        self.persisted.set()
+
+
 def _a2a_app(
     executor: AgentExecutor, *, streaming: bool = True
 ) -> tuple[FastAPI, types.AgentCard]:
@@ -86,12 +96,14 @@ def _a2a_app(
             )
         ],
     )
+    task_store = _ObservedTaskStore()
     handler = DefaultRequestHandler(
         agent_executor=executor,
-        task_store=InMemoryTaskStore(),
+        task_store=task_store,
         agent_card=card,
     )
     app = FastAPI()
+    app.state.task_persisted = task_store.persisted
     add_a2a_routes_to_fastapi(
         app,
         agent_card_routes=create_agent_card_routes(card),
@@ -140,6 +152,8 @@ async def test_a2a_cancel_uses_task_protocol_and_stops_running_invocation() -> N
         )
         invocation = asyncio.create_task(adapter.invoke({"prompt": "wait"}, {}))
         await asyncio.wait_for(executor.started.wait(), timeout=1)
+        # Enqueuing Task does not guarantee the SDK's dispatcher has persisted it.
+        await asyncio.wait_for(app.state.task_persisted.wait(), timeout=1)
         assert executor.task_id is not None
         assert await adapter.cancel(executor.task_id) is True
         result = await asyncio.wait_for(invocation, timeout=1)
@@ -147,6 +161,14 @@ async def test_a2a_cancel_uses_task_protocol_and_stops_running_invocation() -> N
     assert result.run_id == executor.task_id
     assert result.final_action == "cancelled"
     assert result.output["state"] == "canceled"
+
+
+async def test_a2a_cancel_missing_task_returns_false() -> None:
+    app, _card = _a2a_app(_DeterministicExecutor(), streaming=False)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://a2a") as client:
+        adapter = A2AAgentAdapter("http://a2a", client=client, capabilities={"streaming": False})
+        assert await adapter.cancel("does-not-exist") is False
 
 
 def test_a2a_profile_is_runnable_and_mcp_remains_a_separate_pending_adapter() -> None:
