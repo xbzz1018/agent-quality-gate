@@ -54,6 +54,8 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt -e .
+      - name: Check installed dependency compatibility
+        run: python -m pip check
       - name: Start OPA 1.17.0
         run: >-
           docker run -d --name aqh-opa -p 8181:8181
