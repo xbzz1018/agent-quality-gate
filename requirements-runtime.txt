@@ -12,6 +12,8 @@ PyJWT==2.13.0
 argon2-cffi==25.1.0
 openai>=2.0,<3.0
 inspect-ai==0.3.258
+# Keep development installs aligned with requirements-runtime.lock.
+agent-client-protocol==0.12.1
 a2a-sdk==1.1.2
 ag-ui-protocol==0.1.19
 mcp==2.0.0
