@@ -1,0 +1,5 @@
+# Reuse API version constraints without installing its database and telemetry stack.
+-c requirements-api.txt
+fastapi
+uvicorn
+pydantic
