@@ -14,6 +14,8 @@ python -m pip check
 
 环境包含 FastAPI、Inspect AI、DeepAgents、A2A SDK、MCP SDK、Kafka Python Client 与 OpenTelemetry。默认 Docker 只运行 PostgreSQL、Redis、OPA、API、Worker、HTTP Fake Agent 和 Web；其他能力使用 profile，不能静默加入默认拓扑。
 
+Inspect AI 0.3.258 使用 `acp.helpers`，开发依赖与 Worker 锁文件统一约束 `agent-client-protocol==0.12.1`；直接解析 ACP 1.x 会在测试收集时导入失败。升级 Inspect AI 时一并复核该约束，并执行 `python -m pip check` 与完整 CI。
+
 
 ## 本地运行
 

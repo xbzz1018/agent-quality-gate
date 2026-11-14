@@ -47,7 +47,7 @@ class SseAgentAdapter(HttpAgentAdapter):
                     if line == "":
                         if data_lines:
                             yield _event(event_name, event_id, data_lines)
-                        event_name, event_id, data_lines = "message", None, []
+                        event_name, data_lines = "message", []
                         continue
                     if line.startswith(":"):
                         continue
@@ -55,7 +55,7 @@ class SseAgentAdapter(HttpAgentAdapter):
                     value = value[1:] if value.startswith(" ") else value
                     if field == "event":
                         event_name = value
-                    elif field == "id":
+                    elif field == "id" and "\x00" not in value:
                         event_id = value
                     elif field == "data":
                         data_lines.append(value)

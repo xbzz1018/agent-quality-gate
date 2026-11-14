@@ -1,4 +1,5 @@
 import httpx
+import pytest
 
 from agent_quality_harness.adapters import HttpAgentAdapter, SseAgentAdapter
 from agent_quality_harness.domain.enums import MeasurementStatus
@@ -30,3 +31,23 @@ async def test_sse_adapter_parses_event_boundaries_and_completion() -> None:
         "run_completed",
     ]
     assert events[-1].data["output"] == {"text": "streamed"}
+
+
+@pytest.mark.parametrize(
+    ("stream", "expected_ids"),
+    [
+        ('id: run-1\ndata: {}\n\ndata: {}\n\n', ["run-1", "run-1"]),
+        ('id: run-1\n\ndata: {}\n\n', ["run-1"]),
+        ('id: run-1\ndata: {}\n\nid:\ndata: {}\n\ndata: {}\n\n', ["run-1", "", ""]),
+        ('id: run-1\ndata: {}\n\nid: bad\x00id\ndata: {}\n\n', ["run-1", "run-1"]),
+    ],
+)
+async def test_sse_adapter_preserves_last_event_id(stream, expected_ids) -> None:
+    transport = httpx.MockTransport(lambda request: httpx.Response(
+        200, headers={"Content-Type": "text/event-stream"}, content=stream.encode(),
+    ))
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = SseAgentAdapter("http://fake/stream", client=client)
+        events = [event async for event in adapter.stream({}, {})]
+
+    assert [event.event_id for event in events] == expected_ids
