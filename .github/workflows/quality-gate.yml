@@ -15,6 +15,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  runtime-locks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install uv==0.12.17
+      - name: Verify all Docker dependency locks
+        run: python scripts/runtime_locks.py
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30

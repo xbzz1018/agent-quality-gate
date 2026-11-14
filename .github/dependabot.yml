@@ -15,6 +15,10 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+      # Stable SDK and beta instrumentation share exact semantic-conventions pins.
+      opentelemetry:
+        patterns:
+          - "opentelemetry-*"
       python-minor-patch:
         update-types:
           - minor

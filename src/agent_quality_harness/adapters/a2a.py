@@ -7,6 +7,7 @@ from uuid import uuid4
 import httpx
 from a2a import types
 from a2a.client import A2ACardResolver, A2AClientError, Client, ClientConfig, ClientFactory
+from a2a.utils.errors import A2AError
 from google.protobuf.json_format import MessageToDict, ParseDict
 from google.protobuf.struct_pb2 import Value
 
@@ -102,7 +103,7 @@ class A2AAgentAdapter:
                 async with self._sdk_client() as (client, _card):
                     task = await client.cancel_task(types.CancelTaskRequest(id=run_id))
             return task.status.state == types.TaskState.TASK_STATE_CANCELED
-        except (A2AClientError, httpx.HTTPError, TimeoutError, ValueError):
+        except (A2AClientError, A2AError, httpx.HTTPError, TimeoutError, ValueError):
             return False
 
     @asynccontextmanager

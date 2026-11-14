@@ -5,7 +5,8 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 COPY requirements-runtime.lock ./
-RUN pip install --no-cache-dir --no-deps -r requirements-runtime.lock
+RUN pip install --no-cache-dir --no-deps -r requirements-runtime.lock \
+    && pip install --no-cache-dir setuptools==84.2.1
 COPY requirements.txt requirements-runtime.txt pyproject.toml README.md ./
 COPY src ./src
 COPY alembic ./alembic

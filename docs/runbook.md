@@ -14,7 +14,16 @@ python -m pip check
 
 环境包含 FastAPI、Inspect AI、DeepAgents、A2A SDK、MCP SDK、Kafka Python Client 与 OpenTelemetry。默认 Docker 只运行 PostgreSQL、Redis、OPA、API、Worker、HTTP Fake Agent 和 Web；其他能力使用 profile，不能静默加入默认拓扑。
 
-Inspect AI 0.3.258 使用 `acp.helpers`，开发依赖与 Worker 锁文件统一约束 `agent-client-protocol==0.12.1`；直接解析 ACP 1.x 会在测试收集时导入失败。升级 Inspect AI 时一并复核该约束，并执行 `python -m pip check` 与完整 CI。
+Inspect AI 0.3.286 与开发依赖、Worker 锁文件统一保留 `agent-client-protocol==0.12.1`；升级 Inspect AI 时一并复核 ACP 兼容性，并执行 `python -m pip check` 与完整 CI。
+
+修改运行依赖后，安装 CI 使用的 uv，再同步六个 Docker 安装配置。锁文件检查会按现有精确版本重新解析，并拒绝声明冲突、缺少传递依赖或陈旧的锁文件：
+
+```powershell
+python scripts/runtime_locks.py --update
+python scripts/runtime_locks.py
+```
+
+`--profile api` 可只处理一个配置。Fake HTTP / AG-UI 复用 API 的版本约束，但保持独立的轻量安装集合。此检查验证依赖解析一致性，运行行为由后端与集成测试另行覆盖。
 
 
 ## 本地运行
