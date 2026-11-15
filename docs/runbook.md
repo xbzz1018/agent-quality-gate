@@ -25,6 +25,8 @@ python scripts/runtime_locks.py
 
 `--profile api` 可只处理一个配置。Fake HTTP / AG-UI 复用 API 的版本约束，但保持独立的轻量安装集合。此检查验证依赖解析一致性，运行行为由后端与集成测试另行覆盖。
 
+Web 暂时精确固定 `vue-tsc==3.3.11`（npm 声明为 `3.3.11`）。3.3.14 在当前 `TargetsView` 的 reactive 表单模板上产生不存在 `.value` 的 TS2339；同一组件和其余升级依赖在 3.3.11 下通过类型检查。解除固定前需运行类型检查、前端测试与构建。
+
 
 ## 本地运行
 
