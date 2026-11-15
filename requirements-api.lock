@@ -11,7 +11,7 @@ cffi==2.1.1
 charset-normalizer==3.5.1
 click==8.4.2
 colorama==0.4.6 ; sys_platform == 'win32'
-fastapi==0.162.0
+fastapi==0.162.5
 googleapis-common-protos==1.75.1
 grpcio==1.83.0
 h11==0.16.0
@@ -40,11 +40,11 @@ opentelemetry-semantic-conventions==0.66b2
 opentelemetry-util-http==0.66b2
 packaging==26.3
 protobuf==6.33.6
-psycopg==3.3.6
-psycopg-binary==3.3.6 ; implementation_name != 'pypy'
+psycopg==3.3.8
+psycopg-binary==3.3.8 ; implementation_name != 'pypy'
 pycparser==3.0 ; implementation_name != 'PyPy'
-pydantic==2.14.2
-pydantic-core==2.50.2
+pydantic==2.14.3
+pydantic-core==2.50.4
 pydantic-settings==2.15.0
 pyjwt==2.15.1
 python-dotenv==1.2.3
@@ -53,7 +53,7 @@ redis==8.1.0
 referencing==0.37.0
 requests==2.34.2
 rpds-py==2026.6.3
-sqlalchemy==2.1.6
+sqlalchemy==2.1.8
 starlette==1.6.0
 typing-extensions==4.16.0
 typing-inspection==0.4.4
