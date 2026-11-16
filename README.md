@@ -57,3 +57,7 @@ docker compose ps
 技术栈：Vue、FastAPI、PostgreSQL、Redis Worker、Inspect AI、OPA。
 
 开发与贡献：[运行手册](docs/runbook.md) · [实现与测试](docs/traceability.md) · [贡献指南](CONTRIBUTING.md) · [安全政策](SECURITY.md)
+
+## 许可证
+
+[MIT](LICENSE)
