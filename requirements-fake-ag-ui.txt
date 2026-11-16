@@ -1,2 +1,2 @@
 -r requirements-fake-http.txt
-ag-ui-protocol==0.1.19
+ag-ui-protocol==1.0.0
