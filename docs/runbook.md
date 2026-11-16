@@ -106,7 +106,7 @@ Remove-Item Env:AQH_JWT_SECRET
 
 不要执行 `docker compose down -v`、`docker system prune --volumes` 或 Docker Desktop Factory Reset；它们会删除管理员、历史运行和卷。API 使用轻量 `requirements-api.lock`，HTTP Fake Agent 使用轻量 `requirements-fake-http.lock`，只有 Worker 使用完整 `requirements-runtime.lock`。DeepAgents 和协议 Fixtures 只在显式 profile 中构建。
 
-进入 Web 后点击“初始化 Demo Fixture”会创建明确标记的 Fake Agent Target、Baseline/Candidate、80 条冻结样例、GatePolicy 和 PricingSnapshot。该操作不伪造评测结果，仍需创建运行并由 Worker 实际执行。
+进入 Web 的「被测目标」页面，点击 **Demo Fixture**，会创建明确标记的 Fake Agent Target、Baseline/Candidate、80 条冻结样例、GatePolicy 和 PricingSnapshot。该操作不伪造评测结果，仍需创建运行并由 Worker 实际执行。首次操作的字段和成功标志见[第一次评测](first-evaluation.md)。
 
 
 ## 验证
@@ -129,8 +129,8 @@ npm run build
 ## 最短演示路径
 
 1. 启动核心栈并创建管理员，打开 `http://127.0.0.1:5174`。
-2. 点击“初始化 Demo Fixture”，创建明确标记的 HTTP Fake Agent、80 条冻结样例、Baseline/Candidate 和策略。
-3. 创建并等待 Worker 执行 Baseline 和 Candidate；Fixture 初始化本身不生成运行成绩。
-4. 进入版本对比和失败 Case，检查规则、Trace 与回放，再查看 Gate 原因。
+2. 在「被测目标」点击 **Demo Fixture**，创建明确标记的 HTTP Fake Agent、80 条冻结样例、Baseline/Candidate 和策略。
+3. 在「评测运行」创建一次包含 Baseline 和 Candidate 的运行，并选择 Demo 策略与价格快照；等待 Worker 执行，Fixture 初始化本身不生成运行成绩。
+4. 进入版本对比和 Case，检查规则与事件；存在失败 Case 时再回放，最后查看 Gate 原因。逐步操作见[第一次评测](first-evaluation.md)。
 
 Demo Fixture 证明链路可执行，不代表真实 Agent 质量。没有 Baseline 的 Candidate-only 运行返回 `baseline_required`；真实目标验收的日期与源码边界见[历史记录](current-target-verification.md)。
