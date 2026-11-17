@@ -6,6 +6,14 @@ Agent Quality Harness（AQH）是一个 Agent 版本回归评测工具。更换�
 
 [第一次评测](docs/first-evaluation.md) · [项目案例与设计取舍](docs/project-case.md) · [运行手册](docs/runbook.md) · [实现与测试](docs/traceability.md)
 
+<!-- portfolio-preview:start -->
+[浏览项目与交互示例](https://kukup.xbzz.cloud/projects/quality-harness)
+
+![项目首页与功能入口](https://kukup.xbzz.cloud/images/quality-home.webp?v=a0c9e2011cc8)
+
+<sub>项目首页 · 示例资料与展示配色。点击上方链接，从首页继续浏览各项功能。</sub>
+<!-- portfolio-preview:end -->
+
 ## 什么时候用
 
 | 你正在做的变更 | 用 AQH 检查什么 |
