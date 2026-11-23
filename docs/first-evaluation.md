@@ -12,7 +12,14 @@
 docker compose ps
 ```
 
-确认 PostgreSQL、Redis、OPA、API、Worker、Fake Agent 和 Web 均已启动并显示 `healthy`，再继续。首次构建和数据库迁移可能需要等待；启动脚本返回不等于服务全部就绪。
+确认 PostgreSQL、Redis、OPA、API、Worker、Fake Agent 和 Web 均显示 `healthy` 后再继续。首次构建和数据库迁移可能需要等待。
+
+如果服务显示 `unhealthy` 或 `Exited`，先用 `docker compose ps -a` 找到服务名，再查看它的日志。例如网页打不开时，先看 API 和 Web。
+
+```powershell
+docker compose ps -a
+docker compose logs --tail 80 api web
+```
 
 ## 2. 创建管理员并登录
 
