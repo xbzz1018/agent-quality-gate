@@ -37,7 +37,13 @@ docker compose up -d postgres redis opa
 $env:AQH_REDIS_URL = "redis://localhost:56379/0"
 $env:AQH_OPA_ENABLED = "true"
 python -m alembic upgrade head
-"请在这里输入至少 12 位强密码" | aqh admin bootstrap --username admin --display-name "Platform Administrator" --password-stdin
+# 仅在首次启动时创建管理员
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+$adminPassword = Read-Host "设置 AQH 管理员密码（至少 12 位）" -AsSecureString
+$adminCredential = [System.Management.Automation.PSCredential]::new("admin", $adminPassword)
+$adminCredential.GetNetworkCredential().Password | aqh admin bootstrap `
+  --username admin --display-name "Platform Administrator" --password-stdin
+Remove-Variable adminCredential, adminPassword
 python -m uvicorn agent_quality_harness.main:app --host 127.0.0.1 --port 8010
 ```
 
@@ -73,12 +79,7 @@ npm run dev
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start_closeout_stack.ps1 -Build
 ```
 
-当前端口：Web `http://127.0.0.1:5174`，API 文档 `http://127.0.0.1:8000/docs`，OPA `http://127.0.0.1:8181`，Redis host port `56379`。Nginx 将同源 `/api/v1` 代理到 API。首次创建管理员：
-
-```powershell
-"至少 12 位强密码" | docker compose exec -T api aqh admin bootstrap `
-  --username admin --display-name "Platform Administrator" --password-stdin
-```
+当前端口：Web `http://127.0.0.1:5174`，API 文档 `http://127.0.0.1:8000/docs`，OPA `http://127.0.0.1:8181`，Redis host port `56379`。Nginx 将同源 `/api/v1` 代理到 API。首次使用时按[创建管理员并登录](first-evaluation.md#2-创建管理员并登录)设置密码。
 
 可选能力必须分开启用，启用前后都运行 `docker system df` 并检查 E 盘余量：
 
