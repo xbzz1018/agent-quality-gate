@@ -51,7 +51,11 @@ aqh gate --run-id 123 --api-url http://127.0.0.1:8010
 aqh gate --report tests/fixtures/gate-ship.json
 ```
 
-`SHIP/WARN` 返回 0，`BLOCK/FAILED` 返回非零。`datasets/` 中的 80 条 core 和 20 条 stability 数据均明确标记为 Demo Fixture。真实目标验证必须同时检查 Run 状态、结果数量和每条 `failure_type`；`completed` 不能单独证明目标调用成功。
+`--run-id` 从运行中的 API 读取门禁结果。`--report` 直接读取本地 JSON，可以用[示例文件](../tests/fixtures/gate-ship.json)验证 CI 接线。两个选项同时提供时，优先读取本地文件。
+
+`SHIP` 和 `WARN` 返回 `0`，其中 `WARN` 会生成 GitHub Actions 警告。`BLOCK` 或读取结果失败返回 `2`。在 PowerShell 的 CI 步骤中，可以在调用 `aqh gate` 后立即用 `exit $LASTEXITCODE` 将结果传给 CI。
+
+`datasets/` 中的 80 条 core 和 20 条 stability 数据均明确标记为 Demo Fixture。真实目标验证必须同时检查 Run 状态、结果数量和每条 `failure_type`；`completed` 不能单独证明目标调用成功。
 
 
 ## 适合展示的工程能力
